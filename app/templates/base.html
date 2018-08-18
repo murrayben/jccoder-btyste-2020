@@ -1,0 +1,28 @@
+{% extends "bootstrap/base.html" %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base_styles.css') }}">
+{% endblock %}
+
+{% block content -%}
+    {% block modals %}{% endblock %}
+        <!-- Page Content -->
+        <div class="container">
+            {% for category, message in get_flashed_messages(with_categories=True) %}
+            <div class="alert alert-{{ category }} alert-dismissible fade in" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                {{ message|safe }}
+            </div>
+            {% endfor %}
+
+            {% block page_content %}{% endblock %}
+
+            <footer>
+                    <br /> 
+                    <p>&copy; 2018 - Junior Cycle Coder <span class="pull-right">Designed and Coded by Benjamin Murray</span></p>
+            </footer>
+        </div>
+{% endblock %}

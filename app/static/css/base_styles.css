@@ -1,0 +1,27 @@
+@import "https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700";
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f7f7f7;
+}
+
+p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.1em;
+    font-weight: 300;
+    line-height: 1.7em;
+}
+
+a, a:hover, a:focus {
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+i, span {
+    display: inline-block;
+}
+
+.bg-success, .bg-danger, .bg-info, .bg-primary, .bg-warning {
+    /* Contextual backgrounds */
+    padding: 15px;
+}
