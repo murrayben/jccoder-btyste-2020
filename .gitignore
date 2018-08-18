@@ -6,3 +6,6 @@ venv
 
 # Python bytecode
 *.pyc
+
+# Environment variables
+*.env
