@@ -3,6 +3,7 @@
 body {
     font-family: 'Poppins', sans-serif;
     background-color: #f7f7f7;
+    padding-top: 70px;
 }
 
 p {
@@ -24,4 +25,9 @@ i, span {
 .bg-success, .bg-danger, .bg-info, .bg-primary, .bg-warning {
     /* Contextual backgrounds */
     padding: 15px;
+}
+
+#navbar-icon {
+    display: inline-block;
+    margin-top: -4px;
 }
