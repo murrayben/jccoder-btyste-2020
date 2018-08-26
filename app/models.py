@@ -1,3 +1,4 @@
+from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 
 class Permission:
@@ -53,10 +54,21 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
 
+    @property
+    def password(self):
+        raise AttributeError('Password is a write-only attribute')
+
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
         if self.role is None:
             self.role = Role.query.filter_by(default=True).first()
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
     def is_admin(self):
         return self.can(Permission.ADMINISTRATOR)
