@@ -23,6 +23,7 @@
                     <li class="navbar-text">Logged in as {{ current_user.username }}</li>
                     <li><a href="{{ url_for('logout') }}">Logout</a></li>
                     {% else %}
+                    <li><a href="{{ url_for('register') }}">Register</a></li>
                     <li><a href="{{ url_for('login') }}">Login</a></li>
                     {% endif %}
                 </ul>

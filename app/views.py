@@ -1,8 +1,8 @@
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 from app.models import User
-from app.forms import LoginForm
-from app import app
+from app.forms import LoginForm, RegistrationForm
+from app import app, db
 
 @app.route('/')
 def index():
@@ -28,3 +28,17 @@ def logout():
     logout_user()
     flash('<strong>Success!</strong> You have been logged out ' + username + '.', 'success')
     return redirect(url_for('index'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data, password=form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        login_user(user, False)
+        flash('<strong>Success!</strong> You have been registered and logged in!', 'success')
+        return redirect(url_for('index'))
+    return render_template('register.html', title="JCCoder - Register", form=form)
