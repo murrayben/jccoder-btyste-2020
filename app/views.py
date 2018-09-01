@@ -1,5 +1,5 @@
 from flask import flash, redirect, render_template, request, url_for
-from flask_login import current_user, login_user
+from flask_login import current_user, login_user, logout_user
 from app.models import User
 from app.forms import LoginForm
 from app import app
@@ -20,3 +20,10 @@ def login():
             return redirect(request.args.get('next') or url_for('index'))
         flash('Invalid username or password!', 'warning')
     return render_template('login.html', title="JCCoder - Login", form=form)
+
+@app.route('/logout')
+def logout():
+    username = current_user.username
+    logout_user()
+    flash('<strong>Success!</strong> You have been logged out ' + username + '.', 'success')
+    return redirect(url_for('index'))
