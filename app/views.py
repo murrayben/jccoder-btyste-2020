@@ -1,5 +1,5 @@
 from flask import flash, redirect, render_template, request, url_for
-from flask_login import current_user, login_user, logout_user
+from flask_login import current_user, login_required, login_user, logout_user
 from app.models import User
 from app.forms import LoginForm
 from app import app
@@ -22,6 +22,7 @@ def login():
     return render_template('login.html', title="JCCoder - Login", form=form)
 
 @app.route('/logout')
+@login_required
 def logout():
     username = current_user.username
     logout_user()
