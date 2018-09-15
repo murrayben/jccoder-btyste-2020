@@ -16,4 +16,4 @@ login.session_protection = 'strong'
 login.login_view = 'login'
 login.login_message_category = 'info'
 
-from app import views, models
+from app import views, models, errors

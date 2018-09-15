@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    {{ super() }}
+    <style type="text/css">
+        #home-page {
+            margin-top: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Sorry! That page was not found.</h1>
+    <a href="{{ url_for('index') }}" type="button" class="btn btn-primary" id="home-page">Home page</a>
+</div>
+{% endblock %}
