@@ -310,44 +310,14 @@ class AnswerStatus(db.Model):
     description = db.Column(db.String(64))
     user_answer = db.relationship('UserAnswer', backref='answer_status', lazy='dynamic')
 
-class Topic(db.Model):
-    __tablename__ = 'topics'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64))
-    strands = db.relationship('Strand', backref='topic', lazy='dynamic')
-
-    def __repr__(self):
-        return '<Topic %s>' % self.name
-
-    def what_model(self):
-        return "Topic"
-
-    def model_one_lower(self):
-        return "Strands"
-
-    def all_ordered_children(self):
-        ordered = []
-        if len(self.strands.all()) > 0:
-            def append_strand(strand):
-                ordered.append(strand)
-                if strand.next_strand:
-                    append_strand(strand.next_strand)
-            append_strand(self.strands.filter_by(prev_strand=None).first())
-        return ordered
-
 class Strand(db.Model):
     __tablename__ = 'strands'
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(64))
-    description = db.Column(db.Text)
-    next_strand_id = db.Column(db.Integer, db.ForeignKey('strands.id'), nullable=True)
-    next_strand = db.relationship('Strand', backref=db.backref('prev_strand', uselist=False), remote_side=[id], uselist=False)
-    number = db.Column(db.Integer)
-    topic_id = db.Column(db.Integer, db.ForeignKey('topics.id'))
+    name = db.Column(db.String(64))
     modules = db.relationship('Module', backref='strand', lazy='dynamic')
 
     def __repr__(self):
-        return '<Strand %s>' % self.title
+        return '<Strand %s>' % self.name
 
     def what_model(self):
         return "Strand"
@@ -370,17 +340,47 @@ class Module(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(64))
     description = db.Column(db.Text)
-    icon = db.Column(db.Text)
     next_module_id = db.Column(db.Integer, db.ForeignKey('modules.id'), nullable=True)
     next_module = db.relationship('Module', backref=db.backref('prev_module', uselist=False), remote_side=[id], uselist=False)
+    number = db.Column(db.Integer)
     strand_id = db.Column(db.Integer, db.ForeignKey('strands.id'))
-    lessons = db.relationship('Lesson', backref='module', lazy='dynamic')
+    chapters = db.relationship('Chapter', backref='module', lazy='dynamic')
 
     def __repr__(self):
         return '<Module %s>' % self.title
 
     def what_model(self):
         return "Module"
+
+    def model_one_lower(self):
+        return "Chapters"
+
+    def all_ordered_children(self):
+        ordered = []
+        if len(self.chapters.all()) > 0:
+            def append_chapter(chapter):
+                ordered.append(chapter)
+                if chapter.next_chapter:
+                    append_chapter(chapter.next_chapter)
+            append_chapter(self.chapters.filter_by(prev_chapter=None).first())
+        return ordered
+
+class Chapter(db.Model):
+    __tablename__ = 'chapters'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(64))
+    description = db.Column(db.Text)
+    icon = db.Column(db.Text)
+    next_chapter_id = db.Column(db.Integer, db.ForeignKey('chapters.id'), nullable=True)
+    next_chapter = db.relationship('Chapter', backref=db.backref('prev_chapter', uselist=False), remote_side=[id], uselist=False)
+    module_id = db.Column(db.Integer, db.ForeignKey('modules.id'))
+    lessons = db.relationship('Lesson', backref='chapter', lazy='dynamic')
+
+    def __repr__(self):
+        return '<Chapter %s>' % self.title
+
+    def what_model(self):
+        return "Chapter"
 
     def model_one_lower(self):
         return "Lessons"
@@ -407,13 +407,13 @@ class Lesson(db.Model):
     icon = db.Column(db.Text)
     next_lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'), nullable=True)
     next_lesson = db.relationship('Lesson', backref=db.backref('prev_lesson', uselist=False), remote_side=[id], uselist=False)
-    module_id = db.Column(db.Integer, db.ForeignKey('modules.id'))
+    chapter_id = db.Column(db.Integer, db.ForeignKey('chapters.id'))
     learning_outcomes = db.relationship('LearningOutcome', backref='lesson', lazy='dynamic')
     pages = db.relationship('Page', backref='lesson', lazy='dynamic')
     projects = db.relationship('Project', backref='lesson', lazy='dynamic')
 
     def __repr__(self):
-        return '<Module %s>' % self.title
+        return '<Lesson %s>' % self.title
 
     def what_model(self):
         return "Lesson"

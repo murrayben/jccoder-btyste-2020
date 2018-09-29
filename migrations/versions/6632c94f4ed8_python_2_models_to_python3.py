@@ -39,7 +39,7 @@ def upgrade():
     sa.Column('name', sa.String(length=64), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('topics',
+    op.create_table('strands',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=64), nullable=True),
     sa.PrimaryKeyConstraint('id')
@@ -50,9 +50,9 @@ def upgrade():
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('next_strand_id', sa.Integer(), nullable=True),
     sa.Column('number', sa.Integer(), nullable=True),
-    sa.Column('topic_id', sa.Integer(), nullable=True),
+    sa.Column('strand_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['next_strand_id'], ['strands.id'], ),
-    sa.ForeignKeyConstraint(['topic_id'], ['topics.id'], ),
+    sa.ForeignKeyConstraint(['strand_id'], ['strands.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('modules',
@@ -253,7 +253,7 @@ def downgrade():
     op.drop_table('posts')
     op.drop_table('modules')
     op.drop_table('strands')
-    op.drop_table('topics')
+    op.drop_table('strands')
     op.drop_table('tags')
     op.drop_table('questiontypes')
     op.drop_table('pagetypes')

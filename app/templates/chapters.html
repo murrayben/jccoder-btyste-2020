@@ -1,65 +1,65 @@
 {% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
 
-{% macro display_strand(strand, color=0) -%}
-    {%- if strand %}
-    <h4 class="strand-titles-{{ color }}">{{ strand.title }}</h4>
-    <div class="modules">
+{% macro display_module(module, color=0) -%}
+    {%- if module %}
+    <h4 class="module-titles-{{ color }}">{{ module.title }}</h4>
+    <div class="chapters">
         <div class="row">
-            {{ display_module(strand.modules.filter_by(prev_module=None).first()) }}
+            {{ display_chapter(module.chapters.filter_by(prev_chapter=None).first()) }}
         </div>
     </div>
     {%- endif -%}
-    {% if strand.next_strand -%}
+    {% if module.next_module -%}
         {% if color == 4 %}
-            {{ display_strand(strand.next_strand, 0) }}
+            {{ display_module(module.next_module, 0) }}
         {% else %}
-            {{ display_strand(strand.next_strand, color+1) }}
+            {{ display_module(module.next_module, color+1) }}
         {% endif %}
     {%- endif %}
 {%- endmacro %}
 
-{% macro display_module(module) -%}
-            {%- if module %}
-            <a href="{{ url_for('main.module', id=module.id) }}">
-                <div class="col-xs-4 col-sm-3 col-md-2 module" data-toggle="popover" data-trigger="hover" data-placement="top" title="Learning Outcome" data-content="{{ module.description }}" data-html="true">
+{% macro display_chapter(chapter) -%}
+            {%- if chapter %}
+            <a href="{{ url_for('main.chapter', id=chapter.id) }}">
+                <div class="col-xs-4 col-sm-3 col-md-2 chapter" data-toggle="popover" data-trigger="hover" data-placement="top" title="Learning Outcome" data-content="{{ chapter.description }}" data-html="true">
                     <p>
-                        {% if module.icon %}
-                        <img src="{{ module.icon }}" alt="module icon">
+                        {% if chapter.icon %}
+                        <img src="{{ chapter.icon }}" alt="chapter icon">
                         {% endif %}
-                        <span>{{ module.title }}</span>
+                        <span>{{ chapter.title }}</span>
                     </p>
                 </div>
             </a>
             {%- endif -%}
-            {% if module.next_module -%}
-                {{ display_module(module.next_module) }}
+            {% if chapter.next_chapter -%}
+                {{ display_chapter(chapter.next_chapter) }}
             {%- endif %}
 {%- endmacro %}
 
 {% block styles %}
     {{ super() }}
     <style type="text/css">
-        .strand-titles-0 {
+        .module-titles-0 {
             color: #eecd12 !important;
         }
 
-        .strand-titles-1 {
+        .module-titles-1 {
             color: #bd1e1e !important;
         }
 
-        .strand-titles-2 {
+        .module-titles-2 {
             color: #1e9738 !important;
         }
 
-        .strand-titles-3 {
+        .module-titles-3 {
             color: #691e86 !important;
         }
 
-        .strand-titles-4 {
+        .module-titles-4 {
             color: #12a77a !important;
         }
 
-        .module {
+        .chapter {
             background-color: #0dacd4;
             margin-left: 15px;
             margin-right: 10px;
@@ -70,7 +70,7 @@
             border-radius: 7px;
         }
 
-        .module p {
+        .chapter p {
             text-align: center;
             font-size: 1.15em;
         }
@@ -87,15 +87,15 @@
 
 {% block page_content %}
     <div class="page-header">
-        <h1>Topics</h1>
+        <h1>Strands</h1>
     </div>
-    {% for topic in Topic.query.all() %}
-    <h3>{{ topic.name }}</h3>
+    {% for strand in Strand.query.all() %}
+    <h3>{{ strand.name }}</h3>
     <hr />
-    {% if topic.all_ordered_children()|length > 0 %}
-    {{ display_strand(topic.all_ordered_children()[0]) }}
+    {% if strand.all_ordered_children()|length > 0 %}
+    {{ display_module(strand.all_ordered_children()[0]) }}
     {% else %}
-    <p>No strands</p>
+    <p>No modules</p>
     {% endif %}
     <hr />
     {% endfor %}
@@ -104,26 +104,26 @@
 {% block scripts %}
     {{ super() }}
     <script type="text/javascript">
-        function sizeModules() {
+        function sizeChapters() {
             var longHeight = 0;
-            $('.module').each(function() {
+            $('.chapter').each(function() {
                 if ($(this).height() > longHeight) {
                     longHeight = $(this).height();
                 }
             });
-            $('.module').each(function() {
+            $('.chapter').each(function() {
                 $(this).height(longHeight);
             });
 
-            $('.module p').each(function() {
+            $('.chapter p').each(function() {
                 var top = $(this).parent().height() / 2 - $(this).height() / 2;
                 $(this).css({
                     marginTop: top
                 });
             });
         }
-        $(window).on('resize', sizeModules);
-        sizeModules();
+        $(window).on('resize', sizeChapters);
+        sizeChapters();
         $('[data-toggle="popover"]').popover();
     </script>
 {% endblock %}

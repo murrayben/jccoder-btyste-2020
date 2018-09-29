@@ -1,7 +1,7 @@
 from flask import abort, jsonify, redirect, render_template, url_for, session, request, g
 from flask_login import current_user, login_required
 from datetime import datetime
-from ..models import db, Module, Page, PageAnswer, PageQuestion, Quiz, Lesson, UserAnswer, Question, AnswerStatus
+from ..models import db, Chapter, Page, PageAnswer, PageQuestion, Quiz, Lesson, UserAnswer, Question, AnswerStatus
 from .forms import NewPageQuestion, NewPageAnswer, EditPageAnswer
 from . import main
 
@@ -34,8 +34,8 @@ def index():
     return render_template('index.html', title="JCCoder")
 
 @main.route('/content')
-def modules():
-    return render_template('modules.html', title="JCCoder - Content")
+def chapters():
+    return render_template('chapters.html', title="JCCoder - Content")
 
 @main.route('/about')
 def about():
@@ -88,16 +88,16 @@ def take_quiz(id):
     session["no_attempts"] = []
     return render_template('take_quiz.html', title="JCCoder - Take Quiz", quiz=quiz, questions=questions)
 
-@main.route('/module/<int:id>')
-def module(id):
-    module = Module.query.get_or_404(id)
+@main.route('/chapter/<int:id>')
+def chapter(id):
+    chapter = Chapter.query.get_or_404(id)
     lessons = []
     def append_lessons(lesson):
         lessons.append(lesson)
         if lesson.next_lesson:
             append_lessons(lesson.next_lesson)
-    append_lessons(module.lessons.filter_by(prev_lesson=None).first())
-    return render_template('display_module.html', title="JCCoder - " + module.title, module=module, lessons=lessons)
+    append_lessons(chapter.lessons.filter_by(prev_lesson=None).first())
+    return render_template('display_chapter.html', title="JCCoder - " + chapter.title, chapter=chapter, lessons=lessons)
 
 @main.route('/page-content/', methods=['GET', 'POST'])
 def page_content():

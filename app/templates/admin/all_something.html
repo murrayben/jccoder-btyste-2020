@@ -6,10 +6,10 @@
         {% if items|length > 0 %}
         <ul>
             {% for item in items %}
-            {% if item.what_model() == "Topic" %}
-            <li><a href="{{ url_for('admin.edit_topic', id=item.id) }}">{{ item.name }}</a></li>
+            {% if item.what_model() == "Strand" %}
+            <li><a href="{{ url_for('admin.edit_strand', id=item.id) }}">{{ item.name }}</a></li>
             {%- elif item.what_model() == "Lesson" -%}
-            <li><a href="{{ url_for('admin.edit_lesson', id=item.id) }}">{{ item.title }}</a> (In module: <a href="{{ url_for('admin.edit_module', id=item.module.id) }}">{{ item.module.title }}</a> {% if item.learning_outcomes[:] != [] -%} and Learning Outcome(s):&nbsp;
+            <li><a href="{{ url_for('admin.edit_lesson', id=item.id) }}">{{ item.title }}</a> (In chapter: <a href="{{ url_for('admin.edit_chapter', id=item.chapter.id) }}">{{ item.chapter.title }}</a> {% if item.learning_outcomes[:] != [] -%} and Learning Outcome(s):&nbsp;
                 {% for learning_outcome in item.learning_outcomes -%}
                     <a href="{{ url_for('admin.edit_learning_outcome', id=learning_outcome.id) }}">{{ learning_outcome.description }}</a>
                     {%- if not loop.last -%}
@@ -17,9 +17,9 @@
                     {%- endif %}
                 {%- endfor %}
                 {%- endif %}{% if item.next_lesson %} and Next Lesson: <a href="{{ url_for('admin.edit_lesson', id=item.next_lesson.id) }}">{{ item.next_lesson.title }}</a>{% endif %})</li>
-            {% elif item.what_model() == "Module" %}
-            <li><a href="{{ url_for('admin.edit_module', id=item.id) }}">{{ item.title }}</a> (In strand: <a href="{{ url_for('admin.edit_strand', id=item.strand.id) }}">{{ item.strand.title }}</a>
-                {% if item.next_module %} and Next Module: <a href="{{ url_for('admin.edit_module', id=item.next_module.id) }}">{{ item.next_module.title }}</a>{% endif %})</li>
+            {% elif item.what_model() == "Chapter" %}
+            <li><a href="{{ url_for('admin.edit_chapter', id=item.id) }}">{{ item.title }}</a> (In module: <a href="{{ url_for('admin.edit_module', id=item.module.id) }}">{{ item.module.title }}</a>
+                {% if item.next_chapter %} and Next Chapter: <a href="{{ url_for('admin.edit_chapter', id=item.next_chapter.id) }}">{{ item.next_chapter.title }}</a>{% endif %})</li>
             {% elif item.what_model() == "Quiz" %}
             <li>In page: <a href="{{ url_for('admin.edit_page', id=item.page.id) }}">{{ item.page.title }}</a> (<a href="{{ url_for('main.take_quiz', id=item.id) }}">Take Quiz</a>) <a href="{{ url_for('admin.edit_quiz', id=item.id) }}" class="btn-xs btn-danger">Edit</a></li>
             {% elif item.what_model() == "Question" %}
@@ -27,7 +27,7 @@
             {% else %}
             <li><a href="{{ url_for('admin.edit_' + list_items_singular, id=item.id) }}">{{ item.title }}{% if item.what_model() == "Page" %}</a>
                 (In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a>{% if item.next_page %}
-                and Next Page: <a href="{{ url_for('admin.edit_page', id=item.next_page.id) }}">{{ item.next_page.title }}</a>{% endif %}){% else %}{% if item.next_strand %}</a> (Next Strand: <a href="{{ url_for('admin.edit_strand', id=item.next_strand.id) }}">{{ item.next_strand.title }}</a>){% endif %}</a>{% endif %}</li>
+                and Next Page: <a href="{{ url_for('admin.edit_page', id=item.next_page.id) }}">{{ item.next_page.title }}</a>{% endif %}){% else %}{% if item.next_module %}</a> (Next Module: <a href="{{ url_for('admin.edit_module', id=item.next_module.id) }}">{{ item.next_module.title }}</a>){% endif %}</a>{% endif %}</li>
             {% endif %}
             {% endfor %}
         </ul>
@@ -39,7 +39,7 @@
     <div class="page-header">
         <h1>All {{ list_items }}</h1>
     </div>
-    {% if list_items == 'Strands' or list_items == 'Modules' or list_items == 'Lessons' or list_items == 'Pages' or list_items == 'Projects' %}
+    {% if list_items == 'Modules' or list_items == 'Chapters' or list_items == 'Lessons' or list_items == 'Pages' or list_items == 'Projects' %}
     {% for group in groups %}
     <h3>{{ group.name or group.title }}</h3>
         {% if list_items == 'Projects' %}

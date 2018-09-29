@@ -3,10 +3,10 @@
 
 {% block page_content %}
     <div class="page-header">
-        <h1>Edit {{ topic.name }}</h1>
+        <h1>Edit {{ strand.name }}</h1>
     </div>
     {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
-    <a id="show-all" class="btn btn-info" href="{{ url_for('admin.topics_strands', id=topic.id) }}">Show all Strands</a>
+    <a id="show-all" class="btn btn-info" href="{{ url_for('admin.strands_modules', id=strand.id) }}">Show all Modules</a>
 {% endblock %}
 
 {% block scripts %}

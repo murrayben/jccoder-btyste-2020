@@ -1,8 +1,8 @@
 from flask import abort, jsonify, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
 from markdown import markdown
-from ..models import AnswerStatus, Topic, Strand, Module, Lesson, LearningOutcome, Glossary, Page, UserAnswer, Question, QuestionAnswer, QuestionOption, QuestionType, Quiz, PageType, Project, ProjectStep
-from .forms import NewQuestion, NewTopic, NewStrand, NewModule, NewLesson, EditLessonContent, NewLearningOutcome, NewQuiz, NewGlossary, NewPage, NewProject
+from ..models import AnswerStatus, Strand, Module, Chapter, Lesson, LearningOutcome, Glossary, Page, UserAnswer, Question, QuestionAnswer, QuestionOption, QuestionType, Quiz, PageType, Project, ProjectStep
+from .forms import NewQuestion, NewStrand, NewModule, NewChapter, NewLesson, EditLessonContent, NewLearningOutcome, NewQuiz, NewGlossary, NewPage, NewProject
 from .. import db
 from . import admin
 import json
@@ -41,31 +41,12 @@ def new_question():
         return redirect(url_for('admin.all_questions'))
     return render_template('admin/new_question.html', title="JCCoder - New Question", form=form, QuestionType=QuestionType)
 
-@admin.route('/new/topic', methods=['GET', 'POST'])
-@login_required
-def new_topic():
-    form = NewTopic()
-    if form.validate_on_submit():
-        topic = Topic(name=form.name.data)
-        db.session.add(topic)
-        return redirect(url_for('admin.all_topics'))
-    return render_template('admin/admin_new_something.html', title="JCCoder - New Topic", new_thing="Topic", form=form)
-
 @admin.route('/new/strand', methods=['GET', 'POST'])
 @login_required
 def new_strand():
     form = NewStrand()
     if form.validate_on_submit():
-        number = 1
-        if len(Strand.query.all()) > 0:
-            number = Strand.query.all()[-1].number + 1
-        strand = Strand(title=form.title.data, description=form.description.data, 
-                        topic=Topic.query.get(form.topic.data), number=number)
-        strand.next_strand_id = form.next_strand.data
-        if not form.next_strand.data == 0:
-            Strand.query.get(form.next_strand.data).prev_strand = strand
-        else:
-            strand.next_strand_id = None # MySQL doesn't like 0
+        strand = Strand(name=form.name.data)
         db.session.add(strand)
         return redirect(url_for('admin.all_strands'))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Strand", new_thing="Strand", form=form)
@@ -75,16 +56,35 @@ def new_strand():
 def new_module():
     form = NewModule()
     if form.validate_on_submit():
-        module = Module(title=form.title.data, description=form.description.data,
-                        strand=Strand.query.get(form.strand.data))
+        number = 1
+        if len(Module.query.all()) > 0:
+            number = Module.query.all()[-1].number + 1
+        module = Module(title=form.title.data, description=form.description.data, 
+                        strand=Strand.query.get(form.strand.data), number=number)
         module.next_module_id = form.next_module.data
         if not form.next_module.data == 0:
             Module.query.get(form.next_module.data).prev_module = module
         else:
-            module.next_module = None # MySQL doesn't like 0
+            module.next_module_id = None # MySQL doesn't like 0
         db.session.add(module)
         return redirect(url_for('admin.all_modules'))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Module", new_thing="Module", form=form)
+
+@admin.route('/new/chapter', methods=['GET', 'POST'])
+@login_required
+def new_chapter():
+    form = NewChapter()
+    if form.validate_on_submit():
+        chapter = Chapter(title=form.title.data, description=form.description.data,
+                        module=Module.query.get(form.module.data))
+        chapter.next_chapter_id = form.next_chapter.data
+        if not form.next_chapter.data == 0:
+            Chapter.query.get(form.next_chapter.data).prev_chapter = chapter
+        else:
+            chapter.next_chapter = None # MySQL doesn't like 0
+        db.session.add(chapter)
+        return redirect(url_for('admin.all_chapters'))
+    return render_template('admin/admin_new_something.html', title="JCCoder - New Chapter", new_thing="Chapter", form=form)
 
 @admin.route('/new/lesson', methods=['GET', 'POST'])
 @login_required
@@ -92,11 +92,11 @@ def new_lesson():
     form = NewLesson()
     if form.validate_on_submit():
         lesson = Lesson(title=form.title.data, overview=form.overview.data, icon=form.icon.data,
-                        module=Module.query.get(form.module.data))
+                        chapter=Chapter.query.get(form.chapter.data))
         number = 1
-        lessons_in_module = Lesson.query.filter_by(module=lesson.module).all()
-        if len(lessons_in_module) > 1:
-            number = lessons_in_module[-2].sequence_no + 1
+        lessons_in_chapter = Lesson.query.filter_by(chapter=lesson.chapter).all()
+        if len(lessons_in_chapter) > 1:
+            number = lessons_in_chapter[-2].sequence_no + 1
         lesson.sequence_no = number
         lesson.next_lesson_id = form.next_lesson.data
         if not form.next_lesson.data == 0:
@@ -194,36 +194,36 @@ def save_step():
     step_id = step.id
     return jsonify(success=True, stepID=step_id)
 
-@admin.route('/all/topic/')
-@login_required
-def all_topics():
-    topics = Topic.query.all()
-    return render_template('admin/all_something.html', title="JCCoder - All Topics", list_items="Topics", items=topics)
-
 @admin.route('/all/strand/')
 @login_required
 def all_strands():
     strands = Strand.query.all()
-    groups = Topic.query.all()
-    return render_template('admin/all_something.html', title="JCCoder - All Strands", list_items="Strands", items=strands, groups=groups)
+    return render_template('admin/all_something.html', title="JCCoder - All Strands", list_items="Strands", items=strands)
 
 @admin.route('/all/module/')
 @login_required
 def all_modules():
     modules = Module.query.all()
-    groups = []
-    for topic in Topic.query.all():
-        groups.extend(topic.all_ordered_children())
+    groups = Strand.query.all()
     return render_template('admin/all_something.html', title="JCCoder - All Modules", list_items="Modules", items=modules, groups=groups)
+
+@admin.route('/all/chapter/')
+@login_required
+def all_chapters():
+    chapters = Chapter.query.all()
+    groups = []
+    for strand in Strand.query.all():
+        groups.extend(strand.all_ordered_children())
+    return render_template('admin/all_something.html', title="JCCoder - All Chapters", list_items="Chapters", items=chapters, groups=groups)
 
 @admin.route('/all/lesson/')
 @login_required
 def all_lessons():
     lessons = Lesson.query.all()
     groups = []
-    for topic in Topic.query.all():
-        for strand in topic.all_ordered_children():
-            groups.extend(strand.all_ordered_children())
+    for strand in Strand.query.all():
+        for module in strand.all_ordered_children():
+            groups.extend(module.all_ordered_children())
     return render_template('admin/all_something.html', title="JCCoder - All Lessons", list_items="Lessons", items=lessons, groups=groups)
 
 @admin.route('/all/quiz/')
@@ -249,9 +249,9 @@ def all_glossaries():
 def all_pages():
     pages = Page.query.all()
     groups = []
-    for topic in Topic.query.all():
-        for strand in topic.all_ordered_children():
-            for lesson in strand.all_ordered_children():
+    for strand in Strand.query.all():
+        for module in strand.all_ordered_children():
+            for lesson in module.all_ordered_children():
                 groups.extend(lesson.all_ordered_children())
     return render_template('admin/all_something.html', title="JCCoder - All Pages", list_items="Pages", items=pages, groups=groups)
 
@@ -260,32 +260,32 @@ def all_pages():
 def all_projects():
     projects = Project.query.all()
     groups = []
-    for topic in Topic.query.all():
-        for strand in topic.all_ordered_children():
-            for lesson in strand.all_ordered_children():
+    for strand in Strand.query.all():
+        for module in strand.all_ordered_children():
+            for lesson in module.all_ordered_children():
                 groups.extend(lesson.all_ordered_children())
     return render_template('admin/all_something.html', title="JCCoder - All Projects", list_items="Projects", items=projects, groups=groups)
-
-@admin.route('/all/strand/<int:id>')
-@login_required
-def topics_strands(id):
-    topic = Topic.query.get_or_404(id)
-    strands = topic.all_ordered_children()
-    return render_template('admin/somethings_things.html', title="JCCoder - All Strands in Topic " + topic.name, owner_of_things="Topic", thing_type="Strands", things=strands, owner=topic)
 
 @admin.route('/all/module/<int:id>')
 @login_required
 def strands_modules(id):
     strand = Strand.query.get_or_404(id)
     modules = strand.all_ordered_children()
-    return render_template('admin/somethings_things.html', title="JCCoder - All Modules in Strand " + strand.title, owner_of_things="Strand", thing_type="Modules", things=modules, owner=strand)
+    return render_template('admin/somethings_things.html', title="JCCoder - All Modules in Strand " + strand.name, owner_of_things="Strand", thing_type="Modules", things=modules, owner=strand)
+
+@admin.route('/all/chapter/<int:id>')
+@login_required
+def modules_chapters(id):
+    module = Module.query.get_or_404(id)
+    chapters = module.all_ordered_children()
+    return render_template('admin/somethings_things.html', title="JCCoder - All Chapters in Module " + module.title, owner_of_things="Module", thing_type="Chapters", things=chapters, owner=module)
 
 @admin.route('/all/lesson/<int:id>')
 @login_required
-def modules_lessons(id):
-    module = Module.query.get_or_404(id)
-    lessons = module.all_ordered_children()
-    return render_template('admin/somethings_things.html', title="JCCoder - All Lessons in Module " + module.title, owner_of_things="Module", thing_type="Lessons", things=lessons, owner=module)
+def chapters_lessons(id):
+    chapter = Chapter.query.get_or_404(id)
+    lessons = chapter.all_ordered_children()
+    return render_template('admin/somethings_things.html', title="JCCoder - All Lessons in Chapter " + chapter.title, owner_of_things="Chapter", thing_type="Lessons", things=lessons, owner=chapter)
 
 @admin.route('/all/pages/<int:id>')
 @login_required
@@ -301,42 +301,17 @@ def quizzes_questions(id):
     questions = Question.query.filter_by(quiz=quiz).all()
     return render_template('admin/somethings_things.html', title="JCCoder - All Question in Quiz (in page: " + quiz.page.title + ")", owner_of_things="Quiz", thing_type="Questions", things=questions, owner=quiz)
 
-@admin.route('/edit/topic/<int:id>', methods=["GET", "POST"])
-@login_required
-def edit_topic(id):
-    topic = Topic.query.get_or_404(id)
-    form = NewTopic()
-    if form.validate_on_submit():
-        topic.name = form.name.data
-        db.session.add(topic)
-        return redirect(url_for('.all_topics'))
-    form.name.data = topic.name
-    return render_template('admin/edit_topic.html', title="JCCoder - Edit Topic " + topic.name, form=form, topic=topic)
-
 @admin.route('/edit/strand/<int:id>', methods=["GET", "POST"])
 @login_required
 def edit_strand(id):
     strand = Strand.query.get_or_404(id)
     form = NewStrand()
     if form.validate_on_submit():
-        strand.title = form.title.data
-        strand.description = form.description.data
-        strand.topic_id = form.topic.data
-        strand.next_strand_id = form.next_strand.data
-        if not form.next_strand.data == 0:
-            Strand.query.get(form.next_strand.data).prev_strand = strand
-        else:
-            strand.next_strand_id = None # MySQL doesn't like 0
+        strand.name = form.name.data
         db.session.add(strand)
         return redirect(url_for('.all_strands'))
-    form.title.data = strand.title
-    form.description.data = strand.description
-    form.topic.data = strand.topic_id
-    try:
-        form.next_strand.data = strand.next_strand_id
-    except:
-        form.next_strand.data = 0
-    return render_template('admin/edit_not_learn_out_topic.html', title="JCCoder - Edit Strand " + strand.title, form=form, thing=strand)
+    form.name.data = strand.name
+    return render_template('admin/edit_strand.html', title="JCCoder - Edit Strand " + strand.name, form=form, strand=strand)
 
 @admin.route('/edit/module/<int:id>', methods=["GET", "POST"])
 @login_required
@@ -351,7 +326,7 @@ def edit_module(id):
         if not form.next_module.data == 0:
             Module.query.get(form.next_module.data).prev_module = module
         else:
-            module.next_module = None # MySQL doesn't like 0
+            module.next_module_id = None # MySQL doesn't like 0
         db.session.add(module)
         return redirect(url_for('.all_modules'))
     form.title.data = module.title
@@ -361,7 +336,32 @@ def edit_module(id):
         form.next_module.data = module.next_module_id
     except:
         form.next_module.data = 0
-    return render_template('admin/edit_not_learn_out_topic.html', title="JCCoder - Edit Module " + module.title, form=form, thing=module)
+    return render_template('admin/edit_not_learn_out_strand.html', title="JCCoder - Edit Module " + module.title, form=form, thing=module)
+
+@admin.route('/edit/chapter/<int:id>', methods=["GET", "POST"])
+@login_required
+def edit_chapter(id):
+    chapter = Chapter.query.get_or_404(id)
+    form = NewChapter()
+    if form.validate_on_submit():
+        chapter.title = form.title.data
+        chapter.description = form.description.data
+        chapter.module_id = form.module.data
+        chapter.next_chapter_id = form.next_chapter.data
+        if not form.next_chapter.data == 0:
+            Chapter.query.get(form.next_chapter.data).prev_chapter = chapter
+        else:
+            chapter.next_chapter = None # MySQL doesn't like 0
+        db.session.add(chapter)
+        return redirect(url_for('.all_chapters'))
+    form.title.data = chapter.title
+    form.description.data = chapter.description
+    form.module.data = chapter.module_id
+    try:
+        form.next_chapter.data = chapter.next_chapter_id
+    except:
+        form.next_chapter.data = 0
+    return render_template('admin/edit_not_learn_out_strand.html', title="JCCoder - Edit Chapter " + chapter.title, form=form, thing=chapter)
 
 @admin.route('/edit/lesson/<int:id>', methods=["GET", "POST"])
 @login_required
@@ -372,7 +372,7 @@ def edit_lesson(id):
         lesson.title = form.title.data
         lesson.overview = form.overview.data
         lesson.icon = form.icon.data
-        lesson.module_id = form.module.data
+        lesson.chapter_id = form.chapter.data
         lesson.next_lesson_id = form.next_lesson.data
         if not form.next_lesson.data == 0:
             Lesson.query.get(form.next_lesson.data).prev_lesson = lesson
@@ -383,12 +383,12 @@ def edit_lesson(id):
     form.title.data = lesson.title
     form.overview.data = lesson.overview
     form.icon.data = lesson.icon
-    form.module.data = lesson.module_id
+    form.chapter.data = lesson.chapter_id
     try:
         form.next_lesson.data = lesson.next_lesson_id
     except:
         form.next_lesson.data = 0
-    return render_template('admin/edit_not_learn_out_topic.html', title="JCCoder - Edit Lesson " + lesson.title, form=form, thing=lesson)
+    return render_template('admin/edit_not_learn_out_strand.html', title="JCCoder - Edit Lesson " + lesson.title, form=form, thing=lesson)
 
 @admin.route('/edit/lesson/<int:id>/content', methods=["GET", "POST"])
 @login_required
@@ -425,7 +425,7 @@ def edit_glossary(id):
     form.title.data = glossary.title
     form.content.data = glossary.text
     form.lesson.data = glossary.lesson_id
-    return render_template('admin/edit_not_learn_out_topic.html', title="JCCoder - Edit Glossary " + glossary.title, form=form, thing=glossary)
+    return render_template('admin/edit_not_learn_out_strand.html', title="JCCoder - Edit Glossary " + glossary.title, form=form, thing=glossary)
 
 @admin.route('/edit/page/<int:id>', methods=["GET", "POST"])
 @login_required
@@ -452,7 +452,7 @@ def edit_page(id):
     except:
         form.next_page.data = 0
     form.lesson.data = page.lesson_id
-    return render_template('admin/edit_not_learn_out_topic.html', title="JCCoder - Edit Glossary " + page.title, form=form, thing=page)
+    return render_template('admin/edit_not_learn_out_strand.html', title="JCCoder - Edit Glossary " + page.title, form=form, thing=page)
 
 @admin.route('/edit/quiz/<int:id>', methods=["GET", "POST"])
 @login_required

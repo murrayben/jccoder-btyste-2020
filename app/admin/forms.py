@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import FileField, IntegerField, PasswordField, RadioField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.widgets.html5 import NumberInput, URLInput
 from wtforms.validators import DataRequired, Length, Optional
-from ..models import QuestionType, Topic, Strand, Module, Lesson, Quiz, Page, PageType
+from ..models import QuestionType, Strand, Module, Chapter, Lesson, Quiz, Page, PageType
 
 class NewQuestion(FlaskForm):
     def __init__(self, *args, **kwargs):
@@ -20,45 +20,45 @@ class NewQuestion(FlaskForm):
     quiz = SelectField('Quiz', coerce=int)
     submit = SubmitField('Submit Question')
 
-class NewTopic(FlaskForm):
-    name = StringField('Name', validators=[DataRequired(), Length(1, 64)])
-    submit = SubmitField('Submit Changes')
-
 class NewStrand(FlaskForm):
-    def __init__(self, *args, **kwargs):
-        super(NewStrand, self).__init__(*args, **kwargs)
-        self.topic.choices = [(topic.id, topic.name)
-                               for topic in Topic.query.all()]
-        self.next_strand.choices = [(0, '..........')]
-        self.next_strand.choices.extend([(strand.id, strand.title)
-                                         for strand in Strand.query.all()])
-
-    title = StringField('Title', validators=[DataRequired(), Length(1, 64)])
-    description = TextAreaField('Description', validators=[DataRequired()])
-    next_strand = SelectField('Next Strand', coerce=int)
-    topic = SelectField('Topic', coerce=int)
+    name = StringField('Name', validators=[DataRequired(), Length(1, 64)])
     submit = SubmitField('Submit Changes')
 
 class NewModule(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(NewModule, self).__init__(*args, **kwargs)
-        self.strand.choices = [(strand.id, strand.title)
+        self.strand.choices = [(strand.id, strand.name)
                                for strand in Strand.query.all()]
         self.next_module.choices = [(0, '..........')]
         self.next_module.choices.extend([(module.id, module.title)
                                          for module in Module.query.all()])
-    
+
     title = StringField('Title', validators=[DataRequired(), Length(1, 64)])
     description = TextAreaField('Description', validators=[DataRequired()])
     next_module = SelectField('Next Module', coerce=int)
     strand = SelectField('Strand', coerce=int)
     submit = SubmitField('Submit Changes')
 
+class NewChapter(FlaskForm):
+    def __init__(self, *args, **kwargs):
+        super(NewChapter, self).__init__(*args, **kwargs)
+        self.module.choices = [(module.id, module.title)
+                               for module in Module.query.all()]
+        self.next_chapter.choices = [(0, '..........')]
+        self.next_chapter.choices.extend([(chapter.id, chapter.title)
+                                         for chapter in Chapter.query.all()])
+    
+    title = StringField('Title', validators=[DataRequired(), Length(1, 64)])
+    description = TextAreaField('Description', validators=[DataRequired()])
+    next_chapter = SelectField('Next Chapter', coerce=int)
+    module = SelectField('Module', coerce=int)
+    submit = SubmitField('Submit Changes')
+
 class NewLesson(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(NewLesson, self).__init__(*args, **kwargs)
-        self.module.choices = [(module.id, module.strand.title + ' > ' + module.title)
-                               for module in Module.query.all()]
+        self.chapter.choices = [(chapter.id, chapter.module.title + ' > ' + chapter.title)
+                               for chapter in Chapter.query.all()]
         self.next_lesson.choices = [(0, '..........')]
         self.next_lesson.choices.extend([(lesson.id, lesson.title)
                                          for lesson in Lesson.query.all()])
@@ -67,7 +67,7 @@ class NewLesson(FlaskForm):
     overview = TextAreaField('Overview', validators=[DataRequired()])
     icon = StringField('Icon URL (don\'t forget the http://)', widget=URLInput(), validators=[DataRequired()], default="http://")
     next_lesson = SelectField('Next Lesson', coerce=int)
-    module = SelectField('Module', coerce=int)
+    chapter = SelectField('Chapter', coerce=int)
     markdown = "overview"
     submit = SubmitField('Submit Changes')
 
@@ -79,7 +79,7 @@ class EditLessonContent(FlaskForm):
 class NewLearningOutcome(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(NewLearningOutcome, self).__init__(*args, **kwargs)
-        self.lesson.choices = [(lesson.id, lesson.module.strand.title + ' > ' + lesson.module.title + ' > ' + lesson.title)
+        self.lesson.choices = [(lesson.id, lesson.chapter.module.title + ' > ' + lesson.chapter.title + ' > ' + lesson.title)
                                for lesson in Lesson.query.all()]
 
     description = TextAreaField('Description', validators=[DataRequired()])
@@ -89,7 +89,7 @@ class NewLearningOutcome(FlaskForm):
 class NewQuiz(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(NewQuiz, self).__init__(*args, **kwargs)
-        self.page.choices = [(page.id, page.lesson.module.strand.title + ' > ' + page.lesson.module.title + ' > ' + page.lesson.title + ' > ' + page.title)
+        self.page.choices = [(page.id, page.lesson.chapter.module.title + ' > ' + page.lesson.chapter.title + ' > ' + page.lesson.title + ' > ' + page.title)
                                for page in Page.query.all()]
 
     description = TextAreaField('Description', validators=[DataRequired()])
@@ -99,7 +99,7 @@ class NewQuiz(FlaskForm):
 class NewGlossary(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(NewGlossary, self).__init__(*args, **kwargs)
-        self.lesson.choices = [(lesson.id, lesson.module.strand.title + ' > ' + lesson.module.title + ' > ' + lesson.title)
+        self.lesson.choices = [(lesson.id, lesson.chapter.module.title + ' > ' + lesson.chapter.title + ' > ' + lesson.title)
                                for lesson in Lesson.query.all()]
 
     title = StringField('Title', validators=[DataRequired(), Length(1, 100)])
@@ -112,7 +112,7 @@ class NewPage(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(NewPage, self).__init__(*args, **kwargs)
         self.next_page.choices = [(0, '..........')]
-        self.lesson.choices = [(lesson.id, lesson.module.strand.title + ' > ' + lesson.module.title + ' > ' + lesson.title)
+        self.lesson.choices = [(lesson.id, lesson.chapter.module.title + ' > ' + lesson.chapter.title + ' > ' + lesson.title)
                                for lesson in Lesson.query.all()]
         self.next_page.choices.extend([(page.id, page.title)
                                for page in Page.query.all()])
@@ -130,7 +130,7 @@ class NewPage(FlaskForm):
 class NewProject(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(NewProject, self).__init__(*args, **kwargs)
-        self.lesson.choices = [(lesson.id, lesson.module.strand.title + ' > ' + lesson.module.title + ' > ' + lesson.title)
+        self.lesson.choices = [(lesson.id, lesson.chapter.module.title + ' > ' + lesson.chapter.title + ' > ' + lesson.title)
                                for lesson in Lesson.query.all()]
         self.status.choices = [(0, 'Draft'), (1, 'Final')]
     

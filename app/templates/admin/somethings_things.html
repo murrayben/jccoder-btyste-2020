@@ -9,8 +9,8 @@
     {% if things|length > 0 %}
     <ul>
         {% for item in things %}
-        {% if item.what_model() == "Strand" %}
-        <li><a href="{{ url_for('admin.edit_strand', id=item.id) }}">{{ item.title }}</a></li>
+        {% if item.what_model() == "Module" %}
+        <li><a href="{{ url_for('admin.edit_module', id=item.id) }}">{{ item.title }}</a></li>
         {%- elif item.what_model() == "Lesson" -%}
         <li><a href="{{ url_for('admin.edit_lesson', id=item.id) }}">{{ item.title }}</a>{% if item.learning_outcomes[:] != [] -%}&nbsp;&nbsp;&nbsp;&nbsp;Learning Outcome(s):&nbsp;
             {% for learning_outcome in item.learning_outcomes -%}
@@ -20,8 +20,8 @@
                 {%- endif %}
             {%- endfor %}
             {%- endif %}</li>
-        {% elif item.what_model() == "Module" %}
-        <li><a href="{{ url_for('admin.edit_module', id=item.id) }}">{{ item.title }}</a>
+        {% elif item.what_model() == "Chapter" %}
+        <li><a href="{{ url_for('admin.edit_chapter', id=item.id) }}">{{ item.title }}</a>
         {% elif item.what_model() == "Page" %}
         <li><a href="{{ url_for('admin.edit_page', id=item.id) }}">{{ item.title }}</a>{% if item.next_page %}
             (Next Page: <a href="{{ url_for('admin.edit_page', id=item.next_page.id) }}">{{ item.next_page.title }}</a>){% endif %}</li>
