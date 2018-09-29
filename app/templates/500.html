@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
 
 {% block page_content %}
 <div class="page-header">

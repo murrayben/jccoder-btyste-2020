@@ -1,0 +1,19 @@
+#posts {
+    list-style-type: none
+}
+
+.post:hover {
+    background-color: #f2f2f2;
+}
+
+.post {
+    border: 1px solid grey;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    padding: 5px;
+    overflow-x: auto;
+}
+
+.post-controls a {
+    text-decoration: none;
+}

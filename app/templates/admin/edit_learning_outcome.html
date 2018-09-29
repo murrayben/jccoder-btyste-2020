@@ -1,0 +1,17 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>Edit {{ learning_outcome.description }}</h1>
+    </div>
+    {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script type="text/javascript">
+        $('form').get(0).reset();
+        $('textarea').css('resize', 'vertical');
+    </script>
+{% endblock %}

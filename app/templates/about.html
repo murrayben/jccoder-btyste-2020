@@ -1,0 +1,8 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>About</h1>
+</div>
+<p>This website was made to help kids learn Computer Science easily, because Scratch is easy to learn.</p>
+{% endblock %}

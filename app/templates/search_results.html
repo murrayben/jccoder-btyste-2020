@@ -1,0 +1,16 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>Search Results for "{{ q }}"</h1>
+    </div>
+    {% if pages|length > 0 %}
+    {% for page in pages %}
+    <div class="search-result">
+        <a href="{{ url_for('main.lesson_page', id=page.id) }}">{{ page.title }}</a>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>Nothing has been found!</p>
+    {% endif %}
+{% endblock %}

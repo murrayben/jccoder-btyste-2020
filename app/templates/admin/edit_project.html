@@ -1,0 +1,207 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" type="text/css" href="https://rawgit.com/lodev09/bootstrap-markdown/master/css/bootstrap-markdown.min.css">
+{% endblock %}
+
+{% block modals %}
+    <!-- Modal -->
+    <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="projectTitle">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h3 class="modal-title" id="projectTitle"><!-- Project title put here --></h3>
+                </div>
+                <div class="modal-body" id="projectPreview">
+                <!-- Project preview put here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+  </div>
+{% endblock %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>Edit Project</h1>
+    </div>
+    <button class="btn btn-success" data-toggle="modal" data-target="#previewModal"id="previewBtn">Preview</button>
+    <div data-project-id="{{ project.id }}" id="project-form">
+        {{ wtf.quick_form(form) }}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="https://rawgit.com/lodev09/bootstrap-markdown/master/js/bootstrap-markdown.js"></script>
+    <script data-require="marked@*" data-semver="0.3.1" src="http://cdnjs.cloudflare.com/ajax/libs/marked/0.3.1/marked.js"></script>
+    <script>
+        // Transform id into class (because code is going to be copied)
+        $('#step_content').attr('id', null).addClass('step-content');
+        $('#step_title').attr('id', null).addClass('step-title');
+
+        var $form = $('form[action!="/search"]');
+        var $btnGroup = $('<div class="btn-group" id="btns" />').insertBefore($('#submit'));
+        
+        var $newStepBtn = $('<button role="button" class="btn btn-success" />').text('New Step');
+        $newStepBtn.appendTo($btnGroup);
+        var $deleteStepBtn = $('<button role="button" class="btn btn-danger" />').text('Delete Last Step');
+        $deleteStepBtn.hide();
+        $deleteStepBtn.appendTo($btnGroup);
+        $('#submit').detach().appendTo($btnGroup);
+
+        // Add panel around new step
+        $panel = $('<div class="panel panel-info" />').insertBefore($btnGroup);
+        $('<div class="panel-body" />').appendTo($panel)
+        $('<div class="new-step-block" />').appendTo($('.panel-body'));
+        $form.children('.form-group').last().prev('.form-group').andSelf().detach().appendTo($('.new-step-block'));
+        $('<button class="btn btn-success" data-invalid-text="Validation failed!" data-loading-text="Saving..." data-success-text="Saved!" data-error-text="Failed!" />').text('Save').appendTo($('.new-step-block'));
+
+        var $newStepHTML = $panel.clone();
+        $('#description, .step-content').markdown();
+
+        // New step functionality
+        var project_id = Number($('#project-form').data('project-id'));
+        var numSteps = 1;
+
+        // JSON comes from server
+        var step_json = `{{ steps|safe|replace('`', '\`') }}`.replace(/\n/g, '\\n').replace(/\t/g, '\\t');
+        step_json = JSON.parse(step_json);
+        
+        $newStepBtn.on('click', addStep);
+        $deleteStepBtn.on('click', deleteStep);
+        updateEventListeners();
+        
+        for (step in step_json) {
+            if (step !== "step_1") {
+                $newStepBtn.click();
+            }
+            var $fields = $('.new-step-block').last().children('.form-group');
+            $fields.parent().attr('data-step-id', step_json[step].id);
+            $fields.first().children('.step-title').val(step_json[step].title);
+            $fields.last().children('.md-editor').children('.step-content').val(step_json[step].content);
+        }
+
+        // Preview
+        $('#previewBtn').on('click', function() {
+            $('#projectTitle').text($('#title').val());
+            var data = {description: $('#description').val(), steps: []};
+            for (var i = 0; i < $('.new-step-block').length; i++) {
+                var $stepForms = $('.new-step-block').eq(i).children('.form-group');
+                var title = $stepForms.first().children('.step-title').val();
+                var content = $stepForms.last().children('.md-editor').children('.step-content').val();
+                data.steps.push({title: title, content: content});
+            }
+
+            $.ajax({
+                url: "{{ url_for('admin.preview_project') }}",
+                data: JSON.stringify(data),
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                type: 'POST',
+                success: function(response) {
+                    $('#projectPreview').html(response.previewHTML);
+                },
+                error: function(error) {
+                    $('#projectPreview').html('<p>An error has occured!</p>');
+                    console.log(error);
+                }
+            });
+        });
+
+        function updateEventListeners() {
+            $('.new-step-block button.btn-success').on('click', function(e) {
+                e.preventDefault();
+                var $button = $(this);
+                $button.button('loading');
+                $title = $button.siblings('.form-group').first().children('.step-title').val();
+                $content = $button.siblings('.form-group').last().children('.md-editor').children('.step-content').val();
+                
+                validated = true;
+                if (!$title.trim() || $title.length > 150) {
+                    validated = false;
+                } else if (!$content.trim()) {
+                    validated = false;
+                }
+
+                if (!validated) {
+                    $button.button('invalid');
+                    setTimeout(function () {
+                        $button.button('reset');
+                    }, 2000);
+                    return;
+                }
+
+                var prevStepID = null;
+                if (!(numSteps === 1) && $button.parent() === $('.new-step-block').first()) {
+                    prevStepID = $button.parent().parent().parent().prev().children().children().data('step-id');
+                    if (!prevStepID) {
+                        $button.button('invalid');
+                        setTimeout(function () {
+                            $button.button('reset');
+                        }, 2000);
+                        return;
+                    }
+                }
+                
+                stepID = $button.parent().data('step-id');
+                if (stepID) {
+                    editing = true
+                } else {
+                    editing = false
+                }
+
+                data = {title: $title, content: $content, project_id: project_id, prev_step_id: prevStepID, editing: editing, step_id: stepID};
+
+                $.ajax({
+                    url: '/admin/save-step',
+                    data: JSON.stringify(data),
+                    dataType: 'json',
+                    contentType: "application/json; charset=utf-8",
+                    type: 'POST',
+                    
+                    success: function(response) {
+                        $button.parent().attr('data-step-id', response.stepID);
+                        $button.button('success');
+                        setTimeout(function () {
+                            $button.button('reset');
+                        }, 2000);
+                    },
+
+                    error: function(response) {
+                        $button.button('error');
+                        setTimeout(function () {
+                            $button.button('reset');
+                        }, 2000);
+                    }
+                });
+            });
+        }
+
+        function addStep(e) {
+            e.preventDefault();
+            $newStepHTML.clone().insertBefore($btnGroup);
+            $('.step-content').markdown();
+            numSteps += 1;
+            if (numSteps == 2) {
+                $deleteStepBtn.fadeIn();
+            }
+            updateEventListeners();
+        }
+
+        function deleteStep(e) {
+            e.preventDefault()
+            $('.panel').last().remove();
+            numSteps -= 1;
+            if (numSteps == 1) {
+                $deleteStepBtn.fadeOut();
+            }
+            updateEventListeners();
+        }
+    </script>
+{% endblock %}

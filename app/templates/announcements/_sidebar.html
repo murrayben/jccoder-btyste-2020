@@ -1,0 +1,33 @@
+<div class="well">
+    <h3 style="margin-top: 5px;">Recent Posts</h3>
+    <ul class="media-list">
+        {% set recent_posts = Post.query.filter(db.or_(Post.published == True, Post.author_id == current_user.id, current_user.is_admin())).order_by(Post.date_posted.desc()).limit(6) %}
+        {% for post in recent_posts %}
+        <li class="media">
+            <div class="media-left">
+                <a href="#">
+                    <img class="media-object img-circle" src="http://www.gravatar.com/avatar/bab5bd596068ac6a5ab2af12bd0c9c85?s=40&d=monsterid&?r=g">
+                </a>
+            </div>
+            <div class="media-body">
+                <h4 class="media-heading">{{ post.author.username }}</h4>
+                <a href="{{ url_for('announcements.permalink', id=post.id) }}" class="text-muted">{{ post.title }}</a>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="well">
+    <h3 style="margin-top: 5px;">Categories</h3>
+    <div class="row">
+        <div class="col-xs-12">
+            <ul class="list-unstyled">
+                {% for tag in Tag.query.order_by(Tag.name.asc()).all() %}
+                <li><a href="{{ url_for('announcements.tag', id=tag.id) }}">{{ tag.name }} <span class="badge pull-right">{{ tag.posts.filter(db.or_(Post.published == True, Post.author_id == current_user.id, current_user.is_admin())).count() }}</span></a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <!-- /.row -->
+</div>

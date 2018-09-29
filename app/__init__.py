@@ -3,6 +3,7 @@ from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_moment import Moment
 from config import Config
 
 # Flask-Bootstrap
@@ -10,6 +11,12 @@ bootstrap = Bootstrap()
 
 # SQLAlchemy
 db = SQLAlchemy()
+
+# Flask-Migrate
+migrate = Migrate()
+
+# Flask-Moment
+moment = Moment()
 
 login = LoginManager()
 login.session_protection = 'strong'
@@ -20,17 +27,25 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Initialize Flask-Bootstrap, SQLAlchemy and Flask-Login
+    # Initialize Flask-Bootstrap, SQLAlchemy, Flask-Login, Flask-Migrate and Flask-Moment
     bootstrap.init_app(app)
     db.init_app(app)
     login.init_app(app)
+    migrate.init_app(app, db)
+    moment.init_app(app)
 
     # Register blueprints
+    from .admin import admin as admin_blueprint
+    app.register_blueprint(admin_blueprint, url_prefix='/admin')
+
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint)
 
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
+    
+    from app.announcements import announcements as announcements_blueprint
+    app.register_blueprint(announcements_blueprint, url_prefix='/announcements')
 
     # Return app
     return app

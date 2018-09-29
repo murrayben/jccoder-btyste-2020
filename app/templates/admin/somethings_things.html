@@ -1,0 +1,37 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+
+{% set list_items_singular = model_singulars[thing_type] %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>All {{ thing_type }} in {{ owner_of_things }} {% if owner.title or owner.name %}{{ owner.title or owner.name }}{% else %}(in page: {{ owner.page.title }}){% endif %}</h1>
+    </div>
+    {% if things|length > 0 %}
+    <ul>
+        {% for item in things %}
+        {% if item.what_model() == "Strand" %}
+        <li><a href="{{ url_for('admin.edit_strand', id=item.id) }}">{{ item.title }}</a></li>
+        {%- elif item.what_model() == "Lesson" -%}
+        <li><a href="{{ url_for('admin.edit_lesson', id=item.id) }}">{{ item.title }}</a>{% if item.learning_outcomes[:] != [] -%}&nbsp;&nbsp;&nbsp;&nbsp;Learning Outcome(s):&nbsp;
+            {% for learning_outcome in item.learning_outcomes -%}
+                <a href="{{ url_for('admin.edit_learning_outcome', id=learning_outcome.id) }}">{{ learning_outcome.description }}</a>
+                {%- if not loop.last -%}
+                    ,&nbsp;
+                {%- endif %}
+            {%- endfor %}
+            {%- endif %}</li>
+        {% elif item.what_model() == "Module" %}
+        <li><a href="{{ url_for('admin.edit_module', id=item.id) }}">{{ item.title }}</a>
+        {% elif item.what_model() == "Page" %}
+        <li><a href="{{ url_for('admin.edit_page', id=item.id) }}">{{ item.title }}</a>{% if item.next_page %}
+            (Next Page: <a href="{{ url_for('admin.edit_page', id=item.next_page.id) }}">{{ item.next_page.title }}</a>){% endif %}</li>
+        {% elif item.what_model() == "Question" %}
+        <li><a href="{{ url_for('admin.edit_question', id=item.id) }}">{{ item.text }}</a> (raw Markdown)
+        {% endif %}
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>There are no {{ thing_type|lower }}.</p>
+    {% endif %}
+    <a class="btn btn-success" href="{{ url_for('admin.new_' + list_items_singular) }}">New {{ list_items_singular }}</a>
+{% endblock %}

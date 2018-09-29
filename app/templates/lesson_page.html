@@ -1,0 +1,266 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% macro display_page(_page) -%}
+{%- if _page %}
+{% if _page.page_type.description == "Article" %}
+{% set icon_class = 'glyphicon glyphicon-file' %}
+{% elif _page.page_type.description == "Quiz" %}
+{% set icon_class = 'glyphicon glyphicon-tasks' %}
+{% elif _page.page_type.description == "Video" %}
+{% set icon_class = 'glyphicon glyphicon-play' %}
+{% elif _page.page_type.description == "Glossary" %}
+{% set icon_class = 'glyphicon glyphicon-list-alt' %}
+{% endif %}
+                    <p class="sidebar-page{% if _page.id == page.id %} active{% endif %}">
+                        <a href="{{ url_for('main.lesson_page', id=_page.id) }}" ><span class="{{ icon_class }}"></span> <span class="page-title">{{ _page.title }}</span></a>
+                    </p>
+{%- endif -%}
+{% if _page.next_page -%}
+{{ display_page(_page.next_page) }}
+{%- endif %}
+{%- endmacro %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="https://cdn.rawgit.com/toopay/bootstrap-markdown/master/css/bootstrap-markdown.min.css" />
+    {% if css %}
+    {{ css|safe }}
+    {% endif %}
+    <style>
+        pre {
+            overflow-y: auto;
+            overflow-x: auto;
+            max-height: 300px;
+            min-width: 200px;
+        }
+
+        li.L0, li.L1, li.L2, li.L3,
+        li.L5, li.L6, li.L7, li.L8 {
+            list-style-type: decimal !important;
+        }
+
+        .question, .answer {
+            border-bottom: 1px solid #eee;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .question .answer:first-of-type {
+            border-top: 1px solid #eee;
+            margin-top: 10px;
+        }
+
+        div#sidebar {
+            position: fixed;
+            top: 50px;
+            left: 0;
+            width: 300px;
+            height: 100%;
+            border-right: 1px solid #919191;
+            background-color: #fdfdfd;
+        }
+        
+        #sidebar-title {
+            color: #337ab7;
+            font-weight: 500;
+            font-size: 18px;
+            border-bottom: 1px solid #919191;
+        }
+
+        #sidebar-lesson-title h4 {
+            color: #000000;
+        }
+
+        #sidebar-title, #sidebar-next-lesson {
+            padding: 20px 20px 20px 20px;
+        }
+
+        #sidebar-pages {
+            border-bottom: 1px solid #919191;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+
+        #sidebar-content {
+            overflow-y: scroll;
+        }
+
+        #sidebar-pages .glyphicon {
+            color: #008000;
+        }
+
+        .sidebar-page {
+            padding: 10px 20px 10px 20px
+        }
+
+        .sidebar-page.active {
+            background-color: #ececec;
+            border-top: 1px solid #919191;
+            border-bottom: 1px solid #919191;
+        }
+
+        .sidebar-page:first-of-type {
+            border-top: none;
+        }
+
+        .quiz {
+            height: 100vh;
+            background-color: #f7f7f7;
+        }
+    </style>
+{% endblock %}
+
+{% block modals %}
+    {% if current_user.is_authenticated %}
+    <div class="modal fade" id="answerDialog" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">Add Answer</h4>
+                </div>
+                <div class="modal-body">
+                    {{ wtf.quick_form(new_answer_form, button_map={'submit_answer': 'primary'}) }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal" aria-label="Close">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block page_content %}
+    {% if not current_user.is_admin() %}
+    <div id="sidebar" class="hidden-xs hidden-sm">
+        <div id="sidebar-title">
+            {{ page.lesson.module.strand.title }} &gt; <a href="{{ url_for('main.module', id=page.lesson.module.id) }}">{{ page.lesson.module.title }}</a>
+
+            <div id="sidebar-lesson-title">
+                <h4>{{ page.lesson.title }}</h4>
+            </div>
+        </div>
+        <div id="sidebar-content">
+            <div id="sidebar-pages">
+                {{ display_page(page.lesson.pages.filter_by(prev_page=None).first()) }}
+            </div>
+            {% if page.lesson.next_lesson %}
+            <div id="sidebar-next-lesson">
+                Next Lesson:
+                <a href="{{ url_for('main.lesson_page', id=page.lesson.next_lesson.pages.filter_by(prev_page=None).first().id) }}">{{ page.lesson.next_lesson.title }}</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    <div class="row">
+        <div class="col-md-8 col-lg-9 col-md-offset-4 col-lg-offset-3">
+            <div class="page-header">
+                <h1>{{ page.title }}</h1>
+            </div>
+            <div id="page-html">
+                {{ page_html|safe }}
+            </div>
+            <ul class="pager">
+            {% if page.prev_page %}
+                <li class="previous"><a href="{{ url_for('main.lesson_page', id=page.prev_page.id) }}"><span aria-hidden="true">&larr;</span> {{ page.prev_page.title }}</a></li>
+            {% endif %}
+            {% if page.next_page %}
+                <li class="next"><a href="{{ url_for('main.lesson_page', id=page.next_page.id) }}">{{ page.next_page.title }} <span aria-hidden="true">&rarr;</span></a></li>
+            {% else %}
+                <li class="next"><a href="{{ url_for('main.module', id=page.lesson.module.id) }}">Back to all Lessons <span aria-hidden="true">&rarr;</span></a></li>
+            {% endif %}
+            </ul>
+            {% if current_user.can(Permission.ASK_QUESTIONS) %}
+            <hr />
+            <h2>Add a Question</h2>
+            {{ wtf.quick_form(new_question_form, button_map={'submit_question': 'success'}) }}
+            {% endif %}
+            <hr />
+            {% if page.questions.all() %}
+            <ul class="media-list" id="questions">
+                {% for question in page.questions.all() %}
+                <li class="row question">
+                    <div class="col-xs-4 col-sm-2 col-lg-1">
+                        <img class="media-object" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Emblem-question.svg/70px-Emblem-question.svg.png">
+                    </div>
+                    <div class="col-xs-8 col-sm-10 col-lg-11">
+                        <h2 class="media-heading">By {{ question.author.username }}</h2>
+                        <span class="glyphicon glyphicon-time"></span> {{ moment(question.last_updated).format('DD/MM/YYYY hh:mm:ss') }}
+                        {{ question.html|safe }}
+                        {% if current_user.is_authenticated and (question.author.username == current_user.username) %}
+                        <a href="{{ url_for('main.edit_page_question', id=question.id) }}"><span class="label label-primary">Edit</span></a>
+                        {% endif %}
+                        {% if question.answers.all()|length > 0 %}
+                        <ul class="media-list">
+                        {% for answer in question.answers %}
+                            <li class="row answer">
+                                <div class="col-xs-5 col-sm-3 col-md-2 col-lg-1">
+                                    <img class="media-object" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Stock-dialog-information.svg/80px-Stock-dialog-information.svg.png">
+                                </div>
+                                <div class="col-xs-7 col-sm-9 col-md-10 col-lg-11">
+                                    <h2 class="media-heading">By {{ answer.author.username }}</h4>
+                                    <span class="glyphicon glyphicon-time"></span> {{ moment(question.last_updated).format('DD/MM/YYYY hh:mm:ss') }}
+                                    {{ answer.html|safe }}
+                                    {% if current_user.is_authenticated and (answer.author.username == current_user.username) %}
+                                    <a href="{{ url_for('main.edit_page_answer', id=answer.id) }}"><span class="label label-primary">Edit</span></a>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                        {% else %}
+                        <hr>
+                        <p>This question hasn't been answered. Maybe you could answer it!</p>
+                        {% endif %}
+                        {% if current_user.can(Permission.ANSWER_QUESTIONS) %}
+                        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#answerDialog" data-question-id="{{ question.id }}">Add answer</button>
+                        {% else %}
+                        {% set next = url_for('main.lesson_page', id=page.id) + '#questions' %}
+                        <p>Please <a href="{{ url_for('auth.login', next=next) }}">log in</a> to answer this question.</p>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No questions have been asked yet.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+    {% if current_user.can(Permission.ASK_QUESTIONS) %}
+    <script data-require="marked@*" data-semver="0.3.1" src="http://cdnjs.cloudflare.com/ajax/libs/marked/0.3.1/marked.js"></script>
+    <script src="https://cdn.rawgit.com/toopay/bootstrap-markdown/master/js/bootstrap-markdown.js"></script>
+    <script type="text/javascript">
+        var message = 'For syntax highlighting indent all your code by 4 spaces.';
+        $('#text').markdown().attr('placeholder', message);
+        $('#answer').markdown({ fullscreen: false }).attr('placeholder', message);
+        $('#answerDialog').on('show.bs.modal', function(event) {
+            var $button = $(event.relatedTarget);
+            var questionID = $button.data('question-id');
+            $('#question_id').attr('value', questionID);
+        });
+    </script>
+    {% endif %}
+    <script type="text/javascript">
+        $('#page-html script').detach().appendTo($('body'));
+        $(function() {
+            $('img').not('.media-object').addClass('img-responsive');
+            $('pre').addClass('prettyprint linenums');
+            $('.quiz').load(function() {
+                $('.quiz').height($('.quiz').contents().find('body').css({backgroundColor:'#f7f7f7'}).outerHeight());
+            });
+        });
+    </script>
+    {{ moment.include_moment() }}
+    {% if js %}
+    {{ js|safe }}
+    {% endif %}
+{% endblock %}

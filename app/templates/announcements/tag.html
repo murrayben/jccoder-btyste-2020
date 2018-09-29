@@ -1,0 +1,40 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+{% import "_macros.html" as macros %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/announcement.css') }}" />
+{% endblock %}
+
+{% block page_content %}
+    <div class="row">
+        <div class="col-md-9">
+            <div class="page-header">
+                <h1>Tag "{{ tag.name }}"</h1>
+            </div>
+            {% if posts %}
+            <ul id="posts" class="media-list">
+                {% for post in posts %}
+                <li class="post media">
+                    {% include 'announcements/_post.html' %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No announcements in this category yet!</p>
+            {% endif %}
+            {{ macros.addPagination(pagination, '.tag', id=tag.id) }}
+        </div>
+        <div class="col-md-3">
+            {% include "announcements/_sidebar.html" %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        $(".post .media-body img").addClass("img-responsive");
+    </script>
+    {{ moment.include_moment() }}
+{% endblock %}

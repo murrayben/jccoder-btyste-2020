@@ -1,0 +1,20 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>Edit {{ topic.name }}</h1>
+    </div>
+    {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
+    <a id="show-all" class="btn btn-info" href="{{ url_for('admin.topics_strands', id=topic.id) }}">Show all Strands</a>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script type="text/javascript">
+        $('<div class="btn-toolbar" id="actions">').appendTo($('form').not('[action="/search"]'));
+        $('input[type="submit"]').appendTo($('#actions'));
+        var $showAll = $('#show-all').detach();
+        $showAll.appendTo($('#actions'));
+    </script>
+{% endblock %}

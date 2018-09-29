@@ -1,0 +1,59 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% if form.markdown %}
+    {% set has_markdown = True %}
+{% else %}
+    {% set has_markdown = False %}
+{% endif %}
+
+{% block styles %}
+    {{ super() }}
+    {% if has_markdown %}
+    <link rel="stylesheet" type="text/css" href="https://rawgit.com/lodev09/bootstrap-markdown/master/css/bootstrap-markdown.min.css">
+    {% endif %}
+{% endblock %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>Edit {{ thing.title }} <small>({{ thing.what_model() }})</small></h1>
+    </div>
+    {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
+    {% if thing.what_model() == "Lesson" -%}
+    <a class="btn btn-info" href="{{ url_for('admin.edit_lesson_content', id=thing.id) }}" id="edit-content">Edit Content</a>
+    {%- endif %}
+    {% if thing.what_model() != "Page" and thing.what_model() != "Glossary" -%}
+    {% set url = ('admin.' + thing.what_model() + 's_' + thing.model_one_lower())|lower %}
+    <a id="show-all" class="btn btn-info" href="{{ url_for(url, id=thing.id) }}">Show all {{ thing.model_one_lower()|lower }}</a>
+    {%- endif %}
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    {% if has_markdown %}
+    <script src="https://rawgit.com/lodev09/bootstrap-markdown/master/js/bootstrap-markdown.js"></script>
+    <script data-require="marked@*" data-semver="0.3.1" src="http://cdnjs.cloudflare.com/ajax/libs/marked/0.3.1/marked.js"></script>
+    {% endif %}
+    {% if thing.what_model() == "Page" %}
+    <script src="{{ url_for('static', filename='js/page.js') }}"></script>
+    {% endif %}
+    <script type="text/javascript">
+        $('<div class="btn-toolbar" id="actions">').appendTo($('form').not('[action="/search"]'));
+        $('input[type="submit"]').appendTo($('#actions'));
+        {% if thing.icon -%}
+        $('#icon').on('blur', function() {
+            if (!$(this).val().trim()) {
+                $(this).val('http://');
+            }
+        }); 
+        $('#edit-content').appendTo($('#actions'));
+        {%- endif %}
+        {% if form.markdown %}
+        $('#{{ form.markdown }}').markdown();
+        {% endif %}
+        $('textarea').css('resize', 'vertical');
+        var $showAll = $('#show-all').detach();
+        $showAll.appendTo($('#actions'));
+        
+    </script>
+{% endblock %}

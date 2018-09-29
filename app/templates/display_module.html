@@ -1,0 +1,236 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+
+{% macro display_page(page) -%}
+{%- if page %}
+{% if page.page_type.description == "Article" %}
+{% set icon_class = 'glyphicon glyphicon-file' %}
+{% elif page.page_type.description == "Quiz" %}
+{% set icon_class = 'glyphicon glyphicon-tasks' %}
+{% elif page.page_type.description == "Video" %}
+{% set icon_class = 'glyphicon glyphicon-play' %}
+{% elif page.page_type.description == "Glossary" %}
+{% set icon_class = 'glyphicon glyphicon-list-alt' %}
+{% endif %}
+                    <p>
+                        <a href="{{ url_for('main.lesson_page', id=page.id) }}" data-page-id="{{ page.id }}" {% if page.next_page %}data-next-page-id="{{ page.next_page_id }}" {% endif %}class="page-link"><span class="{{ icon_class }}"></span> <span class="page-title">{{ page.title }}</span></a>
+                    </p>
+{%- endif -%}
+{% if page.next_page -%}
+{{ display_page(page.next_page) }}
+{%- endif %}
+{%- endmacro %}
+
+{% block body_attribs %} data-spy="scroll" data-target="#scrollspy" data-offset="70"{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <style type="text/css">
+        body {
+            position: relative;
+        }
+
+        #go-to-page {
+            float: right;
+        }
+
+        .close {
+            float: left;
+            margin-top: 5px !important;
+            margin-left: 5px;
+        }
+
+        .embed-responsive {
+            margin-bottom: 10px;
+        }
+
+        .modal-body {
+            min-height: 680px;
+            max-height: 680px;
+            overflow-y: auto;
+        }
+
+        .page-title:hover {
+            text-decoration: underline;
+        }
+        
+        .page-link .glyphicon {
+            font-size: 1.4em;
+            color: #008000;
+        }
+
+        .quiz {
+            height: 100vh;
+            
+        }
+
+        .quiz html {
+            background-color: #ffffff;
+        }
+
+        @media (max-width: 768px) {
+            .modal-body {
+                min-height: 100%;
+                max-height: 100%
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block modals %}
+<div class="modal fade" id="pageModal" tabindex="-1" role="dialog" aria-labelledby="pageContent">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <a href="#" id="go-to-page" class="btn btn-sm btn-success">See comments</a>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="glyphicon glyphicon-remove"></span></button>
+                <h3 class="modal-title text-center" id="page-title"></h3>
+            </div>
+            <div class="modal-body" id="page-html">
+            <!-- Will be replaced by page Content -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <a href="#" class="btn btn-success" id="next-page">Next <span id="page-type"></span></a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_content %}
+<div class="row">
+    <div class="col-md-3 hidden-sm hidden-xs" id="scrollspy">
+        <ul class="nav nav-pills nav-stacked affix-top" data-spy="affix">
+            {% for lesson in lessons %}
+            <li class="lesson-link">
+                <a href="#lesson-{{ lesson.id }}">{{ lesson.title }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="col-md-9 col-xs-12">
+        <h1>{{ module.title }}</h1>
+        <hr>
+        {% for lesson in lessons %}
+        <div id="lesson-{{ lesson.id }}">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <div class="panel-title">
+                        <h3>{{ lesson.title }}</h3>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <p class="lesson-overview">
+                        {{ lesson.overview_html|safe }}
+                    </p>
+                    {% set first_page = lesson.pages.filter_by(prev_page=None).first() %}
+                    {{ display_page(first_page) }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script type="text/javascript">
+        // $('#lesson-sidebar').affix({
+        //     offset: {
+        //         top: $('#lesson-sidebar').offset().top
+        //     }
+        // });
+
+        function destroyExtras() {
+            $('.extra').remove();
+        }
+
+        $('#lesson-sidebar').affix();
+        $("#scrollspy ul li a[href^='#']").on('click', function(e) {
+            // prevent default anchor click behavior
+            e.preventDefault();
+            // store hash
+            var hash = this.hash;
+
+            // animate
+            $('html, body').animate({
+                scrollTop: $(hash).offset().top - 50
+            }, 700);
+        });
+
+        $('.page-link').on('click', function(e) {
+            // Stop page from loading
+            e.preventDefault();
+
+            // Open modal
+            $('#pageModal').modal('show');
+            
+            var pageLink = this.href;
+            var $pageEl = $(this);
+            loadPageContent($pageEl, $pageEl.data('page-id'))
+
+            function loadPageContent(pageEl, page_id) {
+                // Send ajax request to server to retrieve page content
+                data = {id: page_id}
+                $.ajax({
+                    url: '/page-content/',
+                    data: JSON.stringify(data),
+                    dataType: 'json',
+                    contentType: 'application/json; charset=utf-8',
+                    type: 'POST',
+                    success: function(response) {
+                        var pageTitle = response.page_title;
+                        var pageHTML = response.page_html;
+                        var css = response.css;
+                        var js = response.js;
+
+                        $('#pageModal').on('hidden.bs.modal', function() {
+                            destroyExtras();
+                        });
+
+                        if (css) {
+                            $(css).addClass('extra').appendTo($('head'));
+                        }
+
+                        $('#pageModal #page-title').text(pageTitle);
+                        $('#pageModal #page-html').html(pageHTML);
+                        $('#go-to-page').attr('href', pageEl.attr('href'));
+                        $('#page-type').text(response.page_type)
+
+                        if (js) {
+                            $(js).addClass('extra').appendTo($('body'));
+                        }
+
+                        // Scroll to the top
+                        $('#page-html').animate({
+                            scrollTop: 0
+                        }, 0.00000000000000000001);
+                        if (!pageEl.data('next-page-id')) {
+                            $('#next-page').hide().off('click');
+                        } else {
+                            $('#next-page').show().on('click', function(e) {
+                                e.preventDefault();
+                                // $('#pageModal').modal('hide');
+                                // $('#pageModal').on('hidden.bs.modal', function() {
+                                //     $pageEl.parent('p').next().children('a').click();
+                                //     console.log('hidden');
+                                //     $('#pageModal').off('hidden.bs.modal');
+                                // });
+                                destroyExtras()
+                                var nextPage = pageEl.parent('p').next().children('a');
+                                pageLink = nextPage.href;
+                                $('#next-page').off('click');
+                                loadPageContent(nextPage, pageEl.data('next-page-id'))
+                            });
+                        }
+                    },
+                    error: function(error) {
+                        $('#pageModal #page-title').text('Error');
+                        $('#pageModal #page-html').text('There has been an error in retrieving the content.')
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

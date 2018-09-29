@@ -1,0 +1,21 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" type="text/css" href="https://rawgit.com/lodev09/bootstrap-markdown/master/css/bootstrap-markdown.min.css">
+{% endblock %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>Edit Question</h1>
+    </div>
+    {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="https://rawgit.com/lodev09/bootstrap-markdown/master/js/bootstrap-markdown.js"></script>
+    <script data-require="marked@*" data-semver="0.3.1" src="http://cdnjs.cloudflare.com/ajax/libs/marked/0.3.1/marked.js"></script>
+    <script src="{{ url_for('static', filename='js/question.js') }}"></script>
+{% endblock %}

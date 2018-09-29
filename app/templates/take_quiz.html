@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+
+{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <style>
+        body {
+            padding-top: 0 !important;
+            padding-bottom: 10px;
+            background-color: #ffffff;
+        }
+
+        div.question {
+            padding: 10px 5px;
+            box-shadow: 0em 0em 1em #5e5e5e;
+            margin-bottom: 10px;
+            border-radius: 10px;
+        }
+
+        h3 {
+            margin-top: 5px;
+        }
+
+        .glyphicon-ok {
+            color: #008000;
+        }
+
+        .glyphicon-remove {
+            color: #ff0000;
+        }
+
+        .history-badge {
+            border-radius: 50px;
+            vertical-align: middle;
+            padding: 8px 11px;
+            margin-right: 3px;
+            display: inline-block;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+
+        .badge-correct {
+            background-color: #5ad65a;
+            border: none;
+        }
+
+        .badge-incorrect {
+            background-color: #d43e3e;
+            border: none;
+        }
+
+        .no-ans {
+            border: 2px solid #a7a7a7;
+            padding: 17.5px;
+        }
+
+        .history-badge .glyphicon {
+            color: #ffffff !important;
+        }
+
+        #history {
+            width: 100%;
+            text-align: right;
+            /* margin-bottom: 25px; */
+            display: inline-block;
+            padding: 10px;
+        }
+
+        .answer-status {
+            float: left;
+            font-size: 24px;
+            vertical-align: middle;
+        }
+
+        #summary {
+            display: none;
+        }
+
+        .page-header {
+            margin: 0 0 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="page-header">
+            <h4 id="attempt-status" class="pull-right">Attempt #<span id="attempt-no"></span> out of <span id="max-attempts"></span></h4>
+            <h3>Do {{ questions|length }} problem{% if questions|length != 1 %}s{% endif %}!</h3>
+            <p>{{ quiz.description }}</p>
+        </div>
+            
+        <div class="progress active">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <div id="history">
+            <h3 class="answer-status"></h3>
+            {% for question in questions %}
+            <div class="no-ans history-badge"></div>
+            {% endfor %}
+        </div>
+        <div class="questions">
+            {% for question in questions %}
+            <div class="question" id="{{ question.id }}" data-max-attempts="{{ question.max_attempts }}">
+                <h4>{{ question.show() | safe }}</h4>
+                {% if question.question_type.code == 'C' %}
+                {% for option in question.options %}
+                <div class="form-check">
+                    <input type="radio" name="options-{{ question.id }}" />
+                    <span class="radio-value">
+                        {{ option.text }}
+                    </span>
+                </div>
+                {% endfor %}
+                {% elif question.question_type.code == 'S' %}
+                <input type="text" id="answer" value="" />
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <button role="button" class="btn btn-primary" id="next-btn">Check</button>
+        <div id="summary" class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Question</th>
+                        <th>Number of attempts</th>
+                        <th>Your last attempt</th>
+                        <th>Correct Answer</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for question in questions %}
+                    <tr id="question-{{ question.id }}">
+                        <td class="question-text"></td>
+                        <td class="no-attempts"></td>
+                        <td class="last-attempt"></td>
+                        <td class="correct-ans"></td>
+                        <td class="ans-status"></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script type="text/javascript">
+        // $radioBtns = $('input[type="radio"]');
+        // checkForRadio();
+        // $radioBtns.on('change', checkForRadio);
+
+        $(function() {
+            $('input[type="radio"]').attr('checked', false);
+            $('input[type="text"]').val("");
+            $('.question').hide();
+            $('.question img').addClass('img-responsive');
+            var $currentQuestion = $('.question').first();
+            $currentQuestion.fadeIn(1000);
+            $("#max-attempts").text($currentQuestion.data('max-attempts'));
+            updateAttemptNo(true);
+            var tick = $('<span class="glyphicon glyphicon-ok">');
+            var x = $('<span class="glyphicon glyphicon-remove">');
+            $('#next-btn').on('click', nextQuestion);
+
+            function updateAttemptNo(reset=false) {
+                if (reset) {
+                    attemptNo = 1;
+                } else {
+                    attemptNo++;
+                }
+                $("#attempt-no").text(attemptNo);
+            }
+
+            function nextQuestion() {
+                var $checkedRadioBtns = $currentQuestion.children('.form-check').children('input').filter(':checked');
+                if ($checkedRadioBtns.length === 1 || $currentQuestion.children('#answer').val().trim()) {
+                    // Check question
+                    if ($checkedRadioBtns.length === 1) {
+                        var data = {"answer": $checkedRadioBtns.next().text(), "question_id": $currentQuestion.attr('id')};
+                    } else {
+                        var data = {"answer": $currentQuestion.children('#answer').val(), "question_id": $currentQuestion.attr('id')};
+                    }
+                    $.ajax({
+                        url: "{{ url_for('main.check') }}",
+                        data: JSON.stringify(data),
+                        dataType: 'json',
+                        contentType: "application/json; charset=utf-8",
+                        type: 'POST',
+                        success: function(response) {
+                            var isLastQuestion = $('.question').eq(-1).is($currentQuestion);
+                            var try_again = response.try_again
+                            if (!try_again) {
+                                $progressBar = $('.progress-bar');
+                                $progressWidth = parseInt($progressBar.css('width'), 10) / parseInt($progressBar.parent().width(), 10) * 100;
+                                newWidth = $progressWidth + Math.pow($('.question').length, -1) * 100
+                                newWidth = newWidth.toFixed(0)
+                                if (isLastQuestion) {
+                                    newWidth = 100
+                                }
+                                $progressBar.css('width', newWidth + '%');
+                                $progressBar.attr('aria-valuenow', newWidth);
+                                $progressBar.text(newWidth + '%');
+                            }
+                            if (response.answer_status) {
+                                $('.answer-status').html("<span style=\"color:#5ad65a\">Correct!</span>").hide().fadeIn(1000).delay(1000).fadeOut(1000);
+                                var $historyIcon = $('.no-ans').first();
+                                $historyIcon.addClass('badge-correct');
+                                $historyIcon.removeClass('no-ans');
+                                $historyIcon.append(tick.clone());
+                                updateAttemptNo(true);
+                            } else if (try_again) {
+                                updateAttemptNo();
+                                if (attemptNo === $currentQuestion.data('max-attempts')) {
+                                    $('.answer-status').html("<span style=\"color:#d43e3e\">Last chance! Try Again.</span>").hide().fadeIn(1000).delay(1000).fadeOut(1000);
+                                } else {
+                                    $('.answer-status').html("<span style=\"color:#d43e3e\">Incorrect! Try Again.</span>").hide().fadeIn(1000).delay(1000).fadeOut(1000);
+                                }
+                            } else {
+                                $('.answer-status').text("Hard Luck!").hide().fadeIn(1000).delay(1000).fadeOut(1000);
+                                var $historyIcon = $('.no-ans').first();
+                                $historyIcon.addClass('badge-incorrect');
+                                $historyIcon.removeClass('no-ans');
+                                $historyIcon.append(x.clone());
+                                updateAttemptNo(true);
+                            }
+                            if (isLastQuestion && !try_again) {
+                                // Summary of user's answers
+                                $('#next-btn').fadeOut();
+                                $currentQuestion.fadeOut();
+                                $('#attempt-status').fadeOut();
+                                var data = {'id': '{{ quiz.id }}'};
+                                $.ajax({
+                                    url: "{{ url_for('main.summary') }}",
+                                    data: JSON.stringify(data),
+                                    contentType: 'application/json',
+                                    type: 'POST',
+                                    success: function(response) {
+                                        console.log(response);
+                                        var $summary = $('#summary');
+                                        for (var i = 0; i < $('tbody tr').length; i++) {
+                                            var thisQuesID = response.question_ids[i]
+                                            var $row = $('tr#question-' + thisQuesID)
+                                            var $rowChildren = $row.children();
+                                            $rowChildren.filter('.question-text').html(response.questions[i]);
+                                            $rowChildren.filter('.no-attempts').text(response.no_attempts[i]);
+                                            $rowChildren.filter('.last-attempt').text(response.last_attempts[i]);
+                                            $rowChildren.filter('.correct-ans').text(response.correct_answers[i]);
+                                            if (response.user_ans_status[i]) {
+                                                $rowChildren.filter('.ans-status').append(tick.clone());
+                                            } else {
+                                                $rowChildren.filter('.ans-status').append(x.clone());
+                                            }
+                                        }
+                                        $summary.fadeIn(1000);
+                                    },
+                                    error: function(error) {
+                                        $('.status').text("There has been an error.")
+                                    }
+                                });
+                            } else if (!try_again) {
+                                // Move on to next question
+                                $currentQuestion.hide();
+                                $currentQuestion = $currentQuestion.next();
+                                $currentQuestion.fadeIn(1000);
+                                $("#max-attempts").text($currentQuestion.data('max-attempts'));
+                            }
+                        },
+                        error: function(error) {
+                            $('.answer-status').html("There has been an error in processing your answer.");
+                        }
+                    });
+                        
+                }
+            }
+        });
+    </script>
+{% endblock %}

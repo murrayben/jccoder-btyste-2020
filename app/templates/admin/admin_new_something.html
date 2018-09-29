@@ -1,0 +1,51 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% if form.markdown %}
+    {% set has_markdown = True %}
+{% else %}
+    {% set has_markdown = False %}
+{% endif %}
+
+{% block styles %}
+    {{ super() }}
+    {% if has_markdown %}
+    <link rel="stylesheet" type="text/css" href="https://rawgit.com/lodev09/bootstrap-markdown/master/css/bootstrap-markdown.min.css">
+    {% endif %}
+{% endblock %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>New {{ new_thing }}</h1>
+    </div>
+    {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    {% if has_markdown %}
+    <script src="https://rawgit.com/lodev09/bootstrap-markdown/master/js/bootstrap-markdown.js"></script>
+    <script data-require="marked@*" data-semver="0.3.1" src="http://cdnjs.cloudflare.com/ajax/libs/marked/0.3.1/marked.js"></script>
+    {% endif %}
+    {% if new_thing == "Page" %}
+    <script src="{{ url_for('static', filename='js/page.js') }}"></script>
+    {% endif %}
+    <script type="text/javascript">
+        $('form').get(0).reset();
+        $('textarea').css('resize', 'vertical');
+        {% if form.icon %}
+        $('#icon').on('blur', function() {
+            if (!$(this).val().trim()) {
+                $(this).val('http://');
+            }
+        });
+        {% endif %}
+        {% if form.markdown %}
+        $('#{{ form.markdown }}').markdown();
+        {% endif %}
+        var $backBtn = $('<a class="btn btn-info"></a>');
+        $backBtn.text("Back to all {% if new_thing == 'Glossary' %}Glossaries{% else %}{{ new_thing }}{% if new_thing != 'Quiz' %}s{% else %}zes{% endif %}{% endif %}");
+        $backBtn.attr("href", "/admin/all/" + "{{ new_thing|lower }}");
+        $backBtn.appendTo($('form').get(1));
+    </script>
+{% endblock %}
