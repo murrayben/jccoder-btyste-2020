@@ -175,19 +175,20 @@ def save_step():
     if request.method == 'GET':
         abort(404)
     data = request.get_json()
+    if data.get('prev_step_id'):
+        prev_step = ProjectStep.query.get(data.get('prev_step_id'))
+    else:
+        prev_step = None
     if data.get('editing'):
         step = ProjectStep.query.get(data.get('step_id'))
         if not step:
             abort(400)
         step.title = data.get('title')
         step.content = data.get('content')
+        step.prev_step = prev_step
         db.session.add(step)
         db.session.commit()
     else:
-        if data.get('prev_step_id'):
-            prev_step = ProjectStep.query.get(data.get('prev_step_id'))
-        else:
-            prev_step = None
         step = ProjectStep(title=data.get('title'), content=data.get('content'), project_id=data.get('project_id'), prev_step=prev_step)
         db.session.add(step)
         db.session.commit()
