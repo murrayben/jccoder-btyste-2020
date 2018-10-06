@@ -138,7 +138,7 @@
                 }
 
                 var prevStepID = null;
-                if (!(numSteps === 1) && !($button.parent() === $('.new-step-block').first())) {
+                if (!(numSteps === 1) && !($button.parent()[0] === $('.new-step-block').first()[0])) {
                     prevStepID = $button.parent().parent().parent().prev().children().children().data('step-id');
                     if (!prevStepID) {
                         $button.button('invalid');

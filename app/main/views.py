@@ -1,7 +1,7 @@
 from flask import abort, jsonify, redirect, render_template, url_for, session, request, g
 from flask_login import current_user, login_required
 from datetime import datetime
-from ..models import db, Chapter, Page, PageAnswer, PageQuestion, Quiz, Lesson, UserAnswer, Question, AnswerStatus
+from ..models import db, Chapter, Page, PageAnswer, PageQuestion, Project, Quiz, Lesson, UserAnswer, Question, AnswerStatus
 from .forms import NewPageQuestion, NewPageAnswer, EditPageAnswer
 from . import main
 
@@ -177,3 +177,8 @@ def summary():
         i += 1
     return jsonify(success=True, question_ids=question_ids, questions=questions, no_attempts=session["no_attempts"],
                 last_attempts=session["user_results"], correct_answers=correct_answers, user_ans_status=user_ans_status)
+
+@main.route('/project/<int:id>')
+def project(id):
+    project = Project.query.get_or_404(id)
+    return render_template('project.html', title="JCCoder - Project - " + project.title, project=project)

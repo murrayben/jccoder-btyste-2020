@@ -125,6 +125,22 @@
                     </p>
                     {% set first_page = lesson.pages.filter_by(prev_page=None).first() %}
                     {{ display_page(first_page) }}
+                    {% if lesson.projects.filter_by(status=True) %}
+                    <div class="row">
+                        {% for project in lesson.projects.filter_by(status=True) %}
+                        <div class="col-sm-6 col-md-4">
+                            <a href="{{ url_for('main.project', id=project.id) }}">
+                                <div class="thumbnail">
+                                    <img src="{{ project.thumbnail }}">
+                                    <div class="caption">
+                                        <p>{{ project.description }}</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
