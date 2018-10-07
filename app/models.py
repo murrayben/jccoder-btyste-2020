@@ -3,7 +3,26 @@ from flask_login import UserMixin, AnonymousUserMixin
 from datetime import datetime
 from markdown import markdown
 from app import db, login
-import bleach
+import bleach, re
+
+def customTagMarkdown(original_mardown, extensions=None):
+    lines = []
+    for line in original_mardown.split('\n'):
+        if ':video::' in line:
+            arguments = line.split('::')
+            video = """<div class="row" style="margin-bottom:20px">
+    <div class="{0}">
+        <div class="embed-responsive embed-responsive-{1}">
+            <iframe class="embed-responsive-item" src="{2}" allowfullscreen></iframe>
+        </div>
+    </div>
+</div>""".format(arguments[1], arguments[2], arguments[3])
+            line = video
+        lines.append(line)
+    finished_markdown = '\n'.join(lines)
+    
+    html = markdown(finished_markdown, output_format='html', extensions=extensions or [])
+    return html
 
 post_tags = db.Table("post_tags",
     db.Column('tag_id', db.Integer, db.ForeignKey('tags.id')),
@@ -160,7 +179,7 @@ class Project(db.Model):
 
     @staticmethod
     def description_changed(target, value, oldvalue, initiator):
-        target.description_html = markdown(value, output_format='html')
+        target.description_html = customTagMarkdown(value, output_format='html')
 
     def what_model(self):
         return "Project"
@@ -180,7 +199,7 @@ class ProjectStep(db.Model):
 
     @staticmethod
     def content_changed(target, value, oldvalue, initiator):
-        target.content_html = markdown(value, output_format='html')
+        target.content_html = customTagMarkdown(value)
 
 db.event.listen(ProjectStep.content, 'set', ProjectStep.content_changed)
 
@@ -469,7 +488,7 @@ class Page(db.Model):
             target.html = '<iframe src="{0}" width="100%" class="quiz" frameborder="0"></iframe>'.format(url_for('main.take_quiz', id=target.quiz.id))
         else:
             target.html = bleach.linkify(
-                markdown(value, output_format='html')
+                customTagMarkdown(value)
             )
     
     def __repr__(self):

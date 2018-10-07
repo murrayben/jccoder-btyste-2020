@@ -1,7 +1,6 @@
 from flask import abort, jsonify, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
-from markdown import markdown
-from ..models import AnswerStatus, Strand, Module, Chapter, Lesson, LearningOutcome, Glossary, Page, UserAnswer, Question, QuestionAnswer, QuestionOption, QuestionType, Quiz, PageType, Project, ProjectStep
+from ..models import customTagMarkdown, AnswerStatus, Strand, Module, Chapter, Lesson, LearningOutcome, Glossary, Page, UserAnswer, Question, QuestionAnswer, QuestionOption, QuestionType, Quiz, PageType, Project, ProjectStep
 from .forms import NewQuestion, NewStrand, NewModule, NewChapter, NewLesson, EditLessonContent, NewLearningOutcome, NewQuiz, NewGlossary, NewPage, NewProject
 from .. import db
 from . import admin
@@ -527,12 +526,12 @@ def preview_project():
 
     preview_html = """<div class="well">
     {0}
-</div>""".format(markdown(description))
+</div>""".format(customTagMarkdown(description))
     
     for step in steps:
         preview_html += """<h3 class="text-success">{0}</h3>
 <div class="well">
     {1}
-</div>""".format(step.get('title', 'None'), markdown(step.get('content', 'None')))
+</div>""".format(step.get('title', 'None'), customTagMarkdown(step.get('content', 'None')))
 
     return jsonify(success=True, previewHTML=preview_html)
