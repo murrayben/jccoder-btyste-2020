@@ -24,18 +24,18 @@
             margin-top: 5px;
         }
 
-        .glyphicon-ok {
+        .fa-check {
             color: #008000;
         }
 
-        .glyphicon-remove {
+        .fa-times {
             color: #ff0000;
         }
 
         .history-badge {
             border-radius: 50px;
             vertical-align: middle;
-            padding: 8px 11px;
+            padding: 7px 11px;
             margin-right: 3px;
             display: inline-block;
             font-size: 1.2em;
@@ -57,7 +57,7 @@
             padding: 17.5px;
         }
 
-        .history-badge .glyphicon {
+        .history-badge .fas {
             color: #ffffff !important;
         }
 
@@ -88,7 +88,7 @@
 {% block content %}
     <div class="container-fluid">
         <div class="page-header">
-            <h4 id="attempt-status" class="pull-right">Attempt #<span id="attempt-no"></span> out of <span id="max-attempts"></span></h4>
+            <h4 id="attempt-status" class="float-right">Attempt #<span id="attempt-no"></span> out of <span id="max-attempts"></span></h4>
             <h3>Do {{ questions|length }} problem{% if questions|length != 1 %}s{% endif %}!</h3>
             <p>{{ quiz.description }}</p>
         </div>
@@ -122,8 +122,8 @@
             {% endfor %}
         </div>
         <button role="button" class="btn btn-primary" id="next-btn">Check</button>
-        <div id="summary" class="table-responsive">
-            <table class="table table-bordered table-striped">
+        <div id="summary">
+            <table class="table table-bordered table-responsive">
                 <thead>
                     <tr>
                         <th>Question</th>
@@ -160,13 +160,13 @@
             $('input[type="radio"]').attr('checked', false);
             $('input[type="text"]').val("");
             $('.question').hide();
-            $('.question img').addClass('img-responsive');
+            $('.question img').addClass('img-fluid');
             var $currentQuestion = $('.question').first();
             $currentQuestion.fadeIn(1000);
             $("#max-attempts").text($currentQuestion.data('max-attempts'));
             updateAttemptNo(true);
-            var tick = $('<span class="glyphicon glyphicon-ok">');
-            var x = $('<span class="glyphicon glyphicon-remove">');
+            var tick = $('<span class="fas fa-check">');
+            var x = $('<span class="fas fa-times">');
             $('#next-btn').on('click', nextQuestion);
 
             function updateAttemptNo(reset=false) {

@@ -3,17 +3,17 @@
 
 {% block styles %}
     {{ super() }}
-    <link rel="stylesheet" type="text/css" href="https://rawgit.com/lodev09/bootstrap-markdown/master/css/bootstrap-markdown.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
 {% endblock %}
 
 {% block modals %}
     <!-- Modal -->
     <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="projectTitle">
-        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                     <h3 class="modal-title" id="projectTitle"><!-- Project title put here --></h3>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </div>
                 <div class="modal-body" id="projectPreview">
                 <!-- Project preview put here -->
@@ -38,9 +38,20 @@
 
 {% block scripts %}
     {{ super() }}
-    <script src="https://rawgit.com/lodev09/bootstrap-markdown/master/js/bootstrap-markdown.js"></script>
-    <script data-require="marked@*" data-semver="0.3.1" src="http://cdnjs.cloudflare.com/ajax/libs/marked/0.3.1/marked.js"></script>
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <script>
+        $.fn.button = function(state) {
+            this.text(this.data(state + '-text'));
+            if (state === 'loading') {
+                this.attr('disabled', '');
+            } else if (state === 'reset') {
+                this.text('Save');
+            } else {
+                this.removeAttr('disabled');
+            }
+            return this;
+        }
+
         // Transform id into class (because code is going to be copied)
         $('#step_content').attr('id', null).addClass('step-content');
         $('#step_title').attr('id', null).addClass('step-title');
@@ -55,15 +66,16 @@
         $deleteStepBtn.appendTo($btnGroup);
         $('#submit').detach().appendTo($btnGroup);
 
-        // Add panel around new step
-        $panel = $('<div class="panel panel-info" />').insertBefore($btnGroup);
-        $('<div class="panel-body" />').appendTo($panel)
-        $('<div class="new-step-block" />').appendTo($('.panel-body'));
-        $form.children('.form-group').last().prev('.form-group').andSelf().detach().appendTo($('.new-step-block'));
+        // Add card around new step
+        $card = $('<div class="card border-info mb-4" />').insertBefore($btnGroup);
+        $('<div class="card-body" />').appendTo($card)
+        $('<div class="new-step-block" />').appendTo($('.card-body'));
+        $form.children('.form-group').last().prev('.form-group').addBack().detach().appendTo($('.new-step-block'));
         $('<button class="btn btn-success" data-invalid-text="Validation failed!" data-loading-text="Saving..." data-success-text="Saved!" data-error-text="Failed!" />').text('Save').appendTo($('.new-step-block'));
 
-        var $newStepHTML = $panel.clone();
-        $('#description, .step-content').markdown();
+        var $newStepHTML = $card.clone();
+        new SimpleMDE({element: $('#description')[0], forceSync: true, hideIcons:["guide"]});
+        var firstStep = new SimpleMDE({element: $('.step-content')[0], forceSync: true, hideIcons:["guide"]});
 
         // New step functionality
         var project_id = Number($('#project-form').data('project-id'));
@@ -79,12 +91,13 @@
         
         for (step in step_json) {
             if (step !== "step_1") {
-                $newStepBtn.click();
+                addStep(null, step_json[step].content);
+            } else {
+                firstStep.value(step_json[step].content);
             }
             var $fields = $('.new-step-block').last().children('.form-group');
             $fields.parent().attr('data-step-id', step_json[step].id);
             $fields.first().children('.step-title').val(step_json[step].title);
-            $fields.last().children('.md-editor').children('.step-content').val(step_json[step].content);
         }
 
         // Preview
@@ -94,7 +107,7 @@
             for (var i = 0; i < $('.new-step-block').length; i++) {
                 var $stepForms = $('.new-step-block').eq(i).children('.form-group');
                 var title = $stepForms.first().children('.step-title').val();
-                var content = $stepForms.last().children('.md-editor').children('.step-content').val();
+                var content = $stepForms.last().children('.step-content').val();
                 data.steps.push({title: title, content: content});
             }
 
@@ -106,6 +119,7 @@
                 type: 'POST',
                 success: function(response) {
                     $('#projectPreview').html(response.previewHTML);
+                    $('#projectPreview img').addClass('img-fluid');
                 },
                 error: function(error) {
                     $('#projectPreview').html('<p>An error has occured!</p>');
@@ -120,7 +134,7 @@
                 var $button = $(this);
                 $button.button('loading');
                 $title = $button.siblings('.form-group').first().children('.step-title').val();
-                $content = $button.siblings('.form-group').last().children('.md-editor').children('.step-content').val();
+                $content = $button.siblings('.form-group').last().children('.step-content').val();
                 
                 validated = true;
                 if (!$title.trim() || $title.length > 150) {
@@ -183,10 +197,14 @@
             });
         }
 
-        function addStep(e) {
-            e.preventDefault();
-            $newStepHTML.clone().insertBefore($btnGroup);
-            $('.step-content').markdown();
+        function addStep(e, initialVal='') {
+            try {
+                e.preventDefault();
+            } catch {
+                // Do nothing
+            }
+            var $object = $newStepHTML.clone().insertBefore($btnGroup);
+            new SimpleMDE({element: $object.children('.card-body').children('.new-step-block').children('.form-group').last().children('textarea')[0], forceSync: true, hideIcons:["guide"], initialValue: initialVal});
             numSteps += 1;
             if (numSteps == 2) {
                 $deleteStepBtn.fadeIn();
@@ -196,7 +214,7 @@
 
         function deleteStep(e) {
             e.preventDefault()
-            $('.panel').last().remove();
+            $('.card').last().remove();
             numSteps -= 1;
             if (numSteps == 1) {
                 $deleteStepBtn.fadeOut();

@@ -1,11 +1,11 @@
-<div class="pull-left">
-    <a href="#">
-        <img class="img-circle media-object" src="#">
-    </a>
-</div>
+<a href="#" class="mr-3">
+    <img class="img-circle media-object" src="#">
+</a>
 <div class="media-body">
     <h2 class="media-heading">{{ post.title }}{% if not post.published %} (Draft){% endif %}</h2>
-    By <a href="#">{{ post.author.username }}</a><br /><span class="glyphicon glyphicon-time"></span> {{ moment(post.date_posted).format('MMMM Do YYYY, h:mm:ss a') }}
+    By <a href="#">{{ post.author.username }}</a>
+    <br />
+    <span class="far fa-clock"></span> {{ moment(post.date_posted).format('MMMM Do YYYY, h:mm:ss a') }}
     <br />
     {% if show_body_html %}
     <div>{{ post.body_html|safe }}</div>
@@ -16,13 +16,13 @@
     <a class="btn btn-info" href="{{ url_for('announcements.permalink', id=post.id) }}">Read more &raquo;</a>
     {% endif %}
     <hr />
-    <div class="post-controls pull-right pull-xs-none">
+    <div class="post-controls float-sm-right">
         {% if current_user.username == post.author.username or current_user.is_admin() %}
-        <a class="edit-btn" href="{{ url_for('announcements.edit', id=post.id) }}"><span class="label label-primary">Edit</span></a>
+        <a class="edit-btn" href="{{ url_for('announcements.edit', id=post.id) }}"><span class="badge badge-primary">Edit</span></a>
         {% if post.published %}
-        <a href="{{ url_for('announcements.draft', id=post.id) }}"><span class="label label-danger">Make Draft</span></a>
+        <a href="{{ url_for('announcements.draft', id=post.id) }}"><span class="badge badge-danger">Make Draft</span></a>
         {% else %}
-        <a href="{{ url_for('announcements.public', id=post.id) }}"><span class="label label-success">Make Public</span></a>
+        <a href="{{ url_for('announcements.public', id=post.id) }}"><span class="badge badge-success">Make Public</span></a>
         {% endif %}
         {% endif %}
     </div>

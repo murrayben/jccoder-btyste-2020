@@ -1,23 +1,23 @@
 {% macro addPagination(pagination, endpoint) %}
     <ul class="pagination">
-        <li{% if not pagination.has_prev %} class="disabled" {% endif %}>
-            <a href="{% if not pagination.has_prev %}#bottom{% else %}{{ url_for(endpoint, page=pagination.page - 1, **kwargs) }}{% endif %}">
+        <li{% if not pagination.has_prev %} class="page-item disabled" {% endif %}>
+            <a class="page-link" href="{% if not pagination.has_prev %}#bottom{% else %}{{ url_for(endpoint, page=pagination.page - 1, **kwargs) }}{% endif %}">
                 &laquo;
             </a>
         </li>
         {% for page in pagination.iter_pages() %}
         {% if page %}
         {% if page == pagination.page %}
-        <li class="active"><a href="#bottom">{{ page }}</a></li>
+        <li class="page-item active"><a class="page-link" href="#bottom">{{ page }}</a></li>
         {% else %}
-        <li><a href="{{ url_for(endpoint, page=page, **kwargs) }}">{{ page }}</a></li>
+        <li class="page-item"><a class="page-link" href="{{ url_for(endpoint, page=page, **kwargs) }}">{{ page }}</a></li>
         {% endif %}
         {% else %}
-        <li class="disabled"><a href="#bottom">&hellip;</a></li>
+        <li class="page-item disabled"><a class="page-link" href="#bottom">&hellip;</a></li>
         {% endif %}
         {% endfor %}
-        <li{% if not pagination.has_next %} class="disabled" {% endif %}>
-            <a href="{% if not pagination.has_next %}#bottom{% else %}{{ url_for(endpoint, page=pagination.page + 1, **kwargs) }}{% endif %}">
+        <li{% if not pagination.has_next %} class="page-item disabled" {% endif %}>
+            <a class="page-link" href="{% if not pagination.has_next %}#bottom{% else %}{{ url_for(endpoint, page=pagination.page + 1, **kwargs) }}{% endif %}">
                 &raquo;
             </a>
         </li>

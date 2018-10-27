@@ -3,17 +3,22 @@
 {% macro display_page(page) -%}
 {%- if page %}
 {% if page.page_type.description == "Article" %}
-{% set icon_class = 'glyphicon glyphicon-file' %}
+{% set icon_class = 'fas fa-file fa-fw' %}
 {% elif page.page_type.description == "Quiz" %}
-{% set icon_class = 'glyphicon glyphicon-tasks' %}
+{% set icon_class = 'fas fa-tasks fa-fw' %}
 {% elif page.page_type.description == "Video" %}
-{% set icon_class = 'glyphicon glyphicon-play' %}
+{% set icon_class = 'fas fa-play fa-fw' %}
 {% elif page.page_type.description == "Glossary" %}
-{% set icon_class = 'glyphicon glyphicon-list-alt' %}
+{% set icon_class = 'fas fa-list-alt fa-fw' %}
 {% endif %}
-                    <p>
-                        <a href="{{ url_for('main.lesson_page', id=page.id) }}" data-page-id="{{ page.id }}" {% if page.next_page %}data-next-page-id="{{ page.next_page_id }}" {% endif %}class="page-link"><span class="{{ icon_class }}"></span> <span class="page-title">{{ page.title }}</span></a>
-                    </p>
+                        <p class="page">
+                            <a href="{{ url_for('main.lesson_page', id=page.id) }}" data-page-id="{{ page.id }}" {% if page.next_page %}data-next-page-id="{{ page.next_page_id }}" {% endif %}class="page-hyperlink">
+                                <span class="dot">
+                                    <i class="{{ icon_class }}"></i>
+                                </span>
+                                <span class="page-title">{{ page.title }}</span>
+                            </a>
+                        </p>
 {%- endif -%}
 {% if page.next_page -%}
 {{ display_page(page.next_page) }}
@@ -29,14 +34,8 @@
             position: relative;
         }
 
-        #go-to-page {
-            float: right;
-        }
-
         .close {
-            float: left;
-            margin-top: 5px !important;
-            margin-left: 5px;
+            margin-top: -7px !important;
         }
 
         .embed-responsive {
@@ -53,9 +52,9 @@
             text-decoration: underline;
         }
         
-        .page-link .glyphicon {
-            font-size: 1.4em;
-            color: #008000;
+        .page-hyperlink .fas {
+            color: #337ab7;
+            font-size: 0.9em;
         }
 
         .quiz {
@@ -65,6 +64,19 @@
 
         .quiz html {
             background-color: #ffffff;
+        }
+
+        .pages {
+            position: relative;
+        }
+
+        .dot {
+            position: relative;
+            display: inline-block;
+            border-radius: 60px;
+            border: 1px solid #646464;
+            padding: 0.3em 0.5em 0.2em;
+            z-index: 1000;
         }
 
         @media (max-width: 768px) {
@@ -81,9 +93,9 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <a href="#" id="go-to-page" class="btn btn-sm btn-success">See comments</a>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="glyphicon glyphicon-remove"></span></button>
+                <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fas fa-times"></span></button>
                 <h3 class="modal-title text-center" id="page-title"></h3>
+                <a href="#" id="go-to-page" class="btn btn-sm btn-success float-right">See comments</a>
             </div>
             <div class="modal-body" id="page-html">
             <!-- Will be replaced by page Content -->
@@ -100,40 +112,41 @@
 {% block page_content %}
 <div class="row">
     <div class="col-md-3 hidden-sm hidden-xs" id="scrollspy">
-        <ul class="nav nav-pills nav-stacked affix-top" data-spy="affix">
+        <ul class="nav nav-pills flex-column position-fixed">
             {% for lesson in lessons %}
-            <li class="lesson-link">
-                <a href="#lesson-{{ lesson.id }}">{{ lesson.title }}</a>
+            <li class="lesson-link nav-item">
+                <a href="#lesson-{{ lesson.id }}" class="nav-link">{{ lesson.title }}</a>
             </li>
             {% endfor %}
         </ul>
     </div>
-    <div class="col-md-9 col-xs-12">
+    <div class="col-md-9 col-xs-12 position-relative">
         <h1>{{ chapter.title }}</h1>
         <hr>
         {% for lesson in lessons %}
-        <div id="lesson-{{ lesson.id }}">
-            <div class="panel panel-success">
-                <div class="panel-heading">
-                    <div class="panel-title">
-                        <h3>{{ lesson.title }}</h3>
-                    </div>
+        <div id="lesson-{{ lesson.id }}" class="mb-4">
+            <div class="card border-dark">
+                <div class="card-header">
+                    <h3>{{ lesson.title }}</h3>
                 </div>
-                <div class="panel-body">
-                    <p class="lesson-overview">
+                <div class="card-body">
+                    <div class="lesson-overview">
                         {{ lesson.overview_html|safe }}
-                    </p>
+                    </div>
                     {% set first_page = lesson.pages.filter_by(prev_page=None).first() %}
+                    <div class="pages">
                     {{ display_page(first_page) }}
+                    </div>
                     {% if lesson.projects.filter_by(status=True) %}
                     <div class="row">
                         {% for project in lesson.projects.filter_by(status=True) %}
-                        <div class="col-sm-6 col-md-4">
+                        <div class="col-xs-12 col-sm-6 col-md-4">
                             <a href="{{ url_for('main.project', id=project.id) }}">
-                                <div class="thumbnail">
-                                    <img src="{{ project.thumbnail }}">
-                                    <div class="caption">
-                                        <p>{{ project.description }}</p>
+                                <div class="card text-dark">
+                                    <img class="card-img-top" src="{{ project.thumbnail }}">
+                                    <div class="card-body">
+                                        <h4 class="card-title">{{ project.title }}</h4>
+                                        <p class="card-text">{{ project.description }}</p>
                                     </div>
                                 </div>
                             </a>
@@ -162,7 +175,6 @@
             $('.extra').remove();
         }
 
-        $('#lesson-sidebar').affix();
         $("#scrollspy ul li a[href^='#']").on('click', function(e) {
             // prevent default anchor click behavior
             e.preventDefault();
@@ -171,11 +183,11 @@
 
             // animate
             $('html, body').animate({
-                scrollTop: $(hash).offset().top - 50
+                scrollTop: $(hash).offset().top - 70
             }, 700);
         });
 
-        $('.page-link').on('click', function(e) {
+        $('.page-hyperlink').on('click', function(e) {
             // Stop page from loading
             e.preventDefault();
 
@@ -211,6 +223,7 @@
 
                         $('#pageModal #page-title').text(pageTitle);
                         $('#pageModal #page-html').html(pageHTML);
+                        $('#pageModal #page-html img').addClass('img-fluid');
                         $('#go-to-page').attr('href', pageEl.attr('href'));
                         $('#page-type').text(response.page_type)
 

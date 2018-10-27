@@ -22,9 +22,10 @@ i, span {
     display: inline-block;
 }
 
-.bg-success, .bg-danger, .bg-info, .bg-primary, .bg-warning {
-    /* Contextual backgrounds */
-    padding: 15px;
+.page-header {
+    padding-bottom: 9px;
+    margin: 40px 0 20px;
+    border-bottom: 1px solid #eee;
 }
 
 #navbar-icon {

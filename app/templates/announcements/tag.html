@@ -13,7 +13,7 @@
                 <h1>Tag "{{ tag.name }}"</h1>
             </div>
             {% if posts %}
-            <ul id="posts" class="media-list">
+            <ul id="posts" class="list-unstyled">
                 {% for post in posts %}
                 <li class="post media">
                     {% include 'announcements/_post.html' %}
@@ -34,7 +34,7 @@
 {% block scripts %}
     {{ super() }}
     <script>
-        $(".post .media-body img").addClass("img-responsive");
+        $(".post .media-body img").addClass("img-fluid");
     </script>
     {{ moment.include_moment() }}
 {% endblock %}

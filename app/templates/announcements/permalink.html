@@ -24,7 +24,7 @@
 {% block scripts %}
     {{ super() }}
     <script>
-        $(".post .media-body img").addClass("img-responsive");
+        $(".post .media-body img").addClass("img-fluid");
     </script>
     {{ moment.include_moment() }}
 {% endblock %}

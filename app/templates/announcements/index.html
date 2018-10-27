@@ -4,14 +4,14 @@
 
 {% block styles %}
     {{ super() }}
-    <link rel="stylesheet" type="text/css" href="https://rawgit.com/lodev09/bootstrap-markdown/master/css/bootstrap-markdown.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" />
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/announcement.css') }}" />
 {% endblock %}
 
 {% block page_content %}
     <div class="row">
         <div class="col-md-9">
-            <div class="page-header">
+            <div class="page-header mt-0">
                 <h1>Announcements</h1>
             </div>
             {% if current_user.is_admin() %}
@@ -21,7 +21,7 @@
             </div>
             {% endif %}
             {% if posts %}
-            <ul id="posts" class="media-list">
+            <ul id="posts" class="list-unstyled">
                 {% for post in posts %}
                 <li class="post media">
                     {% include 'announcements/_post.html' %}
@@ -41,11 +41,11 @@
 
 {% block scripts %}
     {{ super() }}
-    <script src="https://rawgit.com/lodev09/bootstrap-markdown/master/js/bootstrap-markdown.js" /></script>
-    <script data-require="marked@*" data-semver="0.3.1" src="http://cdnjs.cloudflare.com/ajax/libs/marked/0.3.1/marked.js" /></script>
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     {% if current_user.is_admin() %}
     <script>
-        $('textarea').attr('data-provide', 'markdown');
+        new SimpleMDE({element: $('#body')[0], forceSync: true, hideIcons:["guide"]});
+        new SimpleMDE({element: $('#summary')[0], forceSync: true, hideIcons:["guide"]});
         $('#formAcc').hide()
         $('#comBtn').on("click", function() {
             $('#formAcc').slideToggle();
@@ -56,7 +56,7 @@
     </script>
     {% endif %}
     <script>    
-        $(".post .media-body img").addClass("img-responsive");
+        $(".post .media-body img").addClass("img-fluid");
     </script>
     {{ moment.include_moment() }}
 {% endblock %}

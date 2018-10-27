@@ -139,7 +139,7 @@ class NewProject(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(1, 150, 'Title must be less than 150 characters.')])
     description = TextAreaField('Description', validators=[DataRequired()])
     thumbnail = StringField('Thumbnail', widget=URLInput(), validators=[DataRequired(),
-                                                                        Length(1, 100, 'URL must be less than 100 characters.')])
+                                                                        Length(1, 500, 'URL must be less than 500 characters.')])
     lesson = SelectField(coerce=int)
 
     step_title = StringField('Step Title', validators=[Length(max=150)])

@@ -3,7 +3,12 @@
 
 {% block styles %}
     {{ super() }}
-    <link rel="stylesheet" href="https://cdn.rawgit.com/toopay/bootstrap-markdown/master/css/bootstrap-markdown.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" />
+    <style type="text/css">
+        .editor-toolbar.fullscreen {
+            z-index: 99999;
+        }
+    </style>
 {% endblock %}
 
 {% block page_content %}
@@ -15,11 +20,8 @@
 
 {% block scripts %}
     {{ super() }}
-    <script data-require="marked@*" data-semver="0.3.1" src="http://cdnjs.cloudflare.com/ajax/libs/marked/0.3.1/marked.js"></script>
-    <script src="https://cdn.rawgit.com/toopay/bootstrap-markdown/master/js/bootstrap-markdown.js"></script>
-    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <script type="text/javascript">
-        $('form').get(0).reset();
-        $('#text').markdown();
+        new SimpleMDE({element: $('#text')[0], forceSync: true, hideIcons: ["guide"]});
     </script>
 {% endblock %}

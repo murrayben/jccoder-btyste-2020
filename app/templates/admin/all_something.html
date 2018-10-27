@@ -23,7 +23,7 @@
             {% elif item.what_model() == "Quiz" %}
             <li>In page: <a href="{{ url_for('admin.edit_page', id=item.page.id) }}">{{ item.page.title }}</a> (<a href="{{ url_for('main.take_quiz', id=item.id) }}">Take Quiz</a>) <a href="{{ url_for('admin.edit_quiz', id=item.id) }}" class="btn-xs btn-danger">Edit</a></li>
             {% elif item.what_model() == "Question" %}
-            <li><a href="{{ url_for('admin.edit_question', id=item.id) }}">{{ item.text }}</a> (In quiz: <a href="{{ url_for('admin.edit_quiz', id=item.quiz.id) }}"> in page: {{ item.quiz.page.title }}</a>)</li>
+            <li><a href="{{ url_for('admin.edit_question', id=item.id) }}" class="text-truncate d-inline-block" style="max-width: 50%; margin-bottom: -7px;">{{ item.text }}</a> (In quiz: <a href="{{ url_for('admin.edit_quiz', id=item.quiz.id) }}"> in page: {{ item.quiz.page.title }}</a>)</li>
             {% else %}
             <li><a href="{{ url_for('admin.edit_' + list_items_singular, id=item.id) }}">{{ item.title }}{% if item.what_model() == "Page" %}</a>
                 (In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a>{% if item.next_page %}

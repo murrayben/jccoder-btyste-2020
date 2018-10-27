@@ -1,3 +1,4 @@
+from flask import url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 from datetime import datetime
@@ -172,14 +173,14 @@ class Project(db.Model):
     title = db.Column(db.String(150))
     description = db.Column(db.Text)
     description_html = db.Column(db.Text)
-    thumbnail = db.Column(db.String(100))
+    thumbnail = db.Column(db.String(500))
     status = db.Column(db.Boolean, default=False)
     lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'))
     steps = db.relationship('ProjectStep', backref='project', lazy='dynamic')
 
     @staticmethod
     def description_changed(target, value, oldvalue, initiator):
-        target.description_html = customTagMarkdown(value, output_format='html')
+        target.description_html = customTagMarkdown(value)
 
     def what_model(self):
         return "Project"

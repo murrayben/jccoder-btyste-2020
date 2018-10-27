@@ -524,14 +524,18 @@ def preview_project():
     description = data['description']
     steps = data['steps']
 
-    preview_html = """<div class="well">
-    {0}
+    preview_html = """<div class="card">
+    <div class="card-body">
+        {0}
+    </div>
 </div>""".format(customTagMarkdown(description))
     
     for step in steps:
-        preview_html += """<h3 class="text-success">{0}</h3>
-<div class="well">
-    {1}
+        preview_html += """<h3 class="text-success mt-4">{0}</h3>
+<div class="card">
+    <div class="card-body">
+        {1}
+    </div>
 </div>""".format(step.get('title', 'None'), customTagMarkdown(step.get('content', 'None')))
 
     return jsonify(success=True, previewHTML=preview_html)

@@ -4,16 +4,20 @@
 {% macro display_page(_page) -%}
 {%- if _page %}
 {% if _page.page_type.description == "Article" %}
-{% set icon_class = 'glyphicon glyphicon-file' %}
+{% set icon_class = 'fas fa-file fa-fw' %}
 {% elif _page.page_type.description == "Quiz" %}
-{% set icon_class = 'glyphicon glyphicon-tasks' %}
+{% set icon_class = 'fas fa-tasks fa-fw' %}
 {% elif _page.page_type.description == "Video" %}
-{% set icon_class = 'glyphicon glyphicon-play' %}
+{% set icon_class = 'fas fa-play fa-fw' %}
 {% elif _page.page_type.description == "Glossary" %}
-{% set icon_class = 'glyphicon glyphicon-list-alt' %}
+{% set icon_class = 'fas fa-list-alt fa-fw' %}
 {% endif %}
                     <p class="sidebar-page{% if _page.id == page.id %} active{% endif %}">
-                        <a href="{{ url_for('main.lesson_page', id=_page.id) }}" ><span class="{{ icon_class }}"></span> <span class="page-title">{{ _page.title }}</span></a>
+                        <a href="{{ url_for('main.lesson_page', id=_page.id) }}" >
+                            <span class="dot">
+                                <span class="{{ icon_class }}"></span>
+                            </span>
+                            <span class="page-title">{{ _page.title }}</span></a>
                     </p>
 {%- endif -%}
 {% if _page.next_page -%}
@@ -23,11 +27,28 @@
 
 {% block styles %}
     {{ super() }}
-    <link rel="stylesheet" href="https://cdn.rawgit.com/toopay/bootstrap-markdown/master/css/bootstrap-markdown.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" />
     {% if css %}
     {{ css|safe }}
     {% endif %}
     <style>
+        .editor-toolbar.fullscreen {
+            z-index: 99999 !important;
+        }
+
+        .nav-links::before, .nav-links::after {
+            display: table;
+            content: " ";
+        }
+        
+        .nav-links::after {
+            clear: both;
+        }
+
+        .text-hover-white:hover a {
+            color: #ffffff !important;
+        }
+
         pre {
             overflow-y: auto;
             overflow-x: auto;
@@ -88,7 +109,7 @@
         }
 
         #sidebar-pages .glyphicon {
-            color: #008000;
+            color: #337ab7;
         }
 
         .sidebar-page {
@@ -109,17 +130,26 @@
             height: 100vh;
             background-color: #f7f7f7;
         }
+
+        .dot {
+            position: relative;
+            display: inline-block;
+            border-radius: 60px;
+            border: 1px solid #646464;
+            padding: 0.4em 0.5em 0.3em;
+            z-index: 1000;
+        }
     </style>
 {% endblock %}
 
 {% block modals %}
     {% if current_user.is_authenticated %}
     <div class="modal fade" id="answerDialog" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
+                    <h4 class="modal-title">Add Answer</h4>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="myModalLabel">Add Answer</h4>
                 </div>
                 <div class="modal-body">
                     {{ wtf.quick_form(new_answer_form, button_map={'submit_answer': 'primary'}) }}
@@ -135,7 +165,7 @@
 
 {% block page_content %}
     {% if not current_user.is_admin() %}
-    <div id="sidebar" class="hidden-xs hidden-sm">
+    <div id="sidebar" class="d-none d-lg-block">
         <div id="sidebar-title">
             {{ page.lesson.chapter.module.title }} &gt; <a href="{{ url_for('main.chapter', id=page.lesson.chapter.id) }}">{{ page.lesson.chapter.title }}</a>
 
@@ -157,23 +187,24 @@
     </div>
     {% endif %}
     <div class="row">
-        <div class="col-md-8 col-lg-9 col-md-offset-4 col-lg-offset-3">
+        <div class="col offset-lg-4 offset-xl-3 h-100">
             <div class="page-header">
                 <h1>{{ page.title }}</h1>
             </div>
             <div id="page-html">
                 {{ page_html|safe }}
             </div>
-            <ul class="pager">
-            {% if page.prev_page %}
-                <li class="previous"><a href="{{ url_for('main.lesson_page', id=page.prev_page.id) }}"><span aria-hidden="true">&larr;</span> {{ page.prev_page.title }}</a></li>
-            {% endif %}
-            {% if page.next_page %}
-                <li class="next"><a href="{{ url_for('main.lesson_page', id=page.next_page.id) }}">{{ page.next_page.title }} <span aria-hidden="true">&rarr;</span></a></li>
-            {% else %}
-                <li class="next"><a href="{{ url_for('main.chapter', id=page.lesson.chapter.id) }}">Back to all Lessons <span aria-hidden="true">&rarr;</span></a></li>
-            {% endif %}
-            </ul>
+            <div class="nav-links">
+                {% if page.prev_page %}
+                <li class="btn btn-outline-primary text-hover-white"><a href="{{ url_for('main.lesson_page', id=page.prev_page.id) }}"><span aria-hidden="true">&larr;</span> {{ page.prev_page.title }}</a></li>
+                {% endif %}
+                {% if page.next_page %}
+                <li class="btn btn-outline-primary text-hover-white float-right"><a href="{{ url_for('main.lesson_page', id=page.next_page.id) }}">{{ page.next_page.title }} <span aria-hidden="true">&rarr;</span></a></li>
+                {% else %}
+                <li class="btn btn-outline-primary text-hover-white float-right"><a href="{{ url_for('main.chapter', id=page.lesson.chapter.id) }}">Back to all Lessons <span aria-hidden="true">&rarr;</span></a></li>
+                {% endif %}
+                </ul>
+            </div>
             {% if current_user.can(Permission.ASK_QUESTIONS) %}
             <hr />
             <h2>Add a Question</h2>
@@ -181,32 +212,28 @@
             {% endif %}
             <hr />
             {% if page.questions.all() %}
-            <ul class="media-list" id="questions">
+            <ul class="media-list pl-0" id="questions">
                 {% for question in page.questions.all() %}
-                <li class="row question">
-                    <div class="col-xs-4 col-sm-2 col-lg-1">
-                        <img class="media-object" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Emblem-question.svg/70px-Emblem-question.svg.png">
-                    </div>
-                    <div class="col-xs-8 col-sm-10 col-lg-11">
+                <li class="media question">
+                    <img class="mr-3" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Emblem-question.svg/70px-Emblem-question.svg.png">
+                    <div class="media-body">
                         <h2 class="media-heading">By {{ question.author.username }}</h2>
-                        <span class="glyphicon glyphicon-time"></span> {{ moment(question.last_updated).format('DD/MM/YYYY hh:mm:ss') }}
+                        <span class="far fa-clock"></span> {{ moment(question.last_updated).format('DD/MM/YYYY hh:mm:ss') }}
                         {{ question.html|safe }}
                         {% if current_user.is_authenticated and (question.author.username == current_user.username) %}
-                        <a href="{{ url_for('main.edit_page_question', id=question.id) }}"><span class="label label-primary">Edit</span></a>
+                        <a href="{{ url_for('main.edit_page_question', id=question.id) }}"><span class="badge badge-primary">Edit</span></a>
                         {% endif %}
                         {% if question.answers.all()|length > 0 %}
-                        <ul class="media-list">
+                        <ul class="media-list pl-0">
                         {% for answer in question.answers %}
-                            <li class="row answer">
-                                <div class="col-xs-5 col-sm-3 col-md-2 col-lg-1">
-                                    <img class="media-object" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Stock-dialog-information.svg/80px-Stock-dialog-information.svg.png">
-                                </div>
-                                <div class="col-xs-7 col-sm-9 col-md-10 col-lg-11">
+                            <li class="media answer">
+                                <img class="mr-3" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Stock-dialog-information.svg/80px-Stock-dialog-information.svg.png">
+                                <div class="media-body">
                                     <h2 class="media-heading">By {{ answer.author.username }}</h4>
-                                    <span class="glyphicon glyphicon-time"></span> {{ moment(question.last_updated).format('DD/MM/YYYY hh:mm:ss') }}
+                                    <span class="far fa-clock"></span> {{ moment(question.last_updated).format('DD/MM/YYYY hh:mm:ss') }}
                                     {{ answer.html|safe }}
                                     {% if current_user.is_authenticated and (answer.author.username == current_user.username) %}
-                                    <a href="{{ url_for('main.edit_page_answer', id=answer.id) }}"><span class="label label-primary">Edit</span></a>
+                                    <a href="{{ url_for('main.edit_page_answer', id=answer.id) }}"><span class="badge badge-primary">Edit</span></a>
                                     {% endif %}
                                 </div>
                             </li>
@@ -236,12 +263,11 @@
     {{ super() }}
     <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
     {% if current_user.can(Permission.ASK_QUESTIONS) %}
-    <script data-require="marked@*" data-semver="0.3.1" src="http://cdnjs.cloudflare.com/ajax/libs/marked/0.3.1/marked.js"></script>
-    <script src="https://cdn.rawgit.com/toopay/bootstrap-markdown/master/js/bootstrap-markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <script type="text/javascript">
         var message = 'For syntax highlighting indent all your code by 4 spaces.';
-        $('#text').markdown().attr('placeholder', message);
-        $('#answer').markdown({ fullscreen: false }).attr('placeholder', message);
+        new SimpleMDE({element: $('#text')[0], forceSync: true, hideIcons:["guide"], placeholder: message});
+        new SimpleMDE({element: $('#answer')[0], forceSync: true, hideIcons:["guide", "side-by-side", "fullscreen"], placeholder: message});
         $('#answerDialog').on('show.bs.modal', function(event) {
             var $button = $(event.relatedTarget);
             var questionID = $button.data('question-id');
@@ -252,10 +278,11 @@
     <script type="text/javascript">
         $('#page-html script').detach().appendTo($('body'));
         $(function() {
-            $('img').not('.media-object').addClass('img-responsive');
-            $('pre').addClass('prettyprint linenums');
-            $('.quiz').load(function() {
-                $('.quiz').height($('.quiz').contents().find('body').css({backgroundColor:'#f7f7f7'}).outerHeight());
+            $('footer').addClass('offset-lg-4 offset-xl-3');
+            $('img').not('.media-object').addClass('img-fluid');
+            $('pre').not('.CodeMirror-line, .CodeMirror-placeholder').addClass('prettyprint linenums');
+            $('.quiz').on('load', function() {
+                $('.quiz').outerHeight(Number($('.quiz').contents().find('body').css({backgroundColor:'#f7f7f7'}).outerHeight() + 10));
             });
         });
     </script>

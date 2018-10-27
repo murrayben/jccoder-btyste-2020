@@ -113,11 +113,12 @@
                 <div class="step step-{{ step.id }}" style="display: none;" {% if step.next_step %}data-next-id="{{ step.next_step.id }}"{% endif %} data-counter-id="{{ loop.index0 }}">
                     <h2 class="step-title text-info">{{ step.title }}</h2>
                     {{ step.content_html|safe }}
-                    <button class="next-step btn btn-success">{{ "Complete project" if not step.next_step else step.next_step.title }} <span class="glyphicon glyphicon-chevron-right"></span></button>
+                    <button class="next-step btn btn-success">{{ "Complete project" if not step.next_step else step.next_step.title }} <span class="fas fa-chevron-right"></span></button>
                 </div>
                 {% endfor %}
             </div>
         </div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
@@ -137,7 +138,7 @@
             });
         }
 
-        $('.step img').addClass('img-responsive');
+        $('.step img').addClass('img-fluid');
         $('.step').first().show();
         $('.sidebar-link').first().parent().parent().addClass('active');
         $('.next-step').on('click', function() {
@@ -156,7 +157,7 @@
 </div>`;
                     $('#step-links').hide();
                     $('#steps').append(html);
-                    $('#steps').parent().removeClass('col-md-8').addClass('col-xs-12');
+                    $('#steps').parent().removeClass('col-md-8').addClass('col-12');
                     $('#complete').fadeIn();
                 });
                 

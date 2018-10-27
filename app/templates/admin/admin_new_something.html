@@ -10,7 +10,7 @@
 {% block styles %}
     {{ super() }}
     {% if has_markdown %}
-    <link rel="stylesheet" type="text/css" href="https://rawgit.com/lodev09/bootstrap-markdown/master/css/bootstrap-markdown.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
     {% endif %}
 {% endblock %}
 
@@ -24,8 +24,7 @@
 {% block scripts %}
     {{ super() }}
     {% if has_markdown %}
-    <script src="https://rawgit.com/lodev09/bootstrap-markdown/master/js/bootstrap-markdown.js"></script>
-    <script data-require="marked@*" data-semver="0.3.1" src="http://cdnjs.cloudflare.com/ajax/libs/marked/0.3.1/marked.js"></script>
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     {% endif %}
     {% if new_thing == "Page" %}
     <script src="{{ url_for('static', filename='js/page.js') }}"></script>

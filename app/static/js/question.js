@@ -1,4 +1,4 @@
-$('#text').markdown();
+new SimpleMDE({element: $('#text')[0], forceSync: true, hideIcons: ["guide"]});
 $('form').get(0).reset();
 var counter = 1;
 $('<div class="btn-group" id="btns" />').insertBefore($('#submit'));
