@@ -25,7 +25,7 @@
 {%- endif %}
 {%- endmacro %}
 
-{% block body_attribs %} data-spy="scroll" data-target="#scrollspy" data-offset="70"{% endblock %}
+{% block body_attribs %} data-spy="scroll" data-target="#scrollspy" data-offset="71"{% endblock %}
 
 {% block styles %}
     {{ super() }}
@@ -172,7 +172,7 @@
         // });
 
         function destroyExtras() {
-            $('.extra').remove();
+            $('.css-extra, .js-extra').remove();
         }
 
         $("#scrollspy ul li a[href^='#']").on('click', function(e) {
@@ -216,20 +216,16 @@
                         $('#pageModal').on('hidden.bs.modal', function() {
                             destroyExtras();
                         });
-
-                        if (css) {
-                            $(css).addClass('extra').appendTo($('head'));
-                        }
-
                         $('#pageModal #page-title').text(pageTitle);
                         $('#pageModal #page-html').html(pageHTML);
                         $('#pageModal #page-html img').addClass('img-fluid');
                         $('#go-to-page').attr('href', pageEl.attr('href'));
-                        $('#page-type').text(response.page_type)
+                        $('#page-type').text(response.page_type);
 
-                        if (js) {
-                            $(js).addClass('extra').appendTo($('body'));
-                        }
+                        $('.css-extra').detach().appendTo($('head'));
+                        $('.js-extra').each(function() {
+                            $(this).detach().appendTo($('body'));
+                        });
 
                         // Scroll to the top
                         $('#page-html').animate({
@@ -240,13 +236,7 @@
                         } else {
                             $('#next-page').show().on('click', function(e) {
                                 e.preventDefault();
-                                // $('#pageModal').modal('hide');
-                                // $('#pageModal').on('hidden.bs.modal', function() {
-                                //     $pageEl.parent('p').next().children('a').click();
-                                //     console.log('hidden');
-                                //     $('#pageModal').off('hidden.bs.modal');
-                                // });
-                                destroyExtras()
+                                destroyExtras();
                                 var nextPage = pageEl.parent('p').next().children('a');
                                 pageLink = nextPage.href;
                                 $('#next-page').off('click');

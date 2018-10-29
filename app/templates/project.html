@@ -3,6 +3,11 @@
 {% block styles %}
     {{ super() }}
     <style type="text/css">
+        li.L0, li.L1, li.L2, li.L3,
+        li.L5, li.L6, li.L7, li.L8 {
+            list-style-type: decimal !important;
+        }
+
         #project-title, .step-title {
             text-shadow: #808080 0.1em 0.1em 0.2em;
         }
@@ -123,9 +128,10 @@
 
 {% block scripts %}
     {{ super() }}
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
     <script type="text/javascript">
         function display(index, $button=null) {
-            $('.active').removeClass('active');
+            $('.sidebar-link-div.active').removeClass('active');
             $('.sidebar-link-div p').removeClass('done');
             $('.sidebar-link-div').eq(index).addClass('active');
             $('.sidebar-link-div p:lt(' + index + ')').addClass('done');
@@ -139,6 +145,7 @@
         }
 
         $('.step img').addClass('img-fluid');
+        $('.step pre').addClass('prettyprint linenums');
         $('.step').first().show();
         $('.sidebar-link').first().parent().parent().addClass('active');
         $('.next-step').on('click', function() {

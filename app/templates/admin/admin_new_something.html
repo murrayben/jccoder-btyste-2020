@@ -40,7 +40,7 @@
         });
         {% endif %}
         {% if form.markdown %}
-        $('#{{ form.markdown }}').markdown();
+        new SimpleMDE({element: $('#{{ form.markdown }}')[0], forceSync: true, hideIcons: ["guide"]});
         {% endif %}
         var $backBtn = $('<a class="btn btn-info"></a>');
         $backBtn.text("Back to all {% if new_thing == 'Glossary' %}Glossaries{% else %}{{ new_thing }}{% if new_thing != 'Quiz' %}s{% else %}zes{% endif %}{% endif %}");

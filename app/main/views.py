@@ -10,24 +10,24 @@ def before_request():
     if current_user.is_authenticated:
         current_user.last_seen = datetime.utcnow()
 
-def parsePageContent(html):
-    css = None
-    js = None
+# def parsePageContent(html):
+#     css = None
+#     js = None
 
-    lines = html.split('\n')
-    result_lines = []
-    extra_found = False
-    for line in lines:
-        if '<link' in line:
-            css = line
-            extra_found = True
-        if '</script>' in line:
-            js = line
-            extra_found = True
-        if not extra_found:
-            result_lines.append(line)
-        extra_found = False
-    return (css, js, result_lines)
+#     lines = html.split('\n')
+#     result_lines = []
+#     extra_found = False
+#     for line in lines:
+#         if '<link' in line:
+#             css = line
+#             extra_found = True
+#         if '</script>' in line:
+#             js = line
+#             extra_found = True
+#         if not extra_found:
+#             result_lines.append(line)
+#         extra_found = False
+#     return (css, js, result_lines)
 
 @main.route('/')
 def index():
@@ -122,9 +122,10 @@ def page_content():
     else:
         page_type = ''
 
-    css, js, stripped_lines = parsePageContent(page_html)
-    page_html = '\n'.join(stripped_lines)
-    return jsonify(success=True, page_title=page_title, page_html=page_html, page_type=page_type, css=css, js=js)
+    # css, js, stripped_lines = parsePageContent(page_html)
+    # page_html = '\n'.join(stripped_lines)
+    # return jsonify(success=True, page_title=page_title, page_html=page_html, page_type=page_type, css=css, js=js)
+    return jsonify(success=True, page_title=page_title, page_html=page_html, page_type=page_type)
 
 @main.route('/check', methods=['GET', 'POST'])
 def check():

@@ -6,9 +6,15 @@ from markdown import markdown
 from app import db, login
 import bleach, re
 
-def customTagMarkdown(original_mardown, extensions=None):
+def customTagMarkdown(original_mardown, object_id=None, extensions=None):
     lines = []
+    hint_counter = 0
+    hints = []
+    recording_hint = False
+    add_line = True
+    i = 0
     for line in original_mardown.split('\n'):
+        # Video
         if ':video::' in line:
             arguments = line.split('::')
             video = """<div class="row" style="margin-bottom:20px">
@@ -19,7 +25,71 @@ def customTagMarkdown(original_mardown, extensions=None):
     </div>
 </div>""".format(arguments[1], arguments[2], arguments[3])
             line = video
-        lines.append(line)
+        
+        # Hints
+        elif '::hints::' in line:
+            hint_html = """<div class="card border-info mb-3">
+    <div class="card-header bg-info p-2">
+        <h5 class="mb-0">
+            <button class="btn btn-link text-white" data-toggle="collapse" data-target="#step{0}-hints" aria-expanded="true" aria-controls="step{0}-hints" style="text-decoration: none;">
+                <i class="fas fa-2x fa-question-circle"></i>
+                <span style="position: relative; bottom: 5px; left: 5px;">I need a hint</span>
+            </button>
+        </h5>
+    </div>
+
+    <div id="step{0}-hints" class="collapse">
+        <div class="card-body">\n""".format(object_id)
+            add_line = False
+        elif '::/hint::' in line:
+            recording_hint = False
+            add_line = False
+        elif recording_hint:
+            try:
+                hints[hint_counter - 1] = hints[hint_counter - 1] + '\n' + line
+            except:
+                hints.append(line)
+            add_line = False
+        elif '::hint::' in line:
+            hint_counter += 1
+            recording_hint = True
+            add_line = False
+        elif '::/hints::' in line:
+            hint_counter = 1
+            hint_html += """<ul class="nav nav-pills" role="tablist">\n"""
+            for hint in hints:
+                if hint:
+                    hint_html += """<li class="nav-item">
+    <a class="nav-link"""
+                    hint_html += ' active show"' if hint_counter == 1 else '"'
+                    hint_html += """ id="step{0}-hint{1}-tab" data-toggle="pill" href="#step{0}-hint{1}" role="tab" aria-controls="lesson{0}-hint{1}">Hint {1}</a>
+</li>\n""".format(object_id, hint_counter)
+                    hint_counter += 1
+            hint_counter = 1
+            hint_html += """</ul>
+<div class="tab-content mt-2 border rounded px-3 pt-3">"""
+
+            for hint in hints:
+                if hint:
+                    hint_html += '<div class="tab-pane fade'
+                    hint_html += ' show active"' if hint_counter == 1 else '"'
+                    hint_html += """ id="step{0}-hint{1}" role="tabpanel" aria-labelledby="step{0}-hint{1}">{2}</div>\n""".format(object_id, hint_counter, markdown(hint, output_format='html'))
+                    hint_counter += 1
+            hint_html += '</div></div></div></div>'
+            hint_counter = 1
+            hints = []
+
+            line = hint_html
+        
+        # CSS & JS specific
+        elif ':css::' in line:
+            line = '<link rel="stylesheet" href="{0}" class="css-extra" />'.format(line.split('::')[1].strip())
+        elif ':js::' in line:
+            line = '<script type="text/javascript" src="{0}" class="js-extra"></script>'.format(line.split('::')[1].strip())
+        if add_line:
+            lines.append(line)
+        add_line = True
+        i += 1
     finished_markdown = '\n'.join(lines)
     
     html = markdown(finished_markdown, output_format='html', extensions=extensions or [])
@@ -200,7 +270,7 @@ class ProjectStep(db.Model):
 
     @staticmethod
     def content_changed(target, value, oldvalue, initiator):
-        target.content_html = customTagMarkdown(value)
+        target.content_html = customTagMarkdown(value, target.id)
 
 db.event.listen(ProjectStep.content, 'set', ProjectStep.content_changed)
 

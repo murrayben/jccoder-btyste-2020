@@ -82,7 +82,7 @@
         var numSteps = 1;
 
         // JSON comes from server
-        var step_json = `{{ steps|safe|replace('`', '\`') }}`.replace(/\n/g, '\\n').replace(/\t/g, '\\t');
+        var step_json = `{{ steps | safe | replace('`', '\`') | replace('<', '&lt;') }}`.replace(/\n/g, '\\n').replace(/\t/g, '\\t');
         step_json = JSON.parse(step_json);
         
         $newStepBtn.on('click', addStep);
