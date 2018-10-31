@@ -461,6 +461,7 @@ class Chapter(db.Model):
     title = db.Column(db.String(64))
     description = db.Column(db.Text)
     icon = db.Column(db.Text)
+    active = db.Column(db.Boolean)
     next_chapter_id = db.Column(db.Integer, db.ForeignKey('chapters.id'), nullable=True)
     next_chapter = db.relationship('Chapter', backref=db.backref('prev_chapter', uselist=False), remote_side=[id], uselist=False)
     module_id = db.Column(db.Integer, db.ForeignKey('modules.id'))

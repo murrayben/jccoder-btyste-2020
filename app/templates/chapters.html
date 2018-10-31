@@ -19,8 +19,8 @@
 {%- endmacro %}
 
 {% macro display_chapter(chapter) -%}
-            {%- if chapter %}
-            <div class="col-4 col-sm-3 col-md-2 chapter" data-toggle="popover" data-trigger="hover" data-placement="top" title="Learning Outcome" data-content="{{ chapter.description }}" data-html="true">
+            {%- if chapter and (chapter.active or current_user.is_admin()) %}
+            <div class="col-4 col-sm-3 col-md-2 chapter{% if not chapter.active %} disabled{% endif %}" data-toggle="popover" data-trigger="hover" data-placement="top" title="Learning Outcome" data-content="{{ chapter.description }}" data-html="true">
                 <a class="text-white" href="{{ url_for('main.chapter', id=chapter.id) }}">
                     <p class="pt-4 pb-2 h-100">
                         {% if chapter.icon %}
@@ -65,6 +65,10 @@
             margin-bottom: 10px;
             box-shadow: 0 0 20px #707070;
             border-radius: 7px;
+        }
+
+        .chapter.disabled {
+            background-color: #808080
         }
 
         .chapter p {
@@ -122,5 +126,11 @@
         $(window).on('resize', sizeChapters);
         sizeChapters();
         $('[data-toggle="popover"]').popover();
+
+        $('.chapters .row').each(function() {
+            if ($(this).children().length === 0) {
+                $(this).parent().prev('h4').remove();
+            }
+        });
     </script>
 {% endblock %}
