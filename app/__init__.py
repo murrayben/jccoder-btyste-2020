@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_moment import Moment
+from elasticsearch import Elasticsearch
 from config import Config
 
 # Flask-Bootstrap
@@ -34,6 +35,11 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     moment.init_app(app)
 
+    # Elasticsearch
+    app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']]) \
+        if app.config['ELASTICSEARCH_URL'] else None
+
+
     # Register blueprints
     from .admin import admin as admin_blueprint
     app.register_blueprint(admin_blueprint, url_prefix='/admin')
@@ -49,3 +55,5 @@ def create_app(config_class=Config):
 
     # Return app
     return app
+
+from app import models
