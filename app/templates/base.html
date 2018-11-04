@@ -19,6 +19,11 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('main.chapters') }}">Strands</a>
                 </li>
+                <form class="form-inline ml-0 ml-lg-4" action="{{ url_for('main.search') }}" method="GET">
+                    <div class="form-group required">
+                        {{ g.search_form.q(size=10, class="form-control", placeholder=g.search_form.q.label.text) }}
+                    </div>
+                </form>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li class="nav-item">

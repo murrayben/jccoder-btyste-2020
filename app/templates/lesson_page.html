@@ -28,9 +28,6 @@
 {% block styles %}
     {{ super() }}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" />
-    {% if css %}
-    {{ css|safe }}
-    {% endif %}
     <style>
         .editor-toolbar.fullscreen {
             z-index: 99999 !important;
@@ -196,14 +193,13 @@
             </div>
             <div class="nav-links">
                 {% if page.prev_page %}
-                <li class="btn btn-outline-primary text-hover-white"><a href="{{ url_for('main.lesson_page', id=page.prev_page.id) }}"><span aria-hidden="true">&larr;</span> {{ page.prev_page.title }}</a></li>
+                <div class="btn btn-outline-primary text-hover-white"><a href="{{ url_for('main.lesson_page', id=page.prev_page.id) }}"><span aria-hidden="true">&larr;</span> {{ page.prev_page.title }}</a></div>
                 {% endif %}
                 {% if page.next_page %}
-                <li class="btn btn-outline-primary text-hover-white float-right"><a href="{{ url_for('main.lesson_page', id=page.next_page.id) }}">{{ page.next_page.title }} <span aria-hidden="true">&rarr;</span></a></li>
+                <div class="btn btn-outline-primary text-hover-white float-right"><a href="{{ url_for('main.lesson_page', id=page.next_page.id) }}">{{ page.next_page.title }} <span aria-hidden="true">&rarr;</span></a></div>
                 {% else %}
-                <li class="btn btn-outline-primary text-hover-white float-right"><a href="{{ url_for('main.chapter', id=page.lesson.chapter.id) }}">Back to all Lessons <span aria-hidden="true">&rarr;</span></a></li>
+                <div class="btn btn-outline-primary text-hover-white float-right"><a href="{{ url_for('main.chapter', id=page.lesson.chapter.id) }}">Back to all Lessons <span aria-hidden="true">&rarr;</span></a></div>
                 {% endif %}
-                </ul>
             </div>
             {% if current_user.can(Permission.ASK_QUESTIONS) %}
             <hr />
@@ -227,7 +223,7 @@
                         <ul class="media-list pl-0">
                         {% for answer in question.answers %}
                             <li class="media answer">
-                                <img class="mr-3" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Stock-dialog-information.svg/80px-Stock-dialog-information.svg.png">
+                                <img class="media-object mr-3" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Stock-dialog-information.svg/80px-Stock-dialog-information.svg.png">
                                 <div class="media-body">
                                     <h2 class="media-heading">By {{ answer.author.username }}</h4>
                                     <span class="far fa-clock"></span> {{ moment(question.last_updated).format('DD/MM/YYYY hh:mm:ss') }}
@@ -287,7 +283,4 @@
         });
     </script>
     {{ moment.include_moment() }}
-    {% if js %}
-    {{ js|safe }}
-    {% endif %}
 {% endblock %}

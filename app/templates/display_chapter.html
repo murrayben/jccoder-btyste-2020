@@ -82,7 +82,11 @@
         @media (max-width: 768px) {
             .modal-body {
                 min-height: 100%;
-                max-height: 100%
+                max-height: 100%;
+            }
+
+            .project {
+                max-width: 100% !important;
             }
         }
     </style>
@@ -111,7 +115,7 @@
 
 {% block page_content %}
 <div class="row">
-    <div class="col-md-3 hidden-sm hidden-xs" id="scrollspy">
+    <div class="col-lg-3 d-none d-lg-block" id="scrollspy">
         <ul class="nav nav-pills flex-column position-fixed">
             {% for lesson in lessons %}
             <li class="lesson-link nav-item">
@@ -120,7 +124,7 @@
             {% endfor %}
         </ul>
     </div>
-    <div class="col-md-9 col-xs-12 position-relative">
+    <div class="col-12 col-lg-9 position-relative">
         <h1>{{ chapter.title }}</h1>
         <hr>
         {% for lesson in lessons %}
@@ -138,20 +142,21 @@
                     {{ display_page(first_page) }}
                     </div>
                     {% if lesson.projects.filter_by(status=True) %}
-                    <div class="row">
-                        {% for project in lesson.projects.filter_by(status=True) %}
-                        <div class="col-xs-12 col-sm-6 col-md-4">
-                            <a href="{{ url_for('main.project', id=project.id) }}">
-                                <div class="card text-dark">
-                                    <img class="card-img-top" src="{{ project.thumbnail }}">
-                                    <div class="card-body">
-                                        <h4 class="card-title">{{ project.title }}</h4>
-                                        <p class="card-text">{{ project.description }}</p>
-                                    </div>
-                                </div>
+                    <div class="card-deck">
+                        {%- for project in lesson.projects.filter_by(status=True) %}
+                        {%- set card_link = url_for('main.project', id=project.id) %}
+                        <div class="card project text-dark" style="max-width: 50%;">
+                            <a href="{{ card_link }}">
+                                <img class="card-img-top" src="{{ project.thumbnail }}">
                             </a>
+                            <div class="card-body">
+                                <a href="{{ card_link }}" class="text-dark">
+                                    <h4 class="card-title">{{ project.title }}</h4>
+                                    <p class="card-text">{{ project.description }}</p>
+                                </a>
+                            </div>
                         </div>
-                        {% endfor %}
+                        {% endfor -%}
                     </div>
                     {% endif %}
                 </div>

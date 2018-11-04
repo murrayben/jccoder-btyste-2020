@@ -1,33 +1,15 @@
-from flask import abort, jsonify, redirect, render_template, url_for, session, request, g
+from flask import abort, current_app, jsonify, redirect, render_template, url_for, session, request, g
 from flask_login import current_user, login_required
 from datetime import datetime
 from ..models import db, Chapter, Page, PageAnswer, PageQuestion, Project, Quiz, Lesson, UserAnswer, Question, AnswerStatus
-from .forms import NewPageQuestion, NewPageAnswer, EditPageAnswer
+from .forms import NewPageQuestion, NewPageAnswer, EditPageAnswer, SearchForm
 from . import main
 
 @main.before_app_request
 def before_request():
     if current_user.is_authenticated:
         current_user.last_seen = datetime.utcnow()
-
-# def parsePageContent(html):
-#     css = None
-#     js = None
-
-#     lines = html.split('\n')
-#     result_lines = []
-#     extra_found = False
-#     for line in lines:
-#         if '<link' in line:
-#             css = line
-#             extra_found = True
-#         if '</script>' in line:
-#             js = line
-#             extra_found = True
-#         if not extra_found:
-#             result_lines.append(line)
-#         extra_found = False
-#     return (css, js, result_lines)
+    g.search_form = SearchForm()
 
 @main.route('/')
 def index():
@@ -53,9 +35,7 @@ def lesson_page(id):
     if new_answer_form.submit_answer.data and new_answer_form.validate():
         answer = PageAnswer(author=current_user._get_current_object(), text=new_answer_form.answer.data, question_id=int(new_answer_form.question_id.data))
         return redirect(url_for('main.lesson_page', id=id))
-    css, js, lines = parsePageContent(page.html)
-    page_html = '\n'.join(lines)
-    return render_template('lesson_page.html', title="JCCoder - Lesson Pages", page=page, new_question_form=new_question_form, new_answer_form=new_answer_form, page_html=page_html, js=js, css=css)
+    return render_template('lesson_page.html', title="JCCoder - Lesson Pages", page=page, new_question_form=new_question_form, new_answer_form=new_answer_form, page_html=page.html)
 
 @main.route('/edit/lesson-page/question/<int:id>', methods=['GET', 'POST'])
 def edit_page_question(id):
@@ -183,3 +163,16 @@ def summary():
 def project(id):
     project = Project.query.get_or_404(id)
     return render_template('project.html', title="JCCoder - Project - " + project.title, project=project)
+
+@main.route('/search')
+def search():
+    if not g.search_form.validate():
+        abort(404)
+    q = g.search_form.q.data
+    page = request.args.get('page', 1, type=int)
+    pages, total = Page.search(q, page, current_app.config["POSTS_PER_PAGE"])
+    next_url = url_for('main.search', q=q, page=page + 1) \
+        if total > page * current_app.config["POSTS_PER_PAGE"] else None
+    prev_url = url_for('main.search', q=q, page=page - 1) \
+        if page > 1 else None
+    return render_template('search_results.html', title="Search results for \"{0}\"".format(q), q=q, pages=pages.all(), prev_url=prev_url, next_url=next_url)

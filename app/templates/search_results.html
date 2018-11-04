@@ -1,16 +1,65 @@
 {% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
 
+{% block styles %}
+    {{ super() }}
+    <style type="text/css">
+        .nav-links::before, .nav-links::after {
+            display: table;
+            content: " ";
+        }
+        
+        .nav-links::after {
+            clear: both;
+        }
+
+        .text-hover-white:hover a {
+            color: #ffffff !important;
+        }
+
+        .result:hover {
+            background-color: #f2f2f2;
+        }
+    </style>
+{% endblock %}
+
 {% block page_content %}
     <div class="page-header">
         <h1>Search Results for "{{ q }}"</h1>
     </div>
     {% if pages|length > 0 %}
-    {% for page in pages %}
-    <div class="search-result">
-        <a href="{{ url_for('main.lesson_page', id=page.id) }}">{{ page.title }}</a>
-    </div>
-    {% endfor %}
+    <ul class="media-list pl-0">
+        {%- for page in pages %}
+        {%- if page.page_type.description == "Article" %}
+        {% set icon_class = 'fa-file' %}
+        {% elif page.page_type.description == "Quiz" %}
+        {% set icon_class = 'fa-tasks' %}
+        {% elif page.page_type.description == "Video" %}
+        {% set icon_class = 'fa-play' %}
+        {% elif page.page_type.description == "Glossary" %}
+        {% set icon_class = 'fa-list-alt' %}
+        {% endif -%}
+        <li class="result media mb-2 p-3 border rounded">
+            <div class="mr-3">
+                <i class="fas {{ icon_class }} fa-fw fa-2x"></i>
+            </div>
+            <div class="media-body">
+                <h4><a href="{{ url_for('main.lesson_page', id=page.id) }}">{{ page.title }}</a></h4>
+            </div>
+        </li>
+        {% endfor -%}
+    </ul>
     {% else %}
     <p>Nothing has been found!</p>
+    {% endif %}
+
+    {% if prev_url or next_url %}
+    <div class="nav-links">
+        {% if prev_url %}
+        <div class="btn btn-outline-primary text-hover-white"><a href="{{ prev_url }}"><span aria-hidden="true">&larr;</span> Previous Results</a></div>
+        {% endif %}
+        {% if next_url %}
+        <div class="btn btn-outline-primary text-hover-white float-right"><a href="{{ next_url }}">Next Results <span aria-hidden="true">&rarr;</span></a></div>
+        {% endif %}
+    </div>
     {% endif %}
 {% endblock %}
