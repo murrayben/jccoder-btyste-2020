@@ -295,11 +295,11 @@ class Post(db.Model):
 
     @staticmethod
     def body_changed(target, value, oldvalue, initiator):
-        target.body_html = markdown(value, output_format='html')
+        target.body_html = customTagMarkdown(value)
 
     @staticmethod
     def summary_changed(target, value, oldvalue, initiator):
-        target.summary_html = markdown(value, output_format='html')
+        target.summary_html = customTagMarkdown(value)
 
 db.event.listen(Post.body, 'set', Post.body_changed)
 db.event.listen(Post.summary, 'set', Post.summary_changed)
@@ -375,10 +375,10 @@ class Question(db.Model):
         #                 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
         #                 'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span']
         # target.html = bleach.linkify(bleach.clean(
-        #     markdown(value, output_format='html'),
+        #     customTagMarkdown(value),
         #     tags=allowed_tags))
         # Otherwise:
-        target.html = markdown(value, output_format='html')
+        target.html = customTagMarkdown(value)
 
     def __repr__(self):
         return '<Question> {0} Answer: {1}'.format(self.text, self.correct_answer())
@@ -415,10 +415,10 @@ class Glossary(db.Model):
         #                 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
         #                 'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span']
         # target.html = bleach.linkify(bleach.clean(
-        #     markdown(value, output_format='html'),
+        #     customTagMarkdown(value),
         #     tags=allowed_tags))
         # Otherwise:
-        target.html = bleach.linkify(markdown(value, output_format='html'))
+        target.html = bleach.linkify(customTagMarkdown(value))
     
     def __repr__(self):
         return '<Glossary> {0}'.format(self.title)
@@ -584,7 +584,7 @@ class Lesson(db.Model):
                         'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
                         'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span']
         target.overview_html = bleach.linkify(bleach.clean(
-            markdown(value, output_format='html'),
+            customTagMarkdown(value),
             tags=allowed_tags, attributes=['class', 'id', 'href', 'alt', 'title', 'style', 'src']))
 
     def all_ordered_children(self):
@@ -666,7 +666,7 @@ class PageQuestion(db.Model):
                         'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
                         'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span']
         target.html = bleach.linkify(bleach.clean(
-            markdown(value, output_format='html'),
+            customTagMarkdown(value),
             tags=allowed_tags, attributes=['class', 'id', 'href', 'alt', 'title', 'style', 'src']))
 
 db.event.listen(PageQuestion.text, 'set', PageQuestion.generate_new_html)
@@ -685,7 +685,7 @@ class PageAnswer(db.Model):
                         'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
                         'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span']
         target.html = bleach.linkify(bleach.clean(
-            markdown(value, output_format='html'),
+            customTagMarkdown(value),
             tags=allowed_tags, attributes=['class', 'id', 'href', 'alt', 'title', 'style', 'src']))
 
 db.event.listen(PageAnswer.text, 'set', PageAnswer.generate_new_html)
