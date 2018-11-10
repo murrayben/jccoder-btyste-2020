@@ -8,7 +8,7 @@
 
 {% block page_content %}
     <div class="row">
-        <div class="col-md-9">
+        <div class="col-lg-9">
             <div class="page-header">
                 <h1>Tag "{{ tag.name }}"</h1>
             </div>
@@ -25,7 +25,7 @@
             {% endif %}
             {{ macros.addPagination(pagination, '.tag', id=tag.id) }}
         </div>
-        <div class="col-md-3">
+        <div class="col-lg-3">
             {% include "announcements/_sidebar.html" %}
         </div>
     </div>
