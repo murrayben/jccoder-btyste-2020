@@ -12,6 +12,7 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
     hint_counter = 0
     hints = []
     recording_hint = False
+    recording_collapse = False
     add_line = True
     i = 0
     for line in original_mardown.split('\n'):
@@ -87,6 +88,29 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
             line = '<link rel="stylesheet" href="{0}" class="css-extra" />'.format(line.split('::')[1].strip())
         elif ':js::' in line:
             line = '<script type="text/javascript" src="{0}" class="js-extra"></script>'.format(line.split('::')[1].strip())
+
+        # Collapse
+        elif ':collapse::' in line:
+            collapse_title = line.split('::')[1].strip()
+            line = """<div class="card border-info mb-3">
+    <div class="card-header bg-info p-2">
+        <h5 class="mb-0">
+            <button class="btn btn-link text-white" data-toggle="collapse" data-target="#step{0}-collapse" aria-expanded="true" aria-controls="step{0}-hints" style="text-decoration: none;">
+                <i class="fas fa-2x fa-info-circle"></i>
+                <span style="position: relative; bottom: 5px; left: 5px;">{1}</span>
+            </button>
+        </h5>
+    </div>
+
+    <div id="step{0}-collapse" class="collapse">
+        <div class="card-body">\n""".format(object_id, collapse_title)
+            recording_collapse = True
+        elif '::/collapse::' in line:
+            line = "</div></div></div>"
+            recording_collapse = False
+
+        elif recording_collapse:
+            line = markdown(line, output_format='html')
         if add_line:
             lines.append(line)
         add_line = True
