@@ -19,18 +19,6 @@
             margin-bottom: 20px;
         }
 
-        .dot {
-            position: relative;
-            top: 2px;
-            background-color: #f7f7f7;
-            border: 3px solid #999999;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            margin-right: 5px;
-            z-index: 1000;
-        }
-
         .sidebar-link {
             color: #999999;
         }
@@ -41,7 +29,7 @@
 
         .sidebar-link-div {
             position: relative;
-            padding: 7px 20px;
+            padding: 7px 45px;
             border-radius: 5px;
         }
 
@@ -53,10 +41,10 @@
             margin: 0;
         }
 
-        .sidebar-link-div p::before {
+        .sidebar-link-div p a::before {
             position: absolute;
             background-color: #999999;
-            left: 27px;
+            left: 20px;
             top: 15px;
             width: 3px;
             height: 100%;
@@ -64,12 +52,26 @@
             z-index: 999;
         }
 
+        .sidebar-link-div p a::after {
+            position: absolute;
+            content: " ";
+            top: 12px;
+            left: 13px;
+            background-color: #f7f7f7;
+            border: 3px solid #999999;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            margin-right: 5px;
+            z-index: 1000;
+        }
+
         .sidebar-link-div.active p a {
             font-weight: bold;
             color: #0058ca !important;
         }
 
-        .sidebar-link-div.active p .dot {
+        .sidebar-link-div.active p a::after {
             border-color: #0058ca;
         }
 
@@ -77,21 +79,21 @@
             color: #0058ca;
         }
 
-        .sidebar-link-div p.done::before {
+        .sidebar-link-div p.done a::before {
             background-color: #0058ca;
         }
         
-        .sidebar-link-div p.done .dot {
+        .sidebar-link-div p.done a::after {
             border-color: #0058ca;
             background-color: #0058ca;
         }
 
-        #first-sidebar-link::before {
+        #first-sidebar-link a::before {
             top: 50%;
         }
 
-        #last-sidebar-link::before {
-            height: 30%;
+        #last-sidebar-link a::before {
+            height: 10px;
         }
     </style>
 {% endblock %}
@@ -101,18 +103,17 @@
         <h1 id="project-title" class="text-center text-warning">{{ project.title }}</h1>
     </div>
     <div class="row">
-        <div class="col-md-4" id="step-links">
+        <div class="col-lg-4 mb-3" id="step-links">
             {% for step in project.steps %}
             <div class="sidebar-link-div">
                 <p{% if loop.first %} id="first-sidebar-link"{% elif loop.last %} id="last-sidebar-link"{% endif %} data-counter-id="{{ loop.index0 }}">
-                    <span class="dot"></span>
                     <a href="#" class="sidebar-link" data-step-id="{{ step.id }}">{{ step.title }}</a>
                 </p>
             </div>
             {% endfor %}
         </div>
     
-        <div class="col-md-8">
+        <div class="col-lg-8">
             <div id="steps">
                 {% for step in project.steps %}
                 <div class="step step-{{ step.id }}" style="display: none;" {% if step.next_step %}data-next-id="{{ step.next_step.id }}"{% endif %} data-counter-id="{{ loop.index0 }}">
@@ -164,7 +165,7 @@
 </div>`;
                     $('#step-links').hide();
                     $('#steps').append(html);
-                    $('#steps').parent().removeClass('col-md-8').addClass('col-12');
+                    $('#steps').parent().removeClass('col-lg-8').addClass('col-12');
                     $('#complete').fadeIn();
                 });
                 

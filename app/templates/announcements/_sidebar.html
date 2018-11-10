@@ -1,5 +1,5 @@
 <div class="card border-info mb-3">
-    <div class="card-header">Recent Posts</div>
+    <div class="card-header text-white bg-info">Recent Posts</div>
     <div class="card-body">
         <ul class="list-unstyled">
             {% set recent_posts = Post.query.filter(db.or_(Post.published == True, Post.author_id == current_user.id, current_user.is_admin())).order_by(Post.date_posted.desc()).limit(6) %}
@@ -19,7 +19,7 @@
 </div>
 
 <div class="card border-info">
-    <div class="card-header">Tags</div>
+    <div class="card-header text-white bg-info">Tags</div>
     <ul class="list-group list-group-flush">
         {% for tag in Tag.query.order_by(Tag.name.asc()).all() %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
