@@ -180,3 +180,17 @@ def edit(id):
 
     # Render edit page template
     return render_template("announcements/edit.html", title="Edit Announcement - " + post.title, post=post, form=form)
+
+@announcements.route('/search')
+def search():
+    if not g.post_search_form.validate():
+        abort(404)
+    q = g.post_search_form.q.data
+    g.search_form.q.data = ""
+    page = request.args.get('page', 1, type=int)
+    posts, total = Post.search(q, page, current_app.config["POSTS_PER_PAGE"])
+    next_url = url_for('.search', q=q, page=page + 1) \
+        if total > page * current_app.config["POSTS_PER_PAGE"] else None
+    prev_url = url_for('.search', q=q, page=page - 1) \
+        if page > 1 else None
+    return render_template('announcements/search_results.html', title="Search results for \"{0}\"".format(q), q=q, posts=posts.all(), total=total, prev_url=prev_url, next_url=next_url)

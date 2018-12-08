@@ -26,7 +26,7 @@ class PostForm(FlaskForm):
         self.tags.choices = [(tag.id, tag.name) for tag in Tag.query.order_by(Tag.name.asc()).all()]
 
 class SearchForm(FlaskForm):
-    q = StringField('Announcements...', validators=[DataRequired()])
+    q = StringField('Search query...', validators=[DataRequired()])
 
     def __init__(self, *args, **kwargs):
         if 'formdata' not in kwargs:

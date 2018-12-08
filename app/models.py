@@ -277,7 +277,7 @@ class Tag(db.Model):
     def __repr__(self):
         return 'Tag <%s>' % self.name
 
-class Post(db.Model):
+class Post(db.Model, SearchableMixin):
     __tablename__ = 'posts'
     __searchable__ = ['title', 'body']
 

@@ -24,7 +24,7 @@
 
 {% block page_content %}
     <div class="page-header">
-        <h1>Search Results for "{{ q }}"</h1>
+        <h1>Found {{ total if total > 0 else "no" }} results for "{{ q }}"</h1>
     </div>
     {% if pages|length > 0 %}
     <ul class="media-list pl-0">

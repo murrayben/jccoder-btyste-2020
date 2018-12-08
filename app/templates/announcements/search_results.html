@@ -1,0 +1,79 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" />
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/announcement.css') }}" />
+    <style type="text/css">
+        .nav-links::before, .nav-links::after {
+            display: table;
+            content: " ";
+        }
+        
+        .nav-links::after {
+            clear: both;
+        }
+
+        .text-hover-white:hover a {
+            color: #ffffff !important;
+        }
+    </style>
+{% endblock %}
+
+{% block page_content %}
+    <div class="page-header mt-0">
+        <h1>Found {{ total if total > 0 else "no" }} {{ "result" if total == 1 else "results" }} for "{{ q }}"</h1>
+    </div>
+    <div class="row">
+        <div class="col-lg-9 order-2 order-lg-1">
+            {% if posts %}
+            <ul id="posts" class="list-unstyled">
+                {% for post in posts %}
+                <li class="post media">
+                    {% include 'announcements/_post.html' %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No announcements were found!</p>
+            {% endif %}
+            {% if prev_url or next_url %}
+            <div class="nav-links">
+                {% if prev_url %}
+                <div class="btn btn-outline-primary text-hover-white"><a href="{{ prev_url }}"><span aria-hidden="true">&larr;</span> Previous Results</a></div>
+                {% endif %}
+                {% if next_url %}
+                <div class="btn btn-outline-primary text-hover-white float-right"><a href="{{ next_url }}">Next Results <span aria-hidden="true">&rarr;</span></a></div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-lg-3 order-1 order-lg-2 mb-3">
+            {% include "announcements/_sidebar.html" %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    {% if current_user.is_admin() %}
+    <script>
+        new SimpleMDE({element: $('#body')[0], forceSync: true, hideIcons:["guide"]});
+        new SimpleMDE({element: $('#summary')[0], forceSync: true, hideIcons:["guide"]});
+        $('#formAcc').hide()
+        $('#comBtn').on("click", function() {
+            $('#formAcc').slideToggle();
+        });
+        if ($('#formAcc form div.has-error').length > 0) {
+            $('#formAcc').show();
+        }
+    </script>
+    {% endif %}
+    <script>    
+        $(".post .media-body img").addClass("img-fluid");
+    </script>
+    {{ moment.include_moment() }}
+{% endblock %}
