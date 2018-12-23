@@ -1,15 +1,15 @@
 from flask_wtf import FlaskForm
-from wtforms import FileField, IntegerField, PasswordField, RadioField, SelectField, StringField, SubmitField, TextAreaField
+from wtforms import FileField, IntegerField, SelectMultipleField, PasswordField, RadioField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.widgets.html5 import NumberInput, URLInput
 from wtforms.validators import DataRequired, Length, Optional
-from ..models import QuestionType, Strand, Module, Chapter, Lesson, Quiz, Page, PageType
+from ..models import QuestionType, Strand, Module, Chapter, Lesson, Quiz, Page, PageType, Skill
 
 class NewQuestion(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(NewQuestion, self).__init__(*args, **kwargs)
         self.type.choices = [(question_type.id, question_type.description)
                              for question_type in QuestionType.query.all()]
-        self.quiz.choices = [(quiz.id, 'Quiz in page: ' + quiz.page.title)
+        self.quiz.choices = [(quiz.id, 'Quiz in lesson: {0}, Description: {1}'.format(quiz.lesson.title, quiz.description))
                              for quiz in Quiz.query.all()]
 
     type = SelectField('Question Type', validators=[DataRequired()], coerce=int)
@@ -76,9 +76,9 @@ class EditLessonContent(FlaskForm):
     content = TextAreaField('Content', validators=[DataRequired()])
     submit = SubmitField('Submit Content')
 
-class NewLearningOutcome(FlaskForm):
+class NewSkill(FlaskForm):
     def __init__(self, *args, **kwargs):
-        super(NewLearningOutcome, self).__init__(*args, **kwargs)
+        super(NewSkill, self).__init__(*args, **kwargs)
         self.lesson.choices = [(lesson.id, lesson.chapter.module.title + ' > ' + lesson.chapter.title + ' > ' + lesson.title)
                                for lesson in Lesson.query.all()]
 
@@ -89,11 +89,17 @@ class NewLearningOutcome(FlaskForm):
 class NewQuiz(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(NewQuiz, self).__init__(*args, **kwargs)
-        self.page.choices = [(page.id, page.lesson.chapter.module.title + ' > ' + page.lesson.chapter.title + ' > ' + page.lesson.title + ' > ' + page.title)
-                               for page in Page.query.all()]
+        self.lesson.choices = [(lesson.id, lesson.chapter.module.title + ' > ' + lesson.chapter.title + ' > ' + lesson.title)
+                               for lesson in Lesson.query.all()]
+        self.tested_skills.choices = [(skill.id, skill.lesson.chapter.module.title + ' > '
+                                + skill.lesson.chapter.title + ' > '
+                                + skill.lesson.title + ' > '
+                                + skill.description)
+                                for skill in Skill.query.all()]
 
     description = TextAreaField('Description', validators=[DataRequired()])
-    page = SelectField('Page', coerce=int)
+    tested_skills = SelectMultipleField('Skills Tested', coerce=int)
+    lesson = SelectField('Lesson', coerce=int)
     submit = SubmitField('Submit Quiz')
 
 class NewGlossary(FlaskForm):

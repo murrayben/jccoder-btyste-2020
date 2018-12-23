@@ -125,6 +125,11 @@ post_tags = db.Table("post_tags",
     db.Column('post_id', db.Integer, db.ForeignKey('posts.id'))
 )
 
+quiz_skills = db.Table("quiz_skills",
+    db.Column('quiz_id', db.Integer, db.ForeignKey('quizzes.id')),
+    db.Column('skill_id', db.Integer, db.ForeignKey('skills.id'))
+)
+
 class Permission:
     ASK_QUESTIONS = 0x01
     ANSWER_QUESTIONS = 0x02
@@ -389,14 +394,36 @@ class Quiz(db.Model):
     __tablename__ = 'quizzes'
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.Text)
-    page_id = db.Column(db.Integer, db.ForeignKey('pages.id'))
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'))
+    next_quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'), nullable=True)
+    type_id = db.Column(db.Integer, db.ForeignKey('quiztypes.id'))
+    next_quiz = db.relationship('Quiz', backref=db.backref('prev_quiz', uselist=False), remote_side=[id], uselist=False)
     questions = db.relationship('Question', backref='quiz', lazy='dynamic')
+    tested_skills = db.relationship('Skill', secondary=quiz_skills,
+                        backref=db.backref('quizzes_tested', lazy='dynamic'),
+                        lazy='dynamic')
 
     def what_model(self):
         return "Quiz"
 
     def model_one_lower(self):
         return "Questions"
+
+class QuizType(db.Model):
+    __tablename__ = 'quiztypes'
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(1))
+    description = db.Column(db.Text)
+    quizzes = db.relationship('Quiz', backref='type', lazy='dynamic')
+
+    @staticmethod
+    def insert_types():
+        types = [('P', 'Practice'), ('Q', 'Regular Quiz'), ('U', 'Unit Test')]
+        for code, quiz_type in types:
+            if not QuizType.query.filter_by(description=quiz_type).first():
+                t = QuizType(code=code, description=quiz_type)
+                db.session.add(t)
+        db.session.commit()
 
 class Glossary(db.Model):
     __tablename__ = 'glossaries'
@@ -566,8 +593,10 @@ class Lesson(db.Model):
     next_lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'), nullable=True)
     next_lesson = db.relationship('Lesson', backref=db.backref('prev_lesson', uselist=False), remote_side=[id], uselist=False)
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapters.id'))
-    learning_outcomes = db.relationship('LearningOutcome', backref='lesson', lazy='dynamic')
+    type_id = db.Column(db.Integer, db.ForeignKey('lessontypes.id'))
+    skills = db.relationship('Skill', backref='lesson', lazy='dynamic')
     pages = db.relationship('Page', backref='lesson', lazy='dynamic')
+    quizzes = db.relationship('Quiz', backref='lesson', lazy='dynamic')
     projects = db.relationship('Project', backref='lesson', lazy='dynamic')
 
     def __repr__(self):
@@ -599,6 +628,22 @@ class Lesson(db.Model):
 
 db.event.listen(Lesson.overview, 'set', Lesson.generate_new_html)
 
+class LessonType(db.Model):
+    __tablename__ = 'lessontypes'
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(1))
+    description = db.Column(db.Text)
+    lessons = db.relationship('Lesson', backref='type', lazy='dynamic')
+
+    @staticmethod
+    def insert_types():
+        types = [('L', 'Learn'), ('Q', 'Quiz'), ('U', 'Unit Test')]
+        for code, lesson_type in types:
+            if not LessonType.query.filter_by(description=lesson_type).first():
+                t = LessonType(code=code, description=lesson_type)
+                db.session.add(t)
+        db.session.commit()
+
 class Page(SearchableMixin, db.Model):
     __tablename__ = 'pages'
     __searchable__ = ['title', 'text']
@@ -612,7 +657,6 @@ class Page(SearchableMixin, db.Model):
     next_page_id = db.Column(db.Integer, db.ForeignKey('pages.id'), nullable=True)
     next_page = db.relationship('Page', backref=db.backref('prev_page', uselist=False), remote_side=[id], uselist=False)
     questions = db.relationship('PageQuestion', backref='page', lazy='dynamic')
-    quiz = db.relationship('Quiz', backref='page', uselist=False)
     lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'))
 
     def what_model(self):
@@ -623,12 +667,9 @@ class Page(SearchableMixin, db.Model):
         #                 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
         #                 'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span', 'iframe']
         
-        if target.page_type.description == "Quiz":
-            target.html = '<iframe src="{0}" width="100%" class="quiz" frameborder="0"></iframe>'.format(url_for('main.take_quiz', id=target.quiz.id))
-        else:
-            target.html = bleach.linkify(
-                customTagMarkdown(value)
-            )
+        target.html = bleach.linkify(
+            customTagMarkdown(value)
+        )
     
     def __repr__(self):
         return '<Page %s>' % self.title
@@ -644,7 +685,7 @@ class PageType(db.Model):
 
     @staticmethod
     def insert_types():
-        types = ['Article', 'Quiz', 'Glossary', 'Video']
+        types = ['Article', 'Glossary', 'Video']
         for page_type in types:
             if not PageType.query.filter_by(description=page_type).first():
                 t = PageType(description=page_type)
@@ -690,8 +731,11 @@ class PageAnswer(db.Model):
 
 db.event.listen(PageAnswer.text, 'set', PageAnswer.generate_new_html)
 
-class LearningOutcome(db.Model):
-    __tablename__ = 'learningoutcomes'
+class Skill(db.Model):
+    __tablename__ = 'skills'
     id = db.Column(db.Integer, primary_key=True)
-    description = db.Column(db.String(64))
+    description = db.Column(db.Text)
     lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'))
+
+    def what_model(self):
+        return "Skill"

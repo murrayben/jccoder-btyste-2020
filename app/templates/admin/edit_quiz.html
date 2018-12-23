@@ -3,7 +3,7 @@
 
 {% block page_content %}
     <div class="page-header">
-        <h1>Edit Quiz in Page {{ quiz.page.title }}</h1>
+        <h1>Edit Quiz in Lesson {{ quiz.lesson.title }}</h1>
     </div>
     {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
     <div class="btn-toolbar">

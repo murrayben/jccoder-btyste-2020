@@ -17,4 +17,25 @@
     {{ super() }}
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <script src="{{ url_for('static', filename='js/question.js') }}"></script>
+    <script type="text/javascript">
+        $(function() {
+            var options = `{{ options | safe | replace('`', '\`') }}`;
+            options = JSON.parse(options);
+            
+            if (options[0]) {
+                // Options[0] is null when type = Single Answer
+                for (var i = 0; i < options.length; i++) {
+                    console.info($('[name="options1"]').last()[0])
+                    if (i === 0) {
+                        $('[name="options1"]').first().val(options[i]);
+                    } else if (i > 1) {
+                        $newOptionBtn.click();
+                        $('[name="options1"]').last().val(options[i]);
+                    } else {
+                        $('[name="options1"]').last().val(options[i]);
+                    }
+                }
+            }
+        });
+    </script>
 {% endblock %}

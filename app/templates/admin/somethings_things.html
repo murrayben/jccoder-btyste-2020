@@ -4,7 +4,7 @@
 
 {% block page_content %}
     <div class="page-header">
-        <h1>All {{ thing_type }} in {{ owner_of_things }} {% if owner.title or owner.name %}{{ owner.title or owner.name }}{% else %}(in page: {{ owner.page.title }}){% endif %}</h1>
+        <h1>All {{ thing_type }} in {{ owner_of_things }} {% if owner.title or owner.name %}{{ owner.title or owner.name }}{% else %}(in lesson: {{ owner.lesson.title }}){% endif %}</h1>
     </div>
     {% if things|length > 0 %}
     <ul>
@@ -12,9 +12,9 @@
         {% if item.what_model() == "Module" %}
         <li><a href="{{ url_for('admin.edit_module', id=item.id) }}">{{ item.title }}</a></li>
         {%- elif item.what_model() == "Lesson" -%}
-        <li><a href="{{ url_for('admin.edit_lesson', id=item.id) }}">{{ item.title }}</a>{% if item.learning_outcomes[:] != [] -%}&nbsp;&nbsp;&nbsp;&nbsp;Learning Outcome(s):&nbsp;
-            {% for learning_outcome in item.learning_outcomes -%}
-                <a href="{{ url_for('admin.edit_learning_outcome', id=learning_outcome.id) }}">{{ learning_outcome.description }}</a>
+        <li><a href="{{ url_for('admin.edit_lesson', id=item.id) }}">{{ item.title }}</a>{% if item.skills[:] != [] -%}&nbsp;&nbsp;&nbsp;&nbsp;Skill(s):&nbsp;
+            {% for skill in item.skills -%}
+                <a href="{{ url_for('admin.edit_skill', id=skill.id) }}">{{ skill.description }}</a>
                 {%- if not loop.last -%}
                     ,&nbsp;
                 {%- endif %}
@@ -26,7 +26,7 @@
         <li><a href="{{ url_for('admin.edit_page', id=item.id) }}">{{ item.title }}</a>{% if item.next_page %}
             (Next Page: <a href="{{ url_for('admin.edit_page', id=item.next_page.id) }}">{{ item.next_page.title }}</a>){% endif %}</li>
         {% elif item.what_model() == "Question" %}
-        <li><a href="{{ url_for('admin.edit_question', id=item.id) }}">{{ item.text }}</a> (raw Markdown)
+        <li><a href="{{ url_for('admin.edit_question', id=item.id) }}" class="text-truncate d-inline-block" style="max-width: 50%; margin-bottom: -7px;">{{ item.text }}</a> (raw Markdown)
         {% endif %}
         {% endfor %}
     </ul>

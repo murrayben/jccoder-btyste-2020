@@ -9,21 +9,24 @@
             {% if item.what_model() == "Strand" %}
             <li><a href="{{ url_for('admin.edit_strand', id=item.id) }}">{{ item.name }}</a></li>
             {%- elif item.what_model() == "Lesson" -%}
-            <li><a href="{{ url_for('admin.edit_lesson', id=item.id) }}">{{ item.title }}</a> (In chapter: <a href="{{ url_for('admin.edit_chapter', id=item.chapter.id) }}">{{ item.chapter.title }}</a> {% if item.learning_outcomes[:] != [] -%} and Learning Outcome(s):&nbsp;
-                {% for learning_outcome in item.learning_outcomes -%}
-                    <a href="{{ url_for('admin.edit_learning_outcome', id=learning_outcome.id) }}">{{ learning_outcome.description }}</a>
-                    {%- if not loop.last -%}
-                        ,&nbsp;
-                    {%- endif %}
+            <li><a href="{{ url_for('admin.edit_lesson', id=item.id) }}">{{ item.title }}</a> (In chapter: <a href="{{ url_for('admin.edit_chapter', id=item.chapter.id) }}">{{ item.chapter.title }}</a>{% if item.next_lesson %} and Next Lesson: <a href="{{ url_for('admin.edit_lesson', id=item.next_lesson.id) }}">{{ item.next_lesson.title }}</a>{% endif %})
+                {% if item.skills[:] != [] -%}
+                <ul>
+                {% for skill in item.skills -%}
+                    <li><a href="{{ url_for('admin.edit_skill', id=skill.id) }}">{{ skill.description }}</a></li>
                 {%- endfor %}
-                {%- endif %}{% if item.next_lesson %} and Next Lesson: <a href="{{ url_for('admin.edit_lesson', id=item.next_lesson.id) }}">{{ item.next_lesson.title }}</a>{% endif %})</li>
+                </ul>
+                {%- endif %}
+            </li>
             {% elif item.what_model() == "Chapter" %}
             <li><a href="{{ url_for('admin.edit_chapter', id=item.id) }}">{{ item.title }}</a> (In module: <a href="{{ url_for('admin.edit_module', id=item.module.id) }}">{{ item.module.title }}</a>
                 {% if item.next_chapter %} and Next Chapter: <a href="{{ url_for('admin.edit_chapter', id=item.next_chapter.id) }}">{{ item.next_chapter.title }}</a>{% endif %})</li>
             {% elif item.what_model() == "Quiz" %}
-            <li>In page: <a href="{{ url_for('admin.edit_page', id=item.page.id) }}">{{ item.page.title }}</a> (<a href="{{ url_for('main.take_quiz', id=item.id) }}">Take Quiz</a>) <a href="{{ url_for('admin.edit_quiz', id=item.id) }}" class="btn-xs btn-danger">Edit</a></li>
+            <li>In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a> (<a href="{{ url_for('main.take_quiz', id=item.id) }}">Take Quiz</a>) <a href="{{ url_for('admin.edit_quiz', id=item.id) }}" class="badge badge-danger">Edit</a></li>
             {% elif item.what_model() == "Question" %}
-            <li><a href="{{ url_for('admin.edit_question', id=item.id) }}" class="text-truncate d-inline-block" style="max-width: 50%; margin-bottom: -7px;">{{ item.text }}</a> (In quiz: <a href="{{ url_for('admin.edit_quiz', id=item.quiz.id) }}"> in page: {{ item.quiz.page.title }}</a>)</li>
+            <li><a href="{{ url_for('admin.edit_question', id=item.id) }}" class="text-truncate d-inline-block" style="max-width: 50%; margin-bottom: -7px;">{{ item.text }}</a> (In quiz: in lesson: <a href="{{ url_for('admin.edit_quiz', id=item.quiz.id) }}">{{ item.quiz.lesson.title }}</a>)</li>
+            {% elif item.what_model() == "Skill" %}
+            <li><a href="{{ url_for('admin.edit_skill', id=item.id) }}">{{ item.description }}</a></li>
             {% else %}
             <li><a href="{{ url_for('admin.edit_' + list_items_singular, id=item.id) }}">{{ item.title }}{% if item.what_model() == "Page" %}</a>
                 (In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a>{% if item.next_page %}
@@ -32,18 +35,20 @@
             {% endfor %}
         </ul>
         {% else %}
-        <p class="bg-danger">There are no {{ list_items }}.</p>
+        <p class="bg-danger text-white p-2 pl-3">There are no {{ list_items }}.</p>
         {% endif %}
 {% endmacro %}
 {% block page_content %}
     <div class="page-header">
         <h1>All {{ list_items }}</h1>
     </div>
-    {% if list_items == 'Modules' or list_items == 'Chapters' or list_items == 'Lessons' or list_items == 'Pages' or list_items == 'Projects' %}
+    {% if list_items == 'Modules' or list_items == 'Chapters' or list_items == 'Lessons' or list_items == 'Pages' or list_items == 'Skills' or list_items == 'Projects' %}
     {% for group in groups %}
     <h3>{{ group.name or group.title }}</h3>
         {% if list_items == 'Projects' %}
         {% set items = group.projects.all() %}
+        {% elif list_items == 'Skills' %}
+        {% set items = group.skills.all() %}
         {% else %}
         {% set items = group.all_ordered_children() %}
         {% endif %}

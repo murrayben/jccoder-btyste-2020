@@ -25,6 +25,20 @@
 {%- endif %}
 {%- endmacro %}
 
+{% macro display_quiz(quiz) -%}
+                        <div class="practice">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body">
+                                    <p class="quiz-skill font-weight-bold">{{ quiz.tested_skills.first().description }}</p>
+                                    <button type="button" data-quiz-id="{{ quiz.id }}" class="btn btn-sm btn-outline-primary quiz-hyperlink">Start</button>
+                                </div>
+                            </div>
+                        </div>
+{% if quiz.next_quiz -%}
+{{ display_quiz(quiz.next_quiz) }}
+{%- endif %}
+{%- endmacro %}
+
 {% block body_attribs %} data-spy="scroll" data-target="#scrollspy" data-offset="71"{% endblock %}
 
 {% block styles %}
@@ -94,7 +108,7 @@
 
 {% block modals %}
 <div class="modal fade" id="pageModal" tabindex="-1" role="dialog" aria-labelledby="pageContent">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fas fa-times"></span></button>
@@ -138,9 +152,28 @@
                         {{ lesson.overview_html|safe }}
                     </div>
                     {% set first_page = lesson.pages.filter_by(prev_page=None).first() %}
-                    <div class="pages">
-                    {{ display_page(first_page) }}
+                    {% set first_quiz = lesson.quizzes.filter_by(prev_quiz=None).first() %}
+                    {% if lesson.quizzes.all()|length > 0 %}
+                    <div class="row">
+                        <div class="col-12 col-lg-6">
+                            <div class="pages">
+                                <h4 class="mb-3">Learn</h4>
+                                {{ display_page(first_page) }}
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <div class="practice">
+                                <h4 class="mb-3">Practice</h4>
+                                {{ display_quiz(first_quiz) }}
+                            </div>
+                        </div>
                     </div>
+                    {% else %}
+                    <div class="pages">
+                        <h4 class="mb-3">Learn</h4>
+                        {{ display_page(first_page) }}
+                    </div>
+                    {% endif %}
                     {% if lesson.projects.filter_by(status=True) %}
                     <div class="card-deck">
                         {%- for project in lesson.projects.filter_by(status=True) %}
@@ -190,6 +223,22 @@
             $('html, body').animate({
                 scrollTop: $(hash).offset().top - 70
             }, 700);
+        });
+
+        $('.quiz-hyperlink').on('click', function() {
+            $('#pageModal').modal('show');
+            
+            var quizID = $(this).attr('data-quiz-id');
+            
+            $('#go-to-page').css('visibility', 'hidden');
+            $('#next-page').hide();
+            $('#page-title').text($(this).prev().text());
+            $('#page-html').html('<iframe src="/take-quiz/' + quizID + '" frameborder="0" width="100%" class="quiz"></iframe>');
+
+            $('#pageModal').on('hidden.bs.modal', function () {
+                $('#go-to-page').css('visibility', 'visible');
+                $(this).off('hidden.bs.modal')
+            });
         });
 
         $('.page-hyperlink').on('click', function(e) {

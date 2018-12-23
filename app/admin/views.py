@@ -1,7 +1,7 @@
 from flask import abort, jsonify, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
-from ..models import customTagMarkdown, AnswerStatus, Strand, Module, Chapter, Lesson, LearningOutcome, Glossary, Page, UserAnswer, Question, QuestionAnswer, QuestionOption, QuestionType, Quiz, PageType, Project, ProjectStep
-from .forms import NewQuestion, NewStrand, NewModule, NewChapter, NewLesson, EditLessonContent, NewLearningOutcome, NewQuiz, NewGlossary, NewPage, NewProject
+from ..models import customTagMarkdown, AnswerStatus, Strand, Module, Chapter, Lesson, Skill, Glossary, Page, UserAnswer, Question, QuestionAnswer, QuestionOption, QuestionType, Quiz, PageType, Project, ProjectStep
+from .forms import NewQuestion, NewStrand, NewModule, NewChapter, NewLesson, EditLessonContent, NewSkill, NewQuiz, NewGlossary, NewPage, NewProject
 from .. import db
 from . import admin
 import json
@@ -10,6 +10,32 @@ import json
 def check_for_admin():
     if not current_user.is_authenticated or not current_user.is_admin():
         abort(403)
+
+def parseSkillIDs(ids):
+    return_list = []
+
+    # Iterate through whole list of ids
+    for i in ids:
+        # Turn id into an object
+        skill = Skill.query.filter_by(id=i).first()
+
+        # Add that on to the list of Tag objects
+        return_list.append(skill)
+    
+    # Return the list of objects back to the caller
+    return return_list
+
+# Do the reverse of the above
+def unparseSkillObjects(quiz):
+    return_list = []
+
+    # Iterate through the list of objects
+    for i in quiz.tested_skills:
+        # Add the id of the tag to the list of ids
+        return_list.append(i.id)
+    
+    # Return the list of ids back to the caller
+    return return_list
 
 @admin.route('/new/question', methods=['GET', 'POST'])
 @login_required
@@ -106,23 +132,24 @@ def new_lesson():
         return redirect(url_for('admin.all_lessons'))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Lesson", new_thing="Lesson", form=form)
 
-@admin.route('/new/learning-outcome', methods=['GET', 'POST'])
+@admin.route('/new/skill', methods=['GET', 'POST'])
 @login_required
-def new_learning_outcome():
-    form = NewLearningOutcome()
+def new_skill():
+    form = NewSkill()
     if form.validate_on_submit():
-        learning_outcome = LearningOutcome(description=form.description.data,
+        skill = Skill(description=form.description.data,
                                            lesson=Lesson.query.get(form.lesson.data))
-        db.session.add(learning_outcome)
-        return redirect(url_for('admin.all_lessons'))
-    return render_template('admin/admin_new_something.html', title="JCCoder - New Learning Outcome", new_thing="Learning Outcome", form=form)
+        db.session.add(skill)
+        return redirect(url_for('admin.all_skills'))
+    return render_template('admin/admin_new_something.html', title="JCCoder - New Skill", new_thing="Skill", form=form)
 
 @admin.route('/new/quiz', methods=['GET', 'POST'])
 @login_required
 def new_quiz():
     form = NewQuiz()
     if form.validate_on_submit():
-        quiz = Quiz(description=form.description.data, page=Page.query.get(form.page.data))
+        skills = parseSkillIDs(form.tested_skills.data)
+        quiz = Quiz(description=form.description.data, page=Page.query.get(form.page.data), tested_skills=skills)
         db.session.add(quiz)
         return redirect(url_for('admin.all_quizzes'))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Quiz", new_thing="Quiz", form=form)
@@ -255,6 +282,17 @@ def all_pages():
                 groups.extend(lesson.all_ordered_children())
     return render_template('admin/all_something.html', title="JCCoder - All Pages", list_items="Pages", items=pages, groups=groups)
 
+@admin.route('/all/skill/')
+@login_required
+def all_skills():
+    skills = Skill.query.all()
+    groups = []
+    for strand in Strand.query.all():
+        for module in strand.all_ordered_children():
+            for lesson in module.all_ordered_children():
+                groups.extend(lesson.all_ordered_children())
+    return render_template('admin/all_something.html', title="JCCoder - All Skills", list_items="Skills", items=skills, groups=groups)
+
 @admin.route('/all/project/')
 @login_required
 def all_projects():
@@ -299,7 +337,7 @@ def lessons_pages(id):
 def quizzes_questions(id):
     quiz = Quiz.query.get_or_404(id)
     questions = Question.query.filter_by(quiz=quiz).all()
-    return render_template('admin/somethings_things.html', title="JCCoder - All Question in Quiz (in page: " + quiz.page.title + ")", owner_of_things="Quiz", thing_type="Questions", things=questions, owner=quiz)
+    return render_template('admin/somethings_things.html', title="JCCoder - All Questions in Quiz (in lesson: " + quiz.lesson.title + ")", owner_of_things="Quiz", thing_type="Questions", things=questions, owner=quiz)
 
 @admin.route('/edit/strand/<int:id>', methods=["GET", "POST"])
 @login_required
@@ -397,19 +435,19 @@ def edit_lesson_content(id):
     form = EditLessonContent()
     return render_template('admin/edit_lesson_content.html', title="JCCoder - Edit Lesson " + lesson.title + "'s Content", form=form,lesson=lesson)
 
-@admin.route('/edit/learning-outcome/<int:id>', methods=["GET", "POST"])
+@admin.route('/edit/skill/<int:id>', methods=["GET", "POST"])
 @login_required
-def edit_learning_outcome(id):
-    learning_outcome = LearningOutcome.query.get_or_404(id)
-    form = NewLearningOutcome()
+def edit_skill(id):
+    skill = Skill.query.get_or_404(id)
+    form = NewSkill()
     if form.validate_on_submit():
-        learning_outcome.description = form.description.data
-        learning_outcome.lesson_id = form.lesson.data
-        db.session.add(learning_outcome)
-        return redirect(url_for('.all_lessons'))
-    form.description.data = learning_outcome.description
-    form.lesson.data = learning_outcome.lesson_id
-    return render_template('admin/edit_learning_outcome.html', title="JCCoder - Edit Learning Outcome " + learning_outcome.description, form=form, learning_outcome=learning_outcome)
+        skill.description = form.description.data
+        skill.lesson_id = form.lesson.data
+        db.session.add(skill)
+        return redirect(url_for('.all_skills'))
+    form.description.data = skill.description
+    form.lesson.data = skill.lesson_id
+    return render_template('admin/edit_skill.html', title="JCCoder - Edit Skill " + skill.description, form=form, skill=skill)
 
 @admin.route('/edit/glossary/<int:id>', methods=["GET", "POST"])
 @login_required
@@ -461,12 +499,14 @@ def edit_quiz(id):
     form = NewQuiz()
     if form.validate_on_submit():
         quiz.description = form.description.data
-        quiz.page_id = form.page.data
+        quiz.tested_skills = parseSkillIDs(form.tested_skills.data)
+        quiz.lesson_id = form.lesson.data
         db.session.add(quiz)
         return redirect(url_for('.all_quizzes'))
     form.description.data = quiz.description
-    form.page.data = quiz.page_id
-    return render_template('admin/edit_quiz.html', title="JCCoder - Edit Quiz in Page " + quiz.page.title, form=form, quiz=quiz)
+    form.tested_skills.data = unparseSkillObjects(quiz)
+    form.lesson.data = quiz.lesson_id
+    return render_template('admin/edit_quiz.html', title="JCCoder - Edit Quiz in Lesson " + quiz.lesson.title, form=form, quiz=quiz)
 
 @admin.route('/edit/question/<int:id>', methods=["GET", "POST"])
 @login_required
@@ -477,16 +517,31 @@ def edit_question(id):
         question.question_type_id = form.type.data
         question.text = form.text.data
         question.max_attempts = form.max_attempts.data
-        question.answer.first().option.text = form.answer.data
+        if question.question_type_id == QuestionType.query.filter_by(code='C').first().id:
+            question.answer.first().option_id = question.options.all()[int(form.answer.data) - 1].id
+        else:
+            question.answer.first().option.text = form.answer.data
         question.quiz_id = form.quiz.data
         db.session.add(question)
         return redirect(url_for('.all_questions'))
     form.type.data = question.question_type_id
     form.text.data = question.text
-    form.answer.data = question.correct_answer()
+
+    options = question.options.all()
+    for i, option in enumerate(options):
+        options[i] = option.text
+    if question.question_type_id == QuestionType.query.filter_by(code='C').first().id:
+        form.answer.data = options.index(question.correct_answer()) + 1
+    else:
+        form.answer.data = question.correct_answer()
     form.max_attempts.data = question.max_attempts
     form.quiz.data = question.quiz_id
-    return render_template('admin/edit_question.html', title="JCCoder - Edit Question", form=form, question=question)
+
+    if question.question_type_id == QuestionType.query.filter_by(code='S').first().id:
+        options = [None]
+
+    options = json.dumps(options)
+    return render_template('admin/edit_question.html', title="JCCoder - Edit Question", form=form, question=question, options=options)
 
 @admin.route('/edit/project/<int:id>', methods=["GET", "POST"])
 @login_required
