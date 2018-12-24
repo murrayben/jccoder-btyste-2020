@@ -71,11 +71,6 @@
             font-size: 0.9em;
         }
 
-        .quiz {
-            height: 100vh;
-            
-        }
-
         .quiz html {
             background-color: #ffffff;
         }
@@ -91,6 +86,12 @@
             border: 1px solid #646464;
             padding: 0.3em 0.5em 0.2em;
             z-index: 1000;
+        }
+
+        @media (min-width: 1400px) {
+            .modal-dialog {
+                max-width: 1200px;
+            }
         }
 
         @media (max-width: 768px) {
@@ -115,7 +116,7 @@
                 <h3 class="modal-title text-center" id="page-title"></h3>
                 <a href="#" id="go-to-page" class="btn btn-sm btn-success float-right">See comments</a>
             </div>
-            <div class="modal-body" id="page-html">
+            <div class="modal-body position-relative" id="page-html">
             <!-- Will be replaced by page Content -->
             </div>
             <div class="modal-footer">
@@ -225,6 +226,7 @@
             }, 700);
         });
 
+
         $('.quiz-hyperlink').on('click', function() {
             $('#pageModal').modal('show');
             
@@ -233,11 +235,16 @@
             $('#go-to-page').css('visibility', 'hidden');
             $('#next-page').hide();
             $('#page-title').text($(this).prev().text());
-            $('#page-html').html('<iframe src="/take-quiz/' + quizID + '" frameborder="0" width="100%" class="quiz"></iframe>');
+            $('#page-html').html('<iframe src="/take-quiz/' + quizID + '" frameborder="0" width="95%" height="95%" id="quiz-' + quizID + '" class="quiz position-absolute"></iframe>');
+            $(document).on('quiz_height_update', function() {
+                var $quiz = $('#quiz-' + quizID);
+                $quiz.innerHeight($quiz.contents().find('html').innerHeight());
+            });
 
             $('#pageModal').on('hidden.bs.modal', function () {
                 $('#go-to-page').css('visibility', 'visible');
                 $(this).off('hidden.bs.modal')
+                $(document).off('quiz_height_update');
             });
         });
 

@@ -18,7 +18,12 @@ $('#type').on('change', function () {
 $newOptionBtn.click();
 
 function updateMaxAttempts() {
-    $('#max_attempts').attr('max', $('[name="options1"]').length + 1);
+    isSingleAnswer = Number($('#type').val()) === 3 ? true : false;
+    if (isSingleAnswer) {
+        $('#max_attempts').attr('max', 10);
+    } else {
+        $('#max_attempts').attr('max', $('[name="options1"]').length - 1);
+    }
 }
 
 function updateFields(field) {
@@ -36,6 +41,7 @@ function updateFields(field) {
         $newOptionBtn.on('click', addInput);
         $('#answer').prev().text('Answer (first option is 1, second option is 2, etc.)');
         $('#answer').attr('type', 'number');
+        $('#answer').attr('min', 1);
         updateMaxAttempts();
     } else if (Number($this.val()) === 2) {
         // Drag and drop
@@ -52,13 +58,12 @@ function updateFields(field) {
         });
         $('#answer').prev().text('Answer');
         $('#answer').attr('type', 'input');
-        $('#max-attempts').attr('max', 'none');
+        updateMaxAttempts();
     }
 }
 
 function addInput(e) {
     e.preventDefault();
-    console.info('Counter before:', counter);
     var newdiv = $('[name="options1"]').last().clone();
     newdiv.val('');
     newdiv.attr('id', 'options' + counter);
@@ -68,7 +73,6 @@ function addInput(e) {
         $deleteOptionBtn.fadeIn(1000);
     }
     counter++;
-    console.log('Added:', counter);
 }
 function deleteInput(e) {
     e.preventDefault();

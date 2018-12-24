@@ -14,10 +14,7 @@
         }
 
         div.question {
-            padding: 10px 5px;
-            box-shadow: 0em 0em 1em #5e5e5e;
             margin-bottom: 10px;
-            border-radius: 10px;
         }
 
         h3 {
@@ -82,15 +79,26 @@
         .page-header {
             margin: 0 0 10px;
         }
+
+        #start {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="container-fluid">
+        <div id="start" class="text-center">
+            <h3 id="no-problems">Do {{ questions|length }} problem{% if questions|length != 1 %}s{% endif %}!</h3>
+            <p id="description">{{ quiz.description }}</p>
+            <button type="button" id="start-btn" class="btn btn-primary">Start Quiz</button>
+        </div>
+
         <div class="page-header">
-            <h4 id="attempt-status" class="float-right">Attempt #<span id="attempt-no"></span> out of <span id="max-attempts"></span></h4>
-            <h3>Do {{ questions|length }} problem{% if questions|length != 1 %}s{% endif %}!</h3>
-            <p>{{ quiz.description }}</p>
+            <h4 id="attempt-status" class="text-center">Attempt #<span id="attempt-no"></span> out of <span id="max-attempts"></span></h4>
         </div>
             
         <div class="progress active">
@@ -157,17 +165,26 @@
         // $radioBtns.on('change', checkForRadio);
 
         $(function() {
+
             $('input[type="radio"]').attr('checked', false);
             $('input[type="text"]').val("");
-            $('.question').hide();
             $('.question img').addClass('img-fluid');
             var $currentQuestion = $('.question').first();
-            $currentQuestion.fadeIn(1000);
-            $("#max-attempts").text($currentQuestion.data('max-attempts'));
-            updateAttemptNo(true);
+            
             var tick = $('<span class="fas fa-check">');
             var x = $('<span class="fas fa-times">');
-            $('#next-btn').on('click', nextQuestion);
+
+            $('.container-fluid').children().hide();
+            $('#start').show();
+            $('#start-btn').on('click', function() {
+                $('.container-fluid').children().fadeIn();
+                $('#start, #summary, .question').hide();
+                $currentQuestion.fadeIn(1000);
+                $("#max-attempts").text($currentQuestion.data('max-attempts'));
+                updateAttemptNo(true);
+                parent.$(parent.document).trigger('quiz_height_update');
+                $('#next-btn').on('click', nextQuestion);
+            });
 
             function updateAttemptNo(reset=false) {
                 if (reset) {
@@ -194,6 +211,7 @@
                         contentType: "application/json; charset=utf-8",
                         type: 'POST',
                         success: function(response) {
+                            parent.$(parent.document).trigger('quiz_height_update');
                             var isLastQuestion = $('.question').eq(-1).is($currentQuestion);
                             var try_again = response.try_again
                             if (!try_again) {
@@ -234,7 +252,7 @@
                                 // Summary of user's answers
                                 $('#next-btn').fadeOut();
                                 $currentQuestion.fadeOut();
-                                $('#attempt-status').fadeOut();
+                                $('.page-header').fadeOut();
                                 var data = {'id': '{{ quiz.id }}'};
                                 $.ajax({
                                     url: "{{ url_for('main.summary') }}",
@@ -242,7 +260,6 @@
                                     contentType: 'application/json',
                                     type: 'POST',
                                     success: function(response) {
-                                        console.log(response);
                                         var $summary = $('#summary');
                                         for (var i = 0; i < $('tbody tr').length; i++) {
                                             var thisQuesID = response.question_ids[i]
@@ -258,7 +275,9 @@
                                                 $rowChildren.filter('.ans-status').append(x.clone());
                                             }
                                         }
-                                        $summary.fadeIn(1000);
+                                        $summary.fadeIn(function () {
+                                            parent.$(parent.document).trigger('quiz_height_update');
+                                        });
                                     },
                                     error: function(error) {
                                         $('.status').text("There has been an error.")
