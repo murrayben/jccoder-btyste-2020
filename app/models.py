@@ -11,8 +11,10 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
     lines = []
     hint_counter = 0
     hints = []
+    drag_and_drop_options = []
     recording_hint = False
     recording_collapse = False
+    recording_drag_and_drop = False
     add_line = True
     i = 0
     for line in original_mardown.split('\n'):
@@ -88,6 +90,26 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
             line = '<link rel="stylesheet" href="{0}" class="css-extra" />'.format(line.split('::')[1].strip())
         elif ':js::' in line:
             line = '<script type="text/javascript" src="{0}" class="js-extra"></script>'.format(line.split('::')[1].strip())
+
+        # Drag and Drop quiz
+        elif '::drag-and-drop::' in line:
+            recording_drag_and_drop = True
+            line = ''
+        elif '::/drag-and-drop::' in line:
+            table = """<table class="table bg-primary table-bordered text-white">\n"""
+            for option in drag_and_drop_options:
+                table += """    <tr>
+        <td>{0}</td>
+        <td class="blank"></td>
+    </tr>""".format(option)
+            table += "\n</table>"
+            line = table
+            recording_drag_and_drop = False
+            drag_and_drop_options = []
+        elif recording_drag_and_drop:
+            drag_and_drop_options.append(line)
+            line = ''
+        
 
         # Collapse
         elif ':collapse::' in line:
@@ -353,6 +375,8 @@ class Question(db.Model):
     html = db.Column(db.Text)
     image_url = db.Column(db.Text)
     max_attempts = db.Column(db.Integer)
+    solution = db.Column(db.Text)
+    solution_html = db.Column(db.Text)
     question_type_id = db.Column(db.Integer, db.ForeignKey('questiontypes.id'))
     quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'))
     options = db.relationship('QuestionOption', backref='question', lazy='dynamic')
@@ -385,10 +409,22 @@ class Question(db.Model):
         # Otherwise:
         target.html = customTagMarkdown(value)
 
+    def generate_new_solution_html(target, value, oldvalue, initiator):
+        # If the new question page is going to open to regular users
+        # allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
+        #                 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+        #                 'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span']
+        # target.html = bleach.linkify(bleach.clean(
+        #     customTagMarkdown(value),
+        #     tags=allowed_tags))
+        # Otherwise:
+        target.solution_html = customTagMarkdown(value)
+
     def __repr__(self):
         return '<Question> {0} Answer: {1}'.format(self.text, self.correct_answer())
 
 db.event.listen(Question.text, 'set', Question.generate_new_html)
+db.event.listen(Question.solution, 'set', Question.generate_new_solution_html)
 
 class Quiz(db.Model):
     __tablename__ = 'quizzes'
@@ -739,3 +775,4 @@ class Skill(db.Model):
 
     def what_model(self):
         return "Skill"
+

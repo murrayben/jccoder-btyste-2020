@@ -45,7 +45,8 @@ def new_question():
         question_type = form.type.data
         question_type_id = QuestionType.query.filter(QuestionType.id == question_type).first().id
         quiz = Quiz.query.get(form.quiz.data)
-        question = Question(text=form.text.data, question_type_id=question_type_id, max_attempts=form.max_attempts.data, quiz=quiz)
+        question = Question(text=form.text.data, question_type_id=question_type_id, max_attempts=form.max_attempts.data,
+                                quiz=quiz, solution=form.solution.data)
         db.session.add(question)
         db.session.commit()
         question_type = question.question_type
@@ -55,8 +56,18 @@ def new_question():
             for option in options:
                 db.session.add(QuestionOption(text=option, question_id=question.id))
             db.session.commit()
-            question_answer = QuestionAnswer(option=QuestionOption.query.filter_by(text=options[form.answer.data-1]).first(), question=question)
-        
+            question_answer = QuestionAnswer(option=QuestionOption.query.filter_by(text=options[int(form.answer.data)-1]).first(), question=question)
+        elif question_type == QuestionType.query.filter_by(code='D').first(): # Drag and drop
+            options = request.form.getlist('options1')
+            for option in options:
+                if option.startswith('img:'):
+                    option = option[4:]
+                    option = '<img src="{0}" />'.format(option)
+                db.session.add(QuestionOption(text=option, question_id=question.id))
+            question_answer_option = QuestionOption(text=form.answer.data, question_id=question.id)
+            db.session.add(question_answer_option)
+            db.session.commit()
+            question_answer = QuestionAnswer(option=QuestionOption.query.filter_by(text=form.answer.data).first(), question=question)
         elif question_type == QuestionType.query.filter_by(code='S').first(): # Single Answer
             question_option = QuestionOption(text=form.answer.data, question_id=question.id)
             db.session.add(question_option)
@@ -149,7 +160,7 @@ def new_quiz():
     form = NewQuiz()
     if form.validate_on_submit():
         skills = parseSkillIDs(form.tested_skills.data)
-        quiz = Quiz(description=form.description.data, page=Page.query.get(form.page.data), tested_skills=skills)
+        quiz = Quiz(description=form.description.data, lesson=Lesson.query.get(form.lesson.data), tested_skills=skills)
         db.session.add(quiz)
         return redirect(url_for('admin.all_quizzes'))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Quiz", new_thing="Quiz", form=form)
@@ -517,6 +528,7 @@ def edit_question(id):
         question.question_type_id = form.type.data
         question.text = form.text.data
         question.max_attempts = form.max_attempts.data
+        question.solution = form.solution.data
         if question.question_type_id == QuestionType.query.filter_by(code='C').first().id:
             question.answer.first().option_id = question.options.all()[int(form.answer.data) - 1].id
         else:
@@ -536,6 +548,7 @@ def edit_question(id):
         form.answer.data = question.correct_answer()
     form.max_attempts.data = question.max_attempts
     form.quiz.data = question.quiz_id
+    form.solution.data = question.solution
 
     if question.question_type_id == QuestionType.query.filter_by(code='S').first().id:
         options = [None]

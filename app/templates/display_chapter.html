@@ -88,6 +88,17 @@
             z-index: 1000;
         }
 
+        .modal-content {
+            min-height: 600px;
+        }
+
+        @media (max-height: 610px) {
+            .modal-content {
+                min-height: 300px;
+                max-height: 300px;
+            }
+        }
+
         @media (min-width: 1400px) {
             .modal-dialog {
                 max-width: 1200px;
@@ -226,6 +237,9 @@
             }, 700);
         });
 
+        $(window).on('resize', function() {
+            $(document).trigger('quiz_height_update');
+        });
 
         $('.quiz-hyperlink').on('click', function() {
             $('#pageModal').modal('show');
@@ -238,7 +252,9 @@
             $('#page-html').html('<iframe src="/take-quiz/' + quizID + '" frameborder="0" width="95%" height="95%" id="quiz-' + quizID + '" class="quiz position-absolute"></iframe>');
             $(document).on('quiz_height_update', function() {
                 var $quiz = $('#quiz-' + quizID);
-                $quiz.innerHeight($quiz.contents().find('html').innerHeight());
+                if ($quiz.contents().find('#start').is(':hidden')) {
+                    $quiz.innerHeight($quiz.contents().find('html').innerHeight());
+                }
             });
 
             $('#pageModal').on('hidden.bs.modal', function () {

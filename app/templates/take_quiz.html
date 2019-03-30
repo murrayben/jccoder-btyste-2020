@@ -7,6 +7,9 @@
 {% block styles %}
     {{ super() }}
     <style>
+        html {
+            overflow: hidden;
+        }
         body {
             padding-top: 0 !important;
             padding-bottom: 10px;
@@ -32,7 +35,7 @@
         .history-badge {
             border-radius: 50px;
             vertical-align: middle;
-            padding: 7px 11px;
+            padding: 8px 9px 7px;
             margin-right: 3px;
             display: inline-block;
             font-size: 1.2em;
@@ -86,6 +89,35 @@
             left: 50%;
             transform: translate(-50%, -50%);
         }
+
+        .dot {
+            position: relative;
+            display: inline-block;
+            border-radius: 60px;
+            border: 1px solid #646464;
+            padding: 0.4rem 0.5rem 0.3rem;
+            z-index: 1000;
+        }
+
+        .draggable-btn {
+            min-width: 100px;
+            min-height: 46px;
+            border: 1px solid #000000;
+            border-radius: 5px;
+        }
+
+        .draggable-btn:hover {
+            cursor: grab;
+        }
+
+        .draggable-btn:active {
+            cursor: grabbing;
+        }
+
+        .blank {
+            max-width: 20px;
+            vertical-align: middle !important;
+        }
     </style>
 {% endblock %}
 
@@ -113,7 +145,16 @@
         <div class="questions">
             {% for question in questions %}
             <div class="question" id="{{ question.id }}" data-max-attempts="{{ question.max_attempts }}">
-                <h4>{{ question.show() | safe }}</h4>
+                {% if question.question_type.code == 'D' %}
+                <div class="draggable-items-box card bg-primary mb-3 p-3 flex-row align-items-stretch" style="min-height: 80px;">
+                    {% for item in question.options[:-1] %}
+                    <span class="draggable-btn bg-white mr-3 d-flex" data-position="{{ loop.index }}">
+                        <span class="m-auto text-dark">{{ item.text | safe }}</span>
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div>{{ question.show() | safe }}</div>
                 {% if question.question_type.code == 'C' %}
                 {% for option in question.options %}
                 <div class="form-check">
@@ -123,42 +164,78 @@
                     </span>
                 </div>
                 {% endfor %}
+                
                 {% elif question.question_type.code == 'S' %}
                 <input type="text" id="answer" value="" />
                 {% endif %}
+                <hr />
+                <div class="question-help" style="display: none;">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <h4>Related Videos</h4>
+                            <div class="help-videos">
+                                {% with videos = Page.query.filter_by(lesson_id=question.quiz.lesson_id, page_type_id=PageType.query.filter_by(description="Video").first().id).all() %}
+                                <ul class="list-unstyled">
+                                    {% for video in videos %}
+                                    <li class="mb-2">
+                                        <a href="{{ url_for('main.lesson_page', id=video.id) }}" target="_blank">
+                                            <span class="dot">
+                                                <i class="fas fa-play fa-fw"></i>
+                                            </span> {{ video.title }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <h4>Still stuck?</h4>
+                            <button role="button" class="btn btn-block btn-outline-success mb-2" class="get-hint-btn">Get a hint</button>
+                            <p>If you use a hint you will be marked wrong! Try to work out the problem first.</p>
+                        </div>
+                    </div>
+                    <hr />
+                </div>
+                <div class="solution" style="display: none;"></div>
             </div>
             {% endfor %}
         </div>
         <button role="button" class="btn btn-primary" id="next-btn">Check</button>
+        <button role="button" class="btn btn-success" id="help-btn">Need help?</button>
         <div id="summary">
-            <table class="table table-bordered table-responsive">
-                <thead>
-                    <tr>
-                        <th>Question</th>
-                        <th>Number of attempts</th>
-                        <th>Your last attempt</th>
-                        <th>Correct Answer</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for question in questions %}
-                    <tr id="question-{{ question.id }}">
-                        <td class="question-text"></td>
-                        <td class="no-attempts"></td>
-                        <td class="last-attempt"></td>
-                        <td class="correct-ans"></td>
-                        <td class="ans-status"></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Question</th>
+                            <th>Number of attempts</th>
+                            <th>Your last attempt</th>
+                            <th>Correct Answer</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for question in questions %}
+                        <tr id="question-{{ question.id }}">
+                            <td class="question-text"></td>
+                            <td class="no-attempts"></td>
+                            <td class="last-attempt"></td>
+                            <td class="correct-ans"></td>
+                            <td class="ans-status"></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 {% endblock %}
 
 {% block scripts %}
     {{ super() }}
+    <!-- Include jQuery UI for drag and drop questions -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script type="text/javascript">
         // $radioBtns = $('input[type="radio"]');
         // checkForRadio();
@@ -171,19 +248,47 @@
             $('.question img').addClass('img-fluid');
             var $currentQuestion = $('.question').first();
             
-            var tick = $('<span class="fas fa-check">');
-            var x = $('<span class="fas fa-times">');
+            var tick = $('<span class="fas fa-check fa-fw">');
+            var x = $('<span class="fas fa-times fa-fw">');
 
             $('.container-fluid').children().hide();
             $('#start').show();
             $('#start-btn').on('click', function() {
                 $('.container-fluid').children().fadeIn();
                 $('#start, #summary, .question').hide();
-                $currentQuestion.fadeIn(1000);
+                $currentQuestion.fadeIn(function() {
+                    parent.$(parent.document).trigger('quiz_height_update');
+                });
                 $("#max-attempts").text($currentQuestion.data('max-attempts'));
                 updateAttemptNo(true);
-                parent.$(parent.document).trigger('quiz_height_update');
-                $('#next-btn').on('click', nextQuestion);
+                $('#next-btn').on('click', checkQuestion);
+            });
+
+            $('#help-btn').on('click', function() {
+                $(this).hide();
+                $currentQuestion.children(".question-help").first().show(function() {
+                    parent.$(parent.document).trigger('quiz_height_update');
+                });
+            });
+
+            // Drag and drop
+            $('.draggable-btn').draggable({
+                revert: true,
+                snapTolerance: 30,
+                revertDuration: 100,
+                cursor: "move"
+            });
+
+            $('.blank').each(function(index) {
+                $(this).droppable({
+                    accept: '.draggable-btn',
+                    drop: function(event, ui) {
+                        if ($(this).children('.draggable-btn').length === 0) {
+                            $(this).append(ui.draggable);
+                            parent.$(parent.document).trigger('quiz_height_update');
+                        }
+                    }
+                });
             });
 
             function updateAttemptNo(reset=false) {
@@ -196,13 +301,44 @@
             }
 
             function nextQuestion() {
+                // Move on to next question
+                $currentQuestion.hide();
+                $currentQuestion = $currentQuestion.next();
+                $currentQuestion.fadeIn();
+                $('.solution').hide();
+                $('#help-btn').show();
+                updateAttemptNo(true);
+                $("#max-attempts").text($currentQuestion.data('max-attempts'));
+                parent.$(parent.document).trigger('quiz_height_update');
+                $('.answer-status').fadeOut(1000, function() {
+                    parent.$(parent.document).trigger('quiz_height_update');
+                });
+            }
+
+            function checkQuestion() {
+                $('#next-btn').attr('disabled', 'disabled');
                 var $checkedRadioBtns = $currentQuestion.children('.form-check').children('input').filter(':checked');
-                if ($checkedRadioBtns.length === 1 || $currentQuestion.children('#answer').val().trim()) {
+                var draggedItems = $currentQuestion.children('.draggable-items-box');
+                if (draggedItems.length !== 0) {
+                    draggedItems = draggedItems.children('.draggable-btn').length;
+                } else {
+                    draggedItems = undefined;
+                }
+                var singleAnswer = $currentQuestion.children('#answer');
+                singleAnswer =  singleAnswer.length !== 0 ? singleAnswer.val().trim() : false
+                if ($checkedRadioBtns.length === 1 || draggedItems === 0 || singleAnswer) {
                     // Check question
                     if ($checkedRadioBtns.length === 1) {
                         var data = {"answer": $checkedRadioBtns.next().text(), "question_id": $currentQuestion.attr('id')};
+                    } else if (draggedItems === 0) {
+                        var answerDragDrop = "";
+                        for (var i = 0; i < $('.draggable-btn:visible').length; i++) {
+                            answerDragDrop += (i + 1) + "=" + $('.blank:visible').eq(i).children('.draggable-btn').data('position') + " ";
+                        }
+                        answerDragDrop = answerDragDrop.trim();
+                        var data = {"answer": answerDragDrop, "question_id": $currentQuestion.attr('id')}
                     } else {
-                        var data = {"answer": $currentQuestion.children('#answer').val(), "question_id": $currentQuestion.attr('id')};
+                        var data = {"answer": singleAnswer, "question_id": $currentQuestion.attr('id')};
                     }
                     $.ajax({
                         url: "{{ url_for('main.check') }}",
@@ -211,6 +347,7 @@
                         contentType: "application/json; charset=utf-8",
                         type: 'POST',
                         success: function(response) {
+                            $('#next-btn').removeAttr('disabled');
                             parent.$(parent.document).trigger('quiz_height_update');
                             var isLastQuestion = $('.question').eq(-1).is($currentQuestion);
                             var try_again = response.try_again
@@ -227,7 +364,7 @@
                                 $progressBar.text(newWidth + '%');
                             }
                             if (response.answer_status) {
-                                $('.answer-status').html("<span style=\"color:#5ad65a\">Correct!</span>").hide().fadeIn(1000).delay(1000).fadeOut(1000);
+                                $('.answer-status').html("<span style=\"color:#5ad65a\">Correct!</span>").hide().fadeIn(1000);
                                 var $historyIcon = $('.no-ans').first();
                                 $historyIcon.addClass('badge-correct');
                                 $historyIcon.removeClass('no-ans');
@@ -241,54 +378,65 @@
                                     $('.answer-status').html("<span style=\"color:#d43e3e\">Incorrect! Try Again.</span>").hide().fadeIn(1000).delay(1000).fadeOut(1000);
                                 }
                             } else {
-                                $('.answer-status').text("Hard Luck!").hide().fadeIn(1000).delay(1000).fadeOut(1000);
+                                $('.answer-status').html("<span style=\"color:#d43e3e\">Hard Luck!</span>").hide().fadeIn(1000);
                                 var $historyIcon = $('.no-ans').first();
                                 $historyIcon.addClass('badge-incorrect');
                                 $historyIcon.removeClass('no-ans');
                                 $historyIcon.append(x.clone());
-                                updateAttemptNo(true);
+                                var $solutionDiv = $currentQuestion.children('.solution');
+                                $solutionDiv.append('<h4>Explanation</h4>')
+                                $solutionDiv.append(response.solution_html + '<hr />');
+                                $solutionDiv.show(function() {
+                                    parent.$(parent.document).trigger('quiz_height_update');
+                                });
                             }
-                            if (isLastQuestion && !try_again) {
-                                // Summary of user's answers
-                                $('#next-btn').fadeOut();
-                                $currentQuestion.fadeOut();
-                                $('.page-header').fadeOut();
-                                var data = {'id': '{{ quiz.id }}'};
-                                $.ajax({
-                                    url: "{{ url_for('main.summary') }}",
-                                    data: JSON.stringify(data),
-                                    contentType: 'application/json',
-                                    type: 'POST',
-                                    success: function(response) {
-                                        var $summary = $('#summary');
-                                        for (var i = 0; i < $('tbody tr').length; i++) {
-                                            var thisQuesID = response.question_ids[i]
-                                            var $row = $('tr#question-' + thisQuesID)
-                                            var $rowChildren = $row.children();
-                                            $rowChildren.filter('.question-text').html(response.questions[i]);
-                                            $rowChildren.filter('.no-attempts').text(response.no_attempts[i]);
-                                            $rowChildren.filter('.last-attempt').text(response.last_attempts[i]);
-                                            $rowChildren.filter('.correct-ans').text(response.correct_answers[i]);
-                                            if (response.user_ans_status[i]) {
-                                                $rowChildren.filter('.ans-status').append(tick.clone());
-                                            } else {
-                                                $rowChildren.filter('.ans-status').append(x.clone());
+                            if (!try_again) {
+                                isLastQuestion ? $('#next-btn').html('Summary of quiz &#8594;') : $('#next-btn').html('Continue &#8594;');
+                                parent.$(parent.document).trigger('quiz_height_update');
+                                $('#next-btn').off('click').on('click', function() {
+                                    if (isLastQuestion) {
+                                        // Summary of user's answers
+                                        $('#next-btn').fadeOut();
+                                        $('#help-btn').fadeOut();
+                                        $currentQuestion.fadeOut();
+                                        $('.page-header').fadeOut();
+                                        $('.answer-status').fadeOut();
+                                        var data = {'id': '{{ quiz.id }}'};
+                                        $.ajax({
+                                            url: "{{ url_for('main.summary') }}",
+                                            data: JSON.stringify(data),
+                                            contentType: 'application/json',
+                                            type: 'POST',
+                                            success: function(response) {
+                                                var $summary = $('#summary');
+                                                for (var i = 0; i < $('tbody tr').length; i++) {
+                                                    var thisQuesID = response.question_ids[i]
+                                                    var $row = $('tr#question-' + thisQuesID)
+                                                    var $rowChildren = $row.children();
+                                                    $rowChildren.filter('.question-text').html(response.questions[i]);
+                                                    $rowChildren.filter('.no-attempts').text(response.no_attempts[i]);
+                                                    $rowChildren.filter('.last-attempt').text(response.last_attempts[i]);
+                                                    $rowChildren.filter('.correct-ans').text(response.correct_answers[i]);
+                                                    if (response.user_ans_status[i]) {
+                                                        $rowChildren.filter('.ans-status').append(tick.clone());
+                                                    } else {
+                                                        $rowChildren.filter('.ans-status').append(x.clone());
+                                                    }
+                                                }
+                                                $summary.fadeIn(function () {
+                                                    parent.$(parent.document).trigger('quiz_height_update');
+                                                });
+                                            },
+                                            error: function(error) {
+                                                $('.status').text("There has been an error.")
                                             }
-                                        }
-                                        $summary.fadeIn(function () {
-                                            parent.$(parent.document).trigger('quiz_height_update');
                                         });
-                                    },
-                                    error: function(error) {
-                                        $('.status').text("There has been an error.")
+                                    } else {
+                                        $('#next-btn').text('Check').off('click').on('click', checkQuestion);
+                                        nextQuestion();
                                     }
                                 });
-                            } else if (!try_again) {
-                                // Move on to next question
-                                $currentQuestion.hide();
-                                $currentQuestion = $currentQuestion.next();
-                                $currentQuestion.fadeIn(1000);
-                                $("#max-attempts").text($currentQuestion.data('max-attempts'));
+                                
                             }
                         },
                         error: function(error) {
@@ -296,6 +444,8 @@
                         }
                     });
                         
+                } else {
+                    $('#next-btn').removeAttr('disabled');
                 }
             }
         });

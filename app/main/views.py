@@ -138,7 +138,7 @@ def check():
     if current_user.is_authenticated:
         user_answer = UserAnswer(keyed_answer=answer, answer_status=answer_status, user=current_user._get_current_object(),
                                 question=question, attempt_no=attempt_no)
-    return jsonify(success=True, answer_status=status, try_again=try_again)
+    return jsonify(success=True, answer_status=status, try_again=try_again, solution_html=question.solution_html)
 
 @main.route('/summary', methods=['GET', 'POST'])
 def summary():

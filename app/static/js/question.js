@@ -1,4 +1,5 @@
 new SimpleMDE({element: $('#text')[0], forceSync: true, hideIcons: ["guide"]});
+new SimpleMDE({element: $('#solution')[0], forceSync: true, hideIcons: ["guide"]});
 $('form').get(0).reset();
 var counter = 1;
 $('<div class="btn-group" id="btns" />').insertBefore($('#submit'));
@@ -45,6 +46,17 @@ function updateFields(field) {
         updateMaxAttempts();
     } else if (Number($this.val()) === 2) {
         // Drag and drop
+        $('[name="options1"]').parent().fadeIn(1000);
+        $('[name="options1"]').val("");
+        $deleteOptionBtn.prependTo($('#btns')).hide();
+        $deleteOptionBtn.on('click', deleteInput);
+        if ($('[name="options1"]').length > 2) {
+            $deleteOptionBtn.fadeIn(1000)
+        }
+        $newOptionBtn.prependTo($('#btns')).hide().fadeIn(1000);
+        $newOptionBtn.on('click', addInput);
+        $('#answer').prev().text('Answer (in format: table_box_row=option_num)');
+        $('#answer').attr('type', 'input');
     } else if (Number($this.val()) === 3) {
         // Single Answer (input type='text')
         $('[name="options1"]').parent().fadeOut(1000, function() {

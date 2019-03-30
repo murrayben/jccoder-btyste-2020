@@ -19,8 +19,7 @@
     <script src="{{ url_for('static', filename='js/question.js') }}"></script>
     <script type="text/javascript">
         $(function() {
-            var options = `{{ options | safe | replace('`', '\`') }}`;
-            options = JSON.parse(options);
+            var options = {{ options | safe | replace('`', '\`') }};
             
             if (options[0]) {
                 // Options[0] is null when type = Single Answer
@@ -33,6 +32,10 @@
                     } else {
                         $('[name="options1"]').last().val(options[i]);
                     }
+                }
+
+                if (Number($('#type').val()) === 2) { // Drag and drop
+                    $('[name="options1"]').last().remove();
                 }
             }
             updateMaxAttempts();
