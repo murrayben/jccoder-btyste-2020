@@ -1,7 +1,7 @@
 from flask import abort, current_app, jsonify, redirect, render_template, url_for, session, request, g
 from flask_login import current_user, login_required
 from datetime import datetime
-from ..models import db, Chapter, Page, PageAnswer, PageQuestion, Project, Quiz, Lesson, UserAnswer, Question, AnswerStatus
+from ..models import db, Chapter, Page, PageAnswer, PageQuestion, Project, Quiz, Lesson, UserAnswer, Question, AnswerStatus, Hint
 from .forms import NewPageQuestion, NewPageAnswer, EditPageAnswer, SearchForm
 from . import main
 
@@ -115,6 +115,11 @@ def check():
     attempt_no += 1
     session["attempt_no"] += 1
     data = request.get_json()
+    if data.get('hint_used_mark_incorrect', False):
+        session["user_results"].append("Used hint")
+        session["no_attempts"].append("N/A")
+        return jsonify(success=True)
+
     answer = data['answer'].strip()
     question = Question.query.get(data['question_id'])
     if not question:
@@ -132,7 +137,7 @@ def check():
             session["attempt_no"] = 0 # For the next question
         else:
             try_again = True
-    if not try_again:
+    if not try_again and (not data.get("used_hint", False)):
         session["user_results"].append(answer)
         session["no_attempts"].append(attempt_no)
     if current_user.is_authenticated:
@@ -158,6 +163,19 @@ def summary():
         i += 1
     return jsonify(success=True, question_ids=question_ids, questions=questions, no_attempts=session["no_attempts"],
                 last_attempts=session["user_results"], correct_answers=correct_answers, user_ans_status=user_ans_status)
+
+@main.route('/get-hint', methods=["GET", "POST"])
+def get_hint():
+    if request.method == "GET":
+        abort(404)
+    data = request.get_json()
+    hint = Hint.query.filter_by(hint_no=data["hint_no"], question_id=data["question_id"]).first()
+    hint_count = Hint.query.filter_by(question_id=data["question_id"]).count()
+    is_last_hint = int(data["hint_no"]) == hint_count
+    if not hint:
+        # Return error as data is invalid (possibly user tried to change values through browser Inspector)
+        abort(400)
+    return jsonify(success=True, hint_html=hint.html, is_last_hint=is_last_hint)
 
 @main.route('/project/<int:id>')
 def project(id):

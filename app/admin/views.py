@@ -1,6 +1,6 @@
 from flask import abort, jsonify, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
-from ..models import customTagMarkdown, AnswerStatus, Strand, Module, Chapter, Lesson, Skill, Glossary, Page, UserAnswer, Question, QuestionAnswer, QuestionOption, QuestionType, Quiz, PageType, Project, ProjectStep
+from ..models import customTagMarkdown, AnswerStatus, Strand, Module, Chapter, Lesson, Skill, Glossary, Page, UserAnswer, Question, QuestionAnswer, QuestionOption, QuestionType, Quiz, PageType, Project, ProjectStep, Hint
 from .forms import NewQuestion, NewStrand, NewModule, NewChapter, NewLesson, EditLessonContent, NewSkill, NewQuiz, NewGlossary, NewPage, NewProject
 from .. import db
 from . import admin
@@ -49,6 +49,10 @@ def new_question():
                                 quiz=quiz, solution=form.solution.data)
         db.session.add(question)
         db.session.commit()
+
+        for i, hint_text in enumerate(form.hints.data.split('::sep::'), 1):
+            hint = Hint(text=hint_text.strip(), hint_no=i, question_id=question.id)
+            db.session.add(hint)
         question_type = question.question_type
         question_answer = None
         if question_type == QuestionType.query.filter_by(code='C').first(): # Multiple Choice
@@ -533,6 +537,17 @@ def edit_question(id):
             question.answer.first().option_id = question.options.all()[int(form.answer.data) - 1].id
         else:
             question.answer.first().option.text = form.answer.data
+
+        for i, hint_text in enumerate(form.hints.data.split('::sep::'), 1):
+            hint_text = hint_text.strip()   # Remove extra whitespace such as the newline character
+            existing_hint = Hint.query.filter_by(hint_no=i, question_id=question.id).first()
+            if not existing_hint:
+                hint = Hint(text=hint_text, hint_no=i, question_id=question.id)
+                db.session.add(hint)
+            elif existing_hint.text != hint_text:
+                existing_hint.text = hint_text
+                db.session.add(existing_hint)
+        
         question.quiz_id = form.quiz.data
         db.session.add(question)
         return redirect(url_for('.all_questions'))
@@ -546,6 +561,11 @@ def edit_question(id):
         form.answer.data = options.index(question.correct_answer()) + 1
     else:
         form.answer.data = question.correct_answer()
+
+    hint_text = ""
+    for hint in question.hints:
+        hint_text += hint.text + "\n::sep::\n"
+    form.hints.data = hint_text[:-8] # [:-8] gets rid of extra ::sep:: at the end (the 8th char is a newline)
     form.max_attempts.data = question.max_attempts
     form.quiz.data = question.quiz_id
     form.solution.data = question.solution

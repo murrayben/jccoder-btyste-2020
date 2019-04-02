@@ -174,10 +174,6 @@ a[aria-expanded="true"]::before {
 }
 
 @media (max-width: 768px) {
-    .navbar-text {
-        margin-left: 15px;
-    }
-
     #sidebar {
         min-width: 80px;
         max-width: 80px;

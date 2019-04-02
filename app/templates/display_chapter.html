@@ -91,7 +91,12 @@
         .modal-content {
             min-height: 600px;
         }
-
+        
+        @media (min-width: 768px) {
+            .blank {
+                max-width: 20px;
+            }
+        }
         @media (max-height: 610px) {
             .modal-content {
                 min-height: 300px;
@@ -115,6 +120,7 @@
                 max-width: 100% !important;
             }
         }
+        
     </style>
 {% endblock %}
 

@@ -57,7 +57,7 @@
             padding: 17.5px;
         }
 
-        .history-badge .fas {
+        .history-badge .fas, .history-badge .far {
             color: #ffffff !important;
         }
 
@@ -115,7 +115,6 @@
         }
 
         .blank {
-            max-width: 20px;
             vertical-align: middle !important;
         }
     </style>
@@ -144,7 +143,7 @@
         </div>
         <div class="questions">
             {% for question in questions %}
-            <div class="question" id="{{ question.id }}" data-max-attempts="{{ question.max_attempts }}">
+            <div class="question" id="{{ question.id }}" data-max-attempts="{{ question.max_attempts }}" data-at-hint="0">
                 {% if question.question_type.code == 'D' %}
                 <div class="draggable-items-box card bg-primary mb-3 p-3 flex-row align-items-stretch" style="min-height: 80px;">
                     {% for item in question.options[:-1] %}
@@ -154,7 +153,7 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-                <div>{{ question.show() | safe }}</div>
+                <div class="mb-3">{{ question.show() | safe }}</div>
                 {% if question.question_type.code == 'C' %}
                 {% for option in question.options %}
                 <div class="form-check">
@@ -168,6 +167,7 @@
                 {% elif question.question_type.code == 'S' %}
                 <input type="text" id="answer" value="" />
                 {% endif %}
+                <div class="hints-box" style="display: none;"><hr /></div>
                 <hr />
                 <div class="question-help" style="display: none;">
                     <div class="row">
@@ -191,7 +191,7 @@
                         </div>
                         <div class="col-sm-6">
                             <h4>Still stuck?</h4>
-                            <button role="button" class="btn btn-block btn-outline-success mb-2" class="get-hint-btn">Get a hint</button>
+                            <button role="button" class="btn btn-block btn-outline-success mb-2 get-hint-btn">Get a hint</button>
                             <p>If you use a hint you will be marked wrong! Try to work out the problem first.</p>
                         </div>
                     </div>
@@ -250,6 +250,8 @@
             
             var tick = $('<span class="fas fa-check fa-fw">');
             var x = $('<span class="fas fa-times fa-fw">');
+            var hint_icon = $('<i class="far fa-lightbulb fa-fw">');
+            var used_hint = false;
 
             $('.container-fluid').children().hide();
             $('#start').show();
@@ -268,6 +270,50 @@
                 $(this).hide();
                 $currentQuestion.children(".question-help").first().show(function() {
                     parent.$(parent.document).trigger('quiz_height_update');
+                });
+            });
+
+            $('.get-hint-btn').on('click', function() {
+                var $hints_box = $currentQuestion.children('.hints-box').first();
+                $hints_box.show(function() {
+                    data = {"hint_no": Number($currentQuestion.attr('data-at-hint')) + 1, "question_id": $currentQuestion.attr('id')}
+                    $.ajax({
+                        url: "{{ url_for('main.get_hint') }}",
+                        data: JSON.stringify(data),
+                        dataType: 'json',
+                        contentType: "application/json; charset=utf-8",
+                        type: 'POST',
+                        success: function(response) {
+                            $hints_box.append(response.hint_html);
+                            $currentQuestion.attr('data-at-hint', Number($currentQuestion.attr('data-at-hint')) + 1)
+                            if ($currentQuestion.attr('data-at-hint') === "1") {
+                                data = {"hint_used_mark_incorrect": true};
+                                $.ajax({
+                                    url: "{{ url_for('main.check') }}",
+                                    data: JSON.stringify(data),
+                                    dataType: 'json',
+                                    contentType: "application/json; charset=utf-8",
+                                    type: 'POST',
+                                    success: function(response) {
+                                        var $historyIcon = $('.no-ans').first();
+                                        $historyIcon.addClass('badge-incorrect');
+                                        $historyIcon.removeClass('no-ans');
+                                        $historyIcon.append(hint_icon.clone());
+                                        used_hint = true;
+                                    }
+                                });
+                            }
+                            if (response.is_last_hint) {
+                                $('.get-hint-btn:visible').parent().hide();
+                            }
+                        },
+                        error: function(error) {
+                            $hints_box.append("<p>An error has occurred while retriving the hint.</p>");
+                        },
+                        complete: function(response) {
+                            parent.$(parent.document).trigger('quiz_height_update');
+                        }
+                    });
                 });
             });
 
@@ -305,6 +351,7 @@
                 $currentQuestion.hide();
                 $currentQuestion = $currentQuestion.next();
                 $currentQuestion.fadeIn();
+                used_hint = false;
                 $('.solution').hide();
                 $('#help-btn').show();
                 updateAttemptNo(true);
@@ -340,6 +387,8 @@
                     } else {
                         var data = {"answer": singleAnswer, "question_id": $currentQuestion.attr('id')};
                     }
+
+                    data.used_hint = used_hint;
                     $.ajax({
                         url: "{{ url_for('main.check') }}",
                         data: JSON.stringify(data),
@@ -365,10 +414,12 @@
                             }
                             if (response.answer_status) {
                                 $('.answer-status').html("<span style=\"color:#5ad65a\">Correct!</span>").hide().fadeIn(1000);
-                                var $historyIcon = $('.no-ans').first();
-                                $historyIcon.addClass('badge-correct');
-                                $historyIcon.removeClass('no-ans');
-                                $historyIcon.append(tick.clone());
+                                if (!used_hint) {
+                                    var $historyIcon = $('.no-ans').first();
+                                    $historyIcon.addClass('badge-correct');
+                                    $historyIcon.removeClass('no-ans');
+                                    $historyIcon.append(tick.clone());
+                                }
                                 updateAttemptNo(true);
                             } else if (try_again) {
                                 updateAttemptNo();
@@ -379,16 +430,22 @@
                                 }
                             } else {
                                 $('.answer-status').html("<span style=\"color:#d43e3e\">Hard Luck!</span>").hide().fadeIn(1000);
-                                var $historyIcon = $('.no-ans').first();
-                                $historyIcon.addClass('badge-incorrect');
-                                $historyIcon.removeClass('no-ans');
-                                $historyIcon.append(x.clone());
-                                var $solutionDiv = $currentQuestion.children('.solution');
-                                $solutionDiv.append('<h4>Explanation</h4>')
-                                $solutionDiv.append(response.solution_html + '<hr />');
-                                $solutionDiv.show(function() {
+                                if (!used_hint) {
+                                    var $historyIcon = $('.no-ans').first();
+                                    $historyIcon.addClass('badge-incorrect');
+                                    $historyIcon.removeClass('no-ans');
+                                    $historyIcon.append(x.clone());
+                                    var $solutionDiv = $currentQuestion.children('.solution');
+                                    $solutionDiv.append('<h4>Explanation</h4>')
+                                    $solutionDiv.append(response.solution_html + '<hr />');
+                                    $solutionDiv.show(function() {
+                                        $('#help-btn').hide()
+                                        parent.$(parent.document).trigger('quiz_height_update');
+                                    });
+                                } else {
+                                    $('#help-btn').hide()
                                     parent.$(parent.document).trigger('quiz_height_update');
-                                });
+                                }
                             }
                             if (!try_again) {
                                 isLastQuestion ? $('#next-btn').html('Summary of quiz &#8594;') : $('#next-btn').html('Continue &#8594;');

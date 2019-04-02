@@ -1,5 +1,6 @@
 new SimpleMDE({element: $('#text')[0], forceSync: true, hideIcons: ["guide"]});
 new SimpleMDE({element: $('#solution')[0], forceSync: true, hideIcons: ["guide"]});
+new SimpleMDE({element: $('#hints')[0], forceSync: true, hideIcons: ["guide"]});
 $('form').get(0).reset();
 var counter = 1;
 $('<div class="btn-group" id="btns" />').insertBefore($('#submit'));

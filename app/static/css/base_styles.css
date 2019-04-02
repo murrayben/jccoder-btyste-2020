@@ -49,9 +49,3 @@ i, span {
     display: inline-block;
     margin-top: -4px;
 }
-
-@media (max-width: 768px) {
-    .navbar-text {
-        margin-left: 15px;
-    }
-}

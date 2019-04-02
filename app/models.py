@@ -382,6 +382,7 @@ class Question(db.Model):
     options = db.relationship('QuestionOption', backref='question', lazy='dynamic')
     answer = db.relationship('QuestionAnswer', backref='question', lazy='dynamic')
     user_answer = db.relationship('UserAnswer', backref='question', lazy='dynamic')
+    hints = db.relationship('Hint', backref='question', lazy='dynamic')
 
     def what_model(self):
         return "Question"
@@ -425,6 +426,25 @@ class Question(db.Model):
 
 db.event.listen(Question.text, 'set', Question.generate_new_html)
 db.event.listen(Question.solution, 'set', Question.generate_new_solution_html)
+
+class Hint(db.Model):
+    __tablename__ = 'hints'
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Text)
+    html = db.Column(db.Text)
+    hint_no = db.Column(db.Integer)
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'))
+
+    def generate_new_html(target, value, oldvalue, initiator):
+        # allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
+        #                 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+        #                 'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span']
+        # target.html = bleach.linkify(bleach.clean(
+        #     customTagMarkdown(value),
+        #     tags=allowed_tags))
+        target.html = customTagMarkdown(value)
+    
+db.event.listen(Hint.text, 'set', Hint.generate_new_html)
 
 class Quiz(db.Model):
     __tablename__ = 'quizzes'
