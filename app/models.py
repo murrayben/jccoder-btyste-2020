@@ -540,9 +540,13 @@ class UserAnswer(db.Model):
     attempt_no = db.Column(db.Integer)
     datetime = db.Column(db.DateTime, default=datetime.utcnow)
     keyed_answer = db.Column(db.Text)
+    score = db.Column(db.Integer)   # Score is out of 100
     answer_status_id = db.Column(db.Integer, db.ForeignKey('answerstatus.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     question_id = db.Column(db.Integer, db.ForeignKey('questions.id'))
+
+    def __repr__(self):
+        return '<User Answer (%s, %i, %s)>' % (self.name, self.score, self.user)
 
 class AnswerStatus(db.Model):
     __tablename__ = 'answerstatus'

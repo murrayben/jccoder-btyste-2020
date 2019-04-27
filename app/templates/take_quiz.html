@@ -35,10 +35,10 @@
         .history-badge {
             border-radius: 50px;
             vertical-align: middle;
-            padding: 8px 9px 7px;
+            padding: 6px 7px;
             margin-right: 3px;
             display: inline-block;
-            font-size: 1.2em;
+            font-size: 0.7em;
             margin-bottom: 5px;
         }
 
@@ -52,9 +52,14 @@
             border: none;
         }
 
+        .badge-used-hint {
+            background-color: #db8719;
+            border: none;
+        }
+
         .no-ans {
             border: 2px solid #a7a7a7;
-            padding: 17.5px;
+            padding: 12px;
         }
 
         .history-badge .fas, .history-badge .far {
@@ -129,7 +134,7 @@
         </div>
 
         <div class="page-header">
-            <h4 id="attempt-status" class="text-center">Attempt #<span id="attempt-no"></span> out of <span id="max-attempts"></span></h4>
+            <p id="attempt-status" class="text-right">Attempt #<span id="attempt-no"></span> out of <span id="max-attempts"></span></p>
         </div>
             
         <div class="progress active">
@@ -165,7 +170,7 @@
                 {% endfor %}
                 
                 {% elif question.question_type.code == 'S' %}
-                <input type="text" id="answer" value="" />
+                <input autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" type="text" id="answer" value="" />
                 {% endif %}
                 <div class="hints-box" style="display: none;"><hr /></div>
                 <hr />
@@ -201,7 +206,8 @@
             </div>
             {% endfor %}
         </div>
-        <button role="button" class="btn btn-primary" id="next-btn">Check</button>
+        <!-- <button role="button" class="btn btn-primary" id="next-btn">Check</button> -->
+        <button id="next-btn" style="display: none;">Check</button>
         <button role="button" class="btn btn-success" id="help-btn">Need help?</button>
         <div id="summary">
             <div class="table-responsive">
@@ -212,6 +218,7 @@
                             <th>Number of attempts</th>
                             <th>Your last attempt</th>
                             <th>Correct Answer</th>
+                            <th>Score</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -222,6 +229,7 @@
                             <td class="no-attempts"></td>
                             <td class="last-attempt"></td>
                             <td class="correct-ans"></td>
+                            <td class="score"></td>
                             <td class="ans-status"></td>
                         </tr>
                         {% endfor %}
@@ -263,7 +271,8 @@
                 });
                 $("#max-attempts").text($currentQuestion.data('max-attempts'));
                 updateAttemptNo(true);
-                $('#next-btn').on('click', checkQuestion);
+                $('#next-btn').hide().on('click', checkQuestion);
+                parent.$(parent.document).trigger('update_check_btn', ["enable-btn"])
             });
 
             $('#help-btn').on('click', function() {
@@ -287,21 +296,21 @@
                             $hints_box.append(response.hint_html);
                             $currentQuestion.attr('data-at-hint', Number($currentQuestion.attr('data-at-hint')) + 1)
                             if ($currentQuestion.attr('data-at-hint') === "1") {
-                                data = {"hint_used_mark_incorrect": true};
+                                /*data = {"hint_used_mark_incorrect": true};
                                 $.ajax({
                                     url: "{{ url_for('main.check') }}",
                                     data: JSON.stringify(data),
                                     dataType: 'json',
                                     contentType: "application/json; charset=utf-8",
                                     type: 'POST',
-                                    success: function(response) {
-                                        var $historyIcon = $('.no-ans').first();
-                                        $historyIcon.addClass('badge-incorrect');
-                                        $historyIcon.removeClass('no-ans');
-                                        $historyIcon.append(hint_icon.clone());
-                                        used_hint = true;
-                                    }
-                                });
+                                    success: function(response) {*/
+                                var $historyIcon = $('.no-ans').first();
+                                $historyIcon.addClass('badge-used-hint');
+                                $historyIcon.removeClass('no-ans');
+                                $historyIcon.append(hint_icon.clone());
+                                used_hint = true;
+                                /*    }
+                                });*/
                             }
                             if (response.is_last_hint) {
                                 $('.get-hint-btn:visible').parent().hide();
@@ -364,6 +373,7 @@
 
             function checkQuestion() {
                 $('#next-btn').attr('disabled', 'disabled');
+                parent.$(parent.document).trigger('update_check_btn', ["disable-btn"])
                 var $checkedRadioBtns = $currentQuestion.children('.form-check').children('input').filter(':checked');
                 var draggedItems = $currentQuestion.children('.draggable-items-box');
                 if (draggedItems.length !== 0) {
@@ -397,6 +407,7 @@
                         type: 'POST',
                         success: function(response) {
                             $('#next-btn').removeAttr('disabled');
+                            parent.$(parent.document).trigger('update_check_btn', ["enable-btn"])
                             parent.$(parent.document).trigger('quiz_height_update');
                             var isLastQuestion = $('.question').eq(-1).is($currentQuestion);
                             var try_again = response.try_again
@@ -448,12 +459,14 @@
                                 }
                             }
                             if (!try_again) {
-                                isLastQuestion ? $('#next-btn').html('Summary of quiz &#8594;') : $('#next-btn').html('Continue &#8594;');
+                                var $btn_text = isLastQuestion ? $('#next-btn').html('Summary of quiz &#8594;') : $('#next-btn').html('Continue &#8594;');
+                                parent.$(parent.document).trigger('update_check_btn', [$btn_text.text()])
                                 parent.$(parent.document).trigger('quiz_height_update');
                                 $('#next-btn').off('click').on('click', function() {
                                     if (isLastQuestion) {
                                         // Summary of user's answers
-                                        $('#next-btn').fadeOut();
+                                        //$('#next-btn').fadeOut();
+                                        parent.$(parent.document).trigger('update_check_btn', ["end-quiz"])
                                         $('#help-btn').fadeOut();
                                         $currentQuestion.fadeOut();
                                         $('.page-header').fadeOut();
@@ -465,6 +478,7 @@
                                             contentType: 'application/json',
                                             type: 'POST',
                                             success: function(response) {
+                                                console.log(response);
                                                 var $summary = $('#summary');
                                                 for (var i = 0; i < $('tbody tr').length; i++) {
                                                     var thisQuesID = response.question_ids[i]
@@ -474,6 +488,7 @@
                                                     $rowChildren.filter('.no-attempts').text(response.no_attempts[i]);
                                                     $rowChildren.filter('.last-attempt').text(response.last_attempts[i]);
                                                     $rowChildren.filter('.correct-ans').text(response.correct_answers[i]);
+                                                    $rowChildren.filter('.score').text(response.scores[i]);
                                                     if (response.user_ans_status[i]) {
                                                         $rowChildren.filter('.ans-status').append(tick.clone());
                                                     } else {
@@ -485,11 +500,12 @@
                                                 });
                                             },
                                             error: function(error) {
-                                                $('.status').text("There has been an error.")
+                                                $('.status').text("There has been an error.");
                                             }
                                         });
                                     } else {
                                         $('#next-btn').text('Check').off('click').on('click', checkQuestion);
+                                        parent.$(parent.document).trigger('update_check_btn', ["Check"])
                                         nextQuestion();
                                     }
                                 });
@@ -503,6 +519,7 @@
                         
                 } else {
                     $('#next-btn').removeAttr('disabled');
+                    parent.$(parent.document).trigger('update_check_btn', ["enable-btn"]);
                 }
             }
         });

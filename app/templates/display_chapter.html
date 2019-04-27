@@ -56,9 +56,14 @@
             margin-bottom: 10px;
         }
 
+        .modal-dialog {
+            overflow-y: initial !important;
+        }
+
         .modal-body {
-            min-height: 680px;
-            max-height: 680px;
+            /*min-height: 680px;
+            max-height: 680px;*/
+            height: calc(100vh - 300px);
             overflow-y: auto;
         }
 
@@ -97,12 +102,12 @@
                 max-width: 20px;
             }
         }
-        @media (max-height: 610px) {
+        /*@media (max-height: 610px) {
             .modal-content {
                 min-height: 300px;
                 max-height: 300px;
             }
-        }
+        }*/
 
         @media (min-width: 1400px) {
             .modal-dialog {
@@ -111,10 +116,10 @@
         }
 
         @media (max-width: 768px) {
-            .modal-body {
+            /*.modal-body {
                 min-height: 100%;
                 max-height: 100%;
-            }
+            }*/
 
             .project {
                 max-width: 100% !important;
@@ -130,14 +135,15 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fas fa-times"></span></button>
-                <h3 class="modal-title text-center" id="page-title"></h3>
+                <h4 class="modal-title text-center" id="page-title"></h4>
                 <a href="#" id="go-to-page" class="btn btn-sm btn-success float-right">See comments</a>
             </div>
             <div class="modal-body position-relative" id="page-html">
             <!-- Will be replaced by page Content -->
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button role="button" class="btn btn-primary" id="check-btn">Check</button>
+                <button id="modal-close-btn" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 <a href="#" class="btn btn-success" id="next-page">Next <span id="page-type"></span></a>
             </div>
         </div>
@@ -226,7 +232,6 @@
         //         top: $('#lesson-sidebar').offset().top
         //     }
         // });
-
         function destroyExtras() {
             $('.css-extra, .js-extra').remove();
         }
@@ -256,6 +261,10 @@
             $('#next-page').hide();
             $('#page-title').text($(this).prev().text());
             $('#page-html').html('<iframe src="/take-quiz/' + quizID + '" frameborder="0" width="95%" height="95%" id="quiz-' + quizID + '" class="quiz position-absolute"></iframe>');
+            $('#modal-close-btn').hide();
+            $('#check-btn').show().text("Check").attr('disabled', 'disabled').on('click', function() { // Iframe will trigger event to enable it
+                $('#quiz-' + quizID).contents().find('#next-btn').trigger('click');
+            });
             $(document).on('quiz_height_update', function() {
                 var $quiz = $('#quiz-' + quizID);
                 if ($quiz.contents().find('#start').is(':hidden')) {
@@ -270,16 +279,37 @@
             });
         });
 
+        $(document).on('update_check_btn', function(event, action) {
+            // Update text or state of quiz check button
+            var $check_btn = $('#check-btn');
+            if (action === "disable-btn") {
+                $check_btn.attr('disabled', 'disabled');
+            } else if (action === "enable-btn") {
+                $check_btn.removeAttr('disabled');
+            } else if (action === "show") {
+                $check_btn.show();
+            } else if (action === "hide") {
+                $check_btn.hide();
+            } else if (action === "end-quiz") {
+                $check_btn.hide();
+                $('#modal-close-btn').show();
+            } else {
+                $check_btn.text(action);
+            }
+        });
+
         $('.page-hyperlink').on('click', function(e) {
             // Stop page from loading
             e.preventDefault();
 
             // Open modal
             $('#pageModal').modal('show');
+            $('#modal-close-btn').show();
+            $('#check-btn').hide();
             
             var pageLink = this.href;
             var $pageEl = $(this);
-            loadPageContent($pageEl, $pageEl.data('page-id'))
+            loadPageContent($pageEl, $pageEl.data('page-id'));
 
             function loadPageContent(pageEl, page_id) {
                 // Send ajax request to server to retrieve page content
