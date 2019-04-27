@@ -142,7 +142,7 @@
             <!-- Will be replaced by page Content -->
             </div>
             <div class="modal-footer">
-                <button role="button" class="btn btn-primary" id="check-btn">Check</button>
+                <button role="button" class="btn btn-primary" data-toggle="popover" data-trigger="manual" data-placement="top" data-html="true" data-animation="false" id="check-btn">Check</button>
                 <button id="modal-close-btn" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 <a href="#" class="btn btn-success" id="next-page">Next <span id="page-type"></span></a>
             </div>
@@ -251,7 +251,6 @@
         $(window).on('resize', function() {
             $(document).trigger('quiz_height_update');
         });
-
         $('.quiz-hyperlink').on('click', function() {
             $('#pageModal').modal('show');
             
@@ -293,6 +292,11 @@
             } else if (action === "end-quiz") {
                 $check_btn.hide();
                 $('#modal-close-btn').show();
+            } else if (action.indexOf('popover-') !== -1) {
+                $check_btn.attr('data-content', action.replace('popover-', ''));
+                $check_btn.popover('show');
+            } else if (action === "destroy-popover") {
+                $check_btn.popover('dispose');
             } else {
                 $check_btn.text(action);
             }

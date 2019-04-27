@@ -11,3 +11,8 @@ $(document).on('scroll', function () {
         $("#scroll-top").fadeOut(500);
     }
 });
+$(function () {
+    $('[data-toggle="popover"]').popover({
+        container: 'body'
+    });
+  })

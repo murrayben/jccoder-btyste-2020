@@ -197,7 +197,7 @@
                         <div class="col-sm-6">
                             <h4>Still stuck?</h4>
                             <button role="button" class="btn btn-block btn-outline-success mb-2 get-hint-btn">Get a hint</button>
-                            <p>If you use a hint you will be marked wrong! Try to work out the problem first.</p>
+                            <p>If you use a hint, you will be deducted marks for each hint! Try to work out the problem first.</p>
                         </div>
                     </div>
                     <hr />
@@ -283,6 +283,7 @@
             });
 
             $('.get-hint-btn').on('click', function() {
+                var $this = $(this); // For further down
                 var $hints_box = $currentQuestion.children('.hints-box').first();
                 $hints_box.show(function() {
                     data = {"hint_no": Number($currentQuestion.attr('data-at-hint')) + 1, "question_id": $currentQuestion.attr('id')}
@@ -308,6 +309,7 @@
                                 $historyIcon.addClass('badge-used-hint');
                                 $historyIcon.removeClass('no-ans');
                                 $historyIcon.append(hint_icon.clone());
+                                $this.text('Get another hint'); // Here $this is used
                                 used_hint = true;
                                 /*    }
                                 });*/
@@ -366,6 +368,7 @@
                 updateAttemptNo(true);
                 $("#max-attempts").text($currentQuestion.data('max-attempts'));
                 parent.$(parent.document).trigger('quiz_height_update');
+                parent.$(parent.document).trigger('update_check_btn', ["destroy-popover"]);
                 $('.answer-status').fadeOut(1000, function() {
                     parent.$(parent.document).trigger('quiz_height_update');
                 });
@@ -424,7 +427,8 @@
                                 $progressBar.text(newWidth + '%');
                             }
                             if (response.answer_status) {
-                                $('.answer-status').html("<span style=\"color:#5ad65a\">Correct!</span>").hide().fadeIn(1000);
+                                //$('.answer-status').html("<span style=\"color:#5ad65a\">Correct!</span>").hide().fadeIn(1000);
+                                parent.$(parent.document).trigger('update_check_btn', ["popover-<p style=\"color:#5ad65a\">Correct!</p>"]);
                                 if (!used_hint) {
                                     var $historyIcon = $('.no-ans').first();
                                     $historyIcon.addClass('badge-correct');
@@ -435,12 +439,15 @@
                             } else if (try_again) {
                                 updateAttemptNo();
                                 if (attemptNo === $currentQuestion.data('max-attempts')) {
-                                    $('.answer-status').html("<span style=\"color:#d43e3e\">Last chance! Try Again.</span>").hide().fadeIn(1000).delay(1000).fadeOut(1000);
+                                    //$('.answer-status').html("<span style=\"color:#d43e3e\">Last chance! Try Again.</span>").hide().fadeIn(1000).delay(1000).fadeOut(1000);
+                                    parent.$(parent.document).trigger('update_check_btn', ["popover-<p style=\"color:#d43e3e\">Last chance! Try Again.</p>"]);
                                 } else {
-                                    $('.answer-status').html("<span style=\"color:#d43e3e\">Incorrect! Try Again.</span>").hide().fadeIn(1000).delay(1000).fadeOut(1000);
+                                    //$('.answer-status').html("<span style=\"color:#d43e3e\">Incorrect! Try Again.</span>").hide().fadeIn(1000).delay(1000).fadeOut(1000);
+                                    parent.$(parent.document).trigger('update_check_btn', ["popover-<p style=\"color:#d43e3e\">Incorrect! Try Again.</p>"]);
                                 }
                             } else {
-                                $('.answer-status').html("<span style=\"color:#d43e3e\">Hard Luck!</span>").hide().fadeIn(1000);
+                                //$('.answer-status').html("<span style=\"color:#d43e3e\">Hard Luck!</span>").hide().fadeIn(1000);
+                                parent.$(parent.document).trigger('update_check_btn', ["popover-<p style=\"color:#d43e3e\">Hard Luck!</p><p>There is an explanation given for you.</p>"]);
                                 if (!used_hint) {
                                     var $historyIcon = $('.no-ans').first();
                                     $historyIcon.addClass('badge-incorrect');
@@ -466,6 +473,7 @@
                                     if (isLastQuestion) {
                                         // Summary of user's answers
                                         //$('#next-btn').fadeOut();
+                                        parent.$(parent.document).trigger('update_check_btn', ["destroy-popover"])
                                         parent.$(parent.document).trigger('update_check_btn', ["end-quiz"])
                                         $('#help-btn').fadeOut();
                                         $currentQuestion.fadeOut();
