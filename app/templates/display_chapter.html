@@ -165,6 +165,7 @@
 {% endblock %}
 
 {% block page_content %}
+{% if lessons %}
 <div class="row">
     <div class="col-lg-3 d-none d-lg-block" id="scrollspy">
         <ul class="nav nav-pills flex-column position-fixed">
@@ -235,6 +236,12 @@
         {% endfor %}
     </div>
 </div>
+{% else %}
+<div class="page-header">
+    <h1>{{ chapter.title }}</h1>
+</div>
+<p>Sorry, but this chapter has no content. Content will be coming soon.</p>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
