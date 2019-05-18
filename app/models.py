@@ -253,6 +253,9 @@ class User(UserMixin, db.Model):
     answers = db.relationship('UserAnswer', backref='user', lazy='dynamic')
     page_questions = db.relationship('PageQuestion', backref='author', lazy='dynamic')
     page_answers = db.relationship('PageAnswer', backref='author', lazy='dynamic')
+    quizzes_attempted = db.relationship('Quiz', secondary='quizattempts',
+                        backref=db.backref('users_attempted', lazy='dynamic'),
+                        lazy='dynamic') # For quiz results
 
     @property
     def password(self):
@@ -547,6 +550,18 @@ class UserAnswer(db.Model):
 
     def __repr__(self):
         return '<User Answer (%s, %i, %s)>' % (self.name, self.score, self.user)
+
+class QuizAttempt(db.Model):
+    __tablename__ = 'quizattempts'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'))
+    percent = db.Column(db.Integer) # Overall score of quiz (mean of all question scores)
+    datetime = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref=db.backref('quizattempts',
+                cascade='all, delete-orphan', lazy='dynamic'))
+    quiz = db.relationship('Quiz', backref=db.backref('quizattempts',
+                cascade='all, delete-orphan', lazy='dynamic'))
 
 class AnswerStatus(db.Model):
     __tablename__ = 'answerstatus'

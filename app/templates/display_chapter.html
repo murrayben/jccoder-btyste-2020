@@ -29,7 +29,20 @@
                         <div class="practice">
                             <div class="card bg-light mb-3">
                                 <div class="card-body">
-                                    <p class="quiz-skill font-weight-bold">{{ quiz.tested_skills.first().description }}</p>
+                                    {%- set quiz_attempts = QuizAttempt.query.filter_by(user_id=current_user.id, quiz_id=quiz.id) -%}
+                                    {%- set attempted_quiz = (current_user.is_authenticated and quiz_attempts.count() > 0) -%}
+                                    <p class="quiz-skill font-weight-bold{% if attempted_quiz %} mb-0{% endif %}">{{ quiz.tested_skills.first().description }}</p>
+                                    {%- if attempted_quiz %}
+                                    <!--
+                                    {%- set sorted_attempts = [] -%}
+                                    {%- for attempt in quiz_attempts.all() %}
+                                        {%- if sorted_attempts.append(attempt.percent) %}{% endif -%}  {# Jinja2 trick #}
+                                    {% endfor -%}
+                                    {%- set sorted_attempts = sorted_attempts | sort -%} -->
+                                    {%- set best_score = quiz_attempts.order_by(QuizAttempt.percent.desc()).first().percent -%}
+                                    {%- set most_recent = quiz_attempts.order_by(QuizAttempt.datetime.desc()).first() -%}
+                                    <div class="best-score mb-1">Best score: <span class="score">{{ best_score }}</span>% <span class="float-right attempt-datetime" title="{{ most_recent.datetime }}"><em>({{ moment(most_recent.datetime).fromNow(refresh=True) }})</em></span></div>
+                                    {% endif -%}
                                     <button type="button" data-quiz-id="{{ quiz.id }}" class="btn btn-sm btn-outline-primary quiz-hyperlink">Start</button>
                                 </div>
                             </div>
@@ -142,7 +155,7 @@
             <!-- Will be replaced by page Content -->
             </div>
             <div class="modal-footer">
-                <button role="button" class="btn btn-primary" data-toggle="popover" data-trigger="manual" data-placement="top" data-html="true" data-animation="false" id="check-btn">Check</button>
+                <button role="button" class="btn btn-lg btn-info px-5" data-toggle="popover" data-trigger="manual" data-placement="top" data-html="true" data-animation="false" id="check-btn">Check</button>
                 <button id="modal-close-btn" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 <a href="#" class="btn btn-success" id="next-page">Next <span id="page-type"></span></a>
             </div>
@@ -186,7 +199,7 @@
                             </div>
                         </div>
                         <div class="col-12 col-lg-6">
-                            <div class="practice">
+                            <div class="practice-quizzes">
                                 <h4 class="mb-3">Practice</h4>
                                 {{ display_quiz(first_quiz) }}
                             </div>
@@ -226,6 +239,7 @@
 
 {% block scripts %}
     {{ super() }}
+    {{ moment.include_moment() }}
     <script type="text/javascript">
         // $('#lesson-sidebar').affix({
         //     offset: {
@@ -251,6 +265,12 @@
         $(window).on('resize', function() {
             $(document).trigger('quiz_height_update');
         });
+
+        $('#pageModal').on('hide.bs.modal', function() {
+            $('#page-title').empty();
+            $('#page-html').empty();
+        });
+
         $('.quiz-hyperlink').on('click', function() {
             $('#pageModal').modal('show');
             
@@ -258,7 +278,7 @@
             
             $('#go-to-page').css('visibility', 'hidden');
             $('#next-page').hide();
-            $('#page-title').text($(this).prev().text());
+            $('#page-title').text($(this).siblings().first().text());
             $('#page-html').html('<iframe src="/take-quiz/' + quizID + '" frameborder="0" width="95%" height="95%" id="quiz-' + quizID + '" class="quiz position-absolute"></iframe>');
             $('#modal-close-btn').hide();
             $('#check-btn').show().text("Check").attr('disabled', 'disabled').on('click', function() { // Iframe will trigger event to enable it
@@ -275,12 +295,14 @@
                 $('#go-to-page').css('visibility', 'visible');
                 $(this).off('hidden.bs.modal')
                 $(document).off('quiz_height_update');
+                $('#check-btn').off('click');
             });
         });
 
         $(document).on('update_check_btn', function(event, action) {
             // Update text or state of quiz check button
             var $check_btn = $('#check-btn');
+            console.log(action);
             if (action === "disable-btn") {
                 $check_btn.attr('disabled', 'disabled');
             } else if (action === "enable-btn") {
@@ -293,10 +315,45 @@
                 $check_btn.hide();
                 $('#modal-close-btn').show();
             } else if (action.indexOf('popover-') !== -1) {
-                $check_btn.attr('data-content', action.replace('popover-', ''));
+                var popover_html = `<div class="media">
+<div class="mr-3">
+    <i class="fas fa-bell fa-4x" style="color: #b9b922;"></i>
+</div><div class="media-body">` + action.replace('popover-', '') + `</div></div>`;
+                $check_btn.attr('data-content', popover_html);
                 $check_btn.popover('show');
+                var timeout = setTimeout(function() {
+                    $check_btn.popover('dispose');
+                    clearTimeout(timeout);
+                }, 3000);
             } else if (action === "destroy-popover") {
                 $check_btn.popover('dispose');
+            } else if (action.indexOf('ID') !== -1) {
+                var quiz_id = action.replace('ID', '');
+                var data = {'id': quiz_id};
+                $.ajax({
+                    url: '{{ url_for("main.update_quiz_attempts") }}',
+                    data: JSON.stringify(data),
+                    dataType: 'json',
+                    contentType: 'application/json; charset=utf-8',
+                    type: 'POST',
+                    success: function(response) {
+                        var score = response.overall_score;
+                        var best_score = $('.quiz-hyperlink[data-quiz-id="' + quiz_id + '"]').prev().children('.score').first();
+                        if (score > Number(best_score.text())) {
+                            best_score.text(score);
+                        }
+                        var datetime_span = best_score.siblings('span');
+                        console.log(datetime_span);
+                        console.log(response);
+                        datetime_span.attr('title', response.formatted_datetime);
+                        datetime_span.children('em').children('span').attr('data-timestamp', response.datetime_string);
+                        flask_moment_render_all();
+                    },
+                    error: function(error) {
+                        console.error(error);
+                    }
+                });
+                
             } else {
                 $check_btn.text(action);
             }

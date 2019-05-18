@@ -122,6 +122,10 @@
         .blank {
             vertical-align: middle !important;
         }
+
+        #attempt-status {
+            margin-bottom: 0;
+        }
     </style>
 {% endblock %}
 
@@ -146,7 +150,7 @@
             <div class="no-ans history-badge"></div>
             {% endfor %}
         </div>
-        <div class="questions">
+        <div class="questions" style="display: none;">
             {% for question in questions %}
             <div class="question" id="{{ question.id }}" data-max-attempts="{{ question.max_attempts }}" data-at-hint="0">
                 {% if question.question_type.code == 'D' %}
@@ -161,11 +165,11 @@
                 <div class="mb-3">{{ question.show() | safe }}</div>
                 {% if question.question_type.code == 'C' %}
                 {% for option in question.options %}
-                <div class="form-check">
-                    <input type="radio" name="options-{{ question.id }}" />
-                    <span class="radio-value">
+                <div class="custom-control custom-radio">
+                    <input type="radio" id="options-{{ loop.index }}-{{ question.id }}" name="options-{{ question.id }}" class="custom-control-input" />
+                    <label class="custom-control-label" for="options-{{ loop.index }}-{{ question.id }}">
                         {{ option.text }}
-                    </span>
+                    </label>
                 </div>
                 {% endfor %}
                 
@@ -189,14 +193,14 @@
                                             </span> {{ video.title }}
                                         </a>
                                     </li>
-                                {% endfor %}
+                                    {% endfor %}
                                 </ul>
                                 {% endwith %}
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <h4>Still stuck?</h4>
-                            <button role="button" class="btn btn-block btn-outline-success mb-2 get-hint-btn">Get a hint</button>
+                            <button role="button" class="btn btn-block btn-success mb-2 get-hint-btn">Get a hint</button>
                             <p>If you use a hint, you will be deducted marks for each hint! Try to work out the problem first.</p>
                         </div>
                     </div>
@@ -212,20 +216,26 @@
         <div id="summary">
             <div class="table-responsive">
                 <table class="table table-bordered">
-                    <thead>
+                    <thead class="thead-dark">
                         <tr>
                             <th>Question</th>
-                            <th>Number of attempts</th>
+                            <th>Attempts</th>
                             <th>Your last attempt</th>
-                            <th>Correct Answer</th>
+                            <th>Answer</th>
                             <th>Score</th>
                             <th></th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="summary-content">
                         {% for question in questions %}
                         <tr id="question-{{ question.id }}">
-                            <td class="question-text"></td>
+                            <!-- <td class="question-text" data-toggle="popover" data-title="Question {{ loop.index }}" data-placement="auto" data-html="true" data-trigger="hover click" data-container="body"></td> -->
+                            <td class="question-text">
+                                <a href="#question-{{ question.id }}-{{ loop.index }}" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="question-{{ question.id }}-{{ loop.index }}">
+                                    Q{{ loop.index }}
+                                </a>
+                                
+                            </td>
                             <td class="no-attempts"></td>
                             <td class="last-attempt"></td>
                             <td class="correct-ans"></td>
@@ -236,6 +246,20 @@
                     </tbody>
                 </table>
             </div>
+            {% for question in questions %}
+            <div class="collapse" id="question-{{ question.id }}-{{ loop.index }}" data-parent="#summary">
+                <div class="actual-question-html card">
+                    <div class="card-body">
+                        <h5 class="card-title">Question {{ loop.index }}</h5>
+                        <p class="card-text">
+                            {{ question.html | safe }}
+                        </p>
+                        <div id="explanation-{{ question.id }}" class="collapse">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 {% endblock %}
@@ -254,6 +278,9 @@
             $('input[type="radio"]').attr('checked', false);
             $('input[type="text"]').val("");
             $('.question img').addClass('img-fluid');
+            /*$('.question-text').popover({
+                container: 'body'
+            });*/
             var $currentQuestion = $('.question').first();
             
             var tick = $('<span class="fas fa-check fa-fw">');
@@ -282,6 +309,10 @@
                 });
             });
 
+            $('#summary .collapse').on('shown.bs.collapse hidden.bs.collapse', function() {
+                parent.$(parent.document).trigger('quiz_height_update');
+            });
+
             $('.get-hint-btn').on('click', function() {
                 var $this = $(this); // For further down
                 var $hints_box = $currentQuestion.children('.hints-box').first();
@@ -295,6 +326,7 @@
                         type: 'POST',
                         success: function(response) {
                             $hints_box.append(response.hint_html);
+                            $hints_box.children().attr('class', 'text-primary');
                             $currentQuestion.attr('data-at-hint', Number($currentQuestion.attr('data-at-hint')) + 1)
                             if ($currentQuestion.attr('data-at-hint') === "1") {
                                 /*data = {"hint_used_mark_incorrect": true};
@@ -377,7 +409,7 @@
             function checkQuestion() {
                 $('#next-btn').attr('disabled', 'disabled');
                 parent.$(parent.document).trigger('update_check_btn', ["disable-btn"])
-                var $checkedRadioBtns = $currentQuestion.children('.form-check').children('input').filter(':checked');
+                var $checkedRadioBtns = $currentQuestion.children('.custom-radio').children('input').filter(':checked');
                 var draggedItems = $currentQuestion.children('.draggable-items-box');
                 if (draggedItems.length !== 0) {
                     draggedItems = draggedItems.children('.draggable-btn').length;
@@ -428,7 +460,7 @@
                             }
                             if (response.answer_status) {
                                 //$('.answer-status').html("<span style=\"color:#5ad65a\">Correct!</span>").hide().fadeIn(1000);
-                                parent.$(parent.document).trigger('update_check_btn', ["popover-<p style=\"color:#5ad65a\">Correct!</p>"]);
+                                parent.$(parent.document).trigger('update_check_btn', ["popover-<h5>That was the right answer! Well done!</h5>"]);
                                 if (!used_hint) {
                                     var $historyIcon = $('.no-ans').first();
                                     $historyIcon.addClass('badge-correct');
@@ -440,14 +472,14 @@
                                 updateAttemptNo();
                                 if (attemptNo === $currentQuestion.data('max-attempts')) {
                                     //$('.answer-status').html("<span style=\"color:#d43e3e\">Last chance! Try Again.</span>").hide().fadeIn(1000).delay(1000).fadeOut(1000);
-                                    parent.$(parent.document).trigger('update_check_btn', ["popover-<p style=\"color:#d43e3e\">Last chance! Try Again.</p>"]);
+                                    parent.$(parent.document).trigger('update_check_btn', ["popover-<h5>Last chance! Try Again.</h5>"]);
                                 } else {
                                     //$('.answer-status').html("<span style=\"color:#d43e3e\">Incorrect! Try Again.</span>").hide().fadeIn(1000).delay(1000).fadeOut(1000);
-                                    parent.$(parent.document).trigger('update_check_btn', ["popover-<p style=\"color:#d43e3e\">Incorrect! Try Again.</p>"]);
+                                    parent.$(parent.document).trigger('update_check_btn', ["popover-<h5>Incorrect! Try Again.</h5>"]);
                                 }
                             } else {
                                 //$('.answer-status').html("<span style=\"color:#d43e3e\">Hard Luck!</span>").hide().fadeIn(1000);
-                                parent.$(parent.document).trigger('update_check_btn', ["popover-<p style=\"color:#d43e3e\">Hard Luck!</p><p>There is an explanation given for you.</p>"]);
+                                parent.$(parent.document).trigger('update_check_btn', ["popover-<h5>Hard Luck! There is an explanation given for you.</h5>"]);
                                 if (!used_hint) {
                                     var $historyIcon = $('.no-ans').first();
                                     $historyIcon.addClass('badge-incorrect');
@@ -486,25 +518,28 @@
                                             contentType: 'application/json',
                                             type: 'POST',
                                             success: function(response) {
-                                                console.log(response);
                                                 var $summary = $('#summary');
                                                 for (var i = 0; i < $('tbody tr').length; i++) {
                                                     var thisQuesID = response.question_ids[i]
                                                     var $row = $('tr#question-' + thisQuesID)
                                                     var $rowChildren = $row.children();
-                                                    $rowChildren.filter('.question-text').html(response.questions[i]);
+                                                    //$rowChildren.filter('.question-text').text('Question ' + (i+1)).attr('data-content', response.questions[i]);
+                                                    //$rowChildren.filter('.question-text').children('.collapse').children('.actual-question-html').html(response.questions[i]);
                                                     $rowChildren.filter('.no-attempts').text(response.no_attempts[i]);
                                                     $rowChildren.filter('.last-attempt').text(response.last_attempts[i]);
                                                     $rowChildren.filter('.correct-ans').text(response.correct_answers[i]);
                                                     $rowChildren.filter('.score').text(response.scores[i]);
                                                     if (response.user_ans_status[i]) {
                                                         $rowChildren.filter('.ans-status').append(tick.clone());
+                                                        $rowChildren.parent().addClass('table-success');
                                                     } else {
                                                         $rowChildren.filter('.ans-status').append(x.clone());
+                                                        $rowChildren.parent().addClass('table-danger');
                                                     }
                                                 }
                                                 $summary.fadeIn(function () {
                                                     parent.$(parent.document).trigger('quiz_height_update');
+                                                    parent.$(parent.document).trigger('update_check_btn', ["ID" + "{{ quiz.id }}"]);
                                                 });
                                             },
                                             error: function(error) {
@@ -513,7 +548,7 @@
                                         });
                                     } else {
                                         $('#next-btn').text('Check').off('click').on('click', checkQuestion);
-                                        parent.$(parent.document).trigger('update_check_btn', ["Check"])
+                                        parent.$(parent.document).trigger('update_check_btn', ["Check"]);
                                         nextQuestion();
                                     }
                                 });

@@ -1,7 +1,8 @@
 from flask import abort, current_app, jsonify, redirect, render_template, url_for, session, request, g
 from flask_login import current_user, login_required
 from datetime import datetime
-from ..models import db, Chapter, Page, PageAnswer, PageQuestion, Project, Quiz, Lesson, UserAnswer, Question, AnswerStatus, Hint
+from ..models import db, Chapter, Page, PageAnswer, PageQuestion, Project, Quiz, Lesson, UserAnswer, Question, AnswerStatus, Hint, QuizAttempt
+from .. import moment
 from .forms import NewPageQuestion, NewPageAnswer, EditPageAnswer, SearchForm
 from . import main
 
@@ -77,7 +78,9 @@ def chapter(id):
         lessons.append(lesson)
         if lesson.next_lesson:
             append_lessons(lesson.next_lesson)
-    append_lessons(chapter.lessons.filter_by(prev_lesson=None).first())
+    first_lesson = chapter.lessons.filter_by(prev_lesson=None).first()
+    if first_lesson:
+        append_lessons(first_lesson)
     return render_template('display_chapter.html', title="JCCoder - " + chapter.title, chapter=chapter, lessons=lessons)
 
 @main.route('/page-content/', methods=['GET', 'POST'])
@@ -158,6 +161,9 @@ def check():
     if (not status) and (not try_again):
         # Got it wrong
         score = 0
+        solution_html = question.solution_html
+    else:
+        solution_html = ""
 
     if not try_again:
         session["scores"].append(score)
@@ -167,7 +173,7 @@ def check():
     if current_user.is_authenticated:
         user_answer = UserAnswer(keyed_answer=answer, answer_status=answer_status, score=score, user=current_user._get_current_object(),
                                 question=question, attempt_no=attempt_no)
-    return jsonify(success=True, answer_status=status, try_again=try_again, solution_html=question.solution_html)
+    return jsonify(success=True, answer_status=status, try_again=try_again, solution_html=solution_html)
 
 @main.route('/summary', methods=['GET', 'POST'])
 def summary():
@@ -185,9 +191,35 @@ def summary():
         correct_answers.append(question.correct_answer())
         user_ans_status.append(question.check(session["user_results"][i]))
         i += 1
+
+    overall_score = sum(session["scores"]) / len(session["scores"])
+    if current_user.is_authenticated:
+        quiz_attempt = QuizAttempt(user_id=current_user.id, quiz_id=data['id'], percent=overall_score)
+        UserAnswer.query.filter_by(user_id=current_user.id).delete()
+        db.session.add(quiz_attempt)
+
     return jsonify(success=True, question_ids=question_ids, questions=questions, no_attempts=session["no_attempts"],
             last_attempts=session["user_results"], scores=session["scores"],
-            correct_answers=correct_answers, user_ans_status=user_ans_status)
+            correct_answers=correct_answers, user_ans_status=user_ans_status,
+            overall_score=overall_score)
+
+@main.route('/update-quiz-attempts', methods=["GET", "POST"])
+def update_quiz_attempts():
+    if request.method == "GET":
+        abort(404)
+    data = request.get_json()
+    quiz_id = data["id"]
+    quiz = Quiz.query.get(quiz_id)
+
+    if not quiz:
+        abort(400)  # Abort as id is invalid
+    if current_user.is_authenticated:
+        quiz_attempt = QuizAttempt.query.filter_by(quiz_id=data["id"], user_id=current_user.id).order_by(QuizAttempt.datetime.desc()).first()
+        attempt_time = moment.create(quiz_attempt.datetime)
+        formatted_time = attempt_time.format('YYYY-MM-DD hh:mm:ss')
+        return jsonify(success=True, authenticated=True, overall_score=quiz_attempt.percent, datetime_string=attempt_time.utc(), formatted_datetime=formatted_time)
+    else:
+        return jsonify(success=True, authenticated=False)
 
 @main.route('/get-hint', methods=["GET", "POST"])
 def get_hint():
