@@ -333,6 +333,7 @@
                     clearTimeout(timeout);
                 }, 3000);
             } else if (action === "destroy-popover") {
+                $check_btn.popover('hide');
                 $check_btn.popover('dispose');
             } else if (action.indexOf('ID') !== -1) {
                 var quiz_id = action.replace('ID', '');
@@ -344,27 +345,31 @@
                     contentType: 'application/json; charset=utf-8',
                     type: 'POST',
                     success: function(response) {
-                        var score = response.overall_score;
-                        var best_score = $('.quiz-hyperlink[data-quiz-id="' + quiz_id + '"]').prev().children('.score').first();
-                        if (score > Number(best_score.text())) {
-                            best_score.text(score);
-                        }
-                        var datetime_span = best_score.siblings('span');
-                        console.log(datetime_span);
-                        console.log(response);
-                        var $temp = $(response.formatted_datetime);
-                        $temp.appendTo('body'); // Only for less than a second
-                        flask_moment_render($temp);
-                        var title = $temp.text();
-                        $temp.remove();
-                        datetime_span.attr('title', title);
-                        $temp = $(response.datetime_string);
-                        $temp.appendTo('body'); // Same as above
-                        flask_moment_render($temp)
-                        var fromNow = $temp.text();
-                        $temp.remove();
-                        datetime_span.children('em').children('span').attr('data-timestamp', $(response.datetime_string).text()).text(fromNow);
-                        flask_moment_render(momentFromNow);
+                        if (response.authenticated) {
+                            var score = response.overall_score;
+                            var best_score = $('.quiz-hyperlink[data-quiz-id="' + quiz_id + '"]').prev().children('.score').first();
+                            if (score > Number(best_score.text())) {
+                                best_score.text(score);
+                            }
+                            var datetime_span = best_score.siblings('span');
+                            var $temp = $(response.formatted_datetime);
+
+                            $temp.appendTo('body'); // Only for less than a second
+                            flask_moment_render($temp);
+                            var title = $temp.text();
+                            $temp.remove();
+                            datetime_span.attr('title', title);
+
+                            $temp = $(response.datetime_string);
+
+                            $temp.appendTo('body'); // Same as above
+                            flask_moment_render($temp)
+                            var fromNow = $temp.text();
+                            $temp.remove();
+                            
+                            datetime_span.children('em').children('span').attr('data-timestamp', $(response.datetime_string).text()).text(fromNow);
+                            flask_moment_render_all();
+                        }   
                     },
                     error: function(error) {
                         console.error(error);

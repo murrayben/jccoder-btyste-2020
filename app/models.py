@@ -378,8 +378,6 @@ class Question(db.Model):
     html = db.Column(db.Text)
     image_url = db.Column(db.Text)
     max_attempts = db.Column(db.Integer)
-    solution = db.Column(db.Text)
-    solution_html = db.Column(db.Text)
     question_type_id = db.Column(db.Integer, db.ForeignKey('questiontypes.id'))
     quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'))
     options = db.relationship('QuestionOption', backref='question', lazy='dynamic')
@@ -402,6 +400,12 @@ class Question(db.Model):
     def correct_answer(self):
         return self.answer.first().option.text
 
+    def get_explanation(self):
+        explanation = ""
+        for hint in self.hints.all():
+            explanation += hint.html
+        return explanation
+
     def generate_new_html(target, value, oldvalue, initiator):
         # If the new question page is going to open to regular users
         # allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
@@ -413,22 +417,10 @@ class Question(db.Model):
         # Otherwise:
         target.html = customTagMarkdown(value)
 
-    def generate_new_solution_html(target, value, oldvalue, initiator):
-        # If the new question page is going to open to regular users
-        # allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
-        #                 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
-        #                 'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span']
-        # target.html = bleach.linkify(bleach.clean(
-        #     customTagMarkdown(value),
-        #     tags=allowed_tags))
-        # Otherwise:
-        target.solution_html = customTagMarkdown(value)
-
     def __repr__(self):
         return '<Question> {0} Answer: {1}'.format(self.text, self.correct_answer())
 
 db.event.listen(Question.text, 'set', Question.generate_new_html)
-db.event.listen(Question.solution, 'set', Question.generate_new_solution_html)
 
 class Hint(db.Model):
     __tablename__ = 'hints'

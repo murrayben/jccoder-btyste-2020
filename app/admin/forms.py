@@ -16,7 +16,6 @@ class NewQuestion(FlaskForm):
     text = TextAreaField('Question', validators=[DataRequired()])
     options1 = StringField('Options', validators=[DataRequired()])
     answer = StringField('Answer (first option is 1, second option is 2, etc.)', validators=[DataRequired()])
-    solution = TextAreaField('Solution Description', validators=[DataRequired()])
     hints = TextAreaField('Hints [seperate each hint with "::sep::" (without quotes)]', validators=[DataRequired()])
     max_attempts = IntegerField('Maximum attempts', widget=NumberInput(min=1, max=10), validators=[DataRequired()])
     quiz = SelectField('Quiz', coerce=int)

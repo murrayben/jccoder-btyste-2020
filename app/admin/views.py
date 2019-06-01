@@ -46,7 +46,7 @@ def new_question():
         question_type_id = QuestionType.query.filter(QuestionType.id == question_type).first().id
         quiz = Quiz.query.get(form.quiz.data)
         question = Question(text=form.text.data, question_type_id=question_type_id, max_attempts=form.max_attempts.data,
-                                quiz=quiz, solution=form.solution.data)
+                                quiz=quiz)
         db.session.add(question)
         db.session.commit()
 
@@ -532,7 +532,6 @@ def edit_question(id):
         question.question_type_id = form.type.data
         question.text = form.text.data
         question.max_attempts = form.max_attempts.data
-        question.solution = form.solution.data
         if question.question_type_id == QuestionType.query.filter_by(code='C').first().id:
             question.answer.first().option_id = question.options.all()[int(form.answer.data) - 1].id
         else:
@@ -568,7 +567,6 @@ def edit_question(id):
     form.hints.data = hint_text[:-8] # [:-8] gets rid of extra ::sep:: at the end (the 8th char is a newline)
     form.max_attempts.data = question.max_attempts
     form.quiz.data = question.quiz_id
-    form.solution.data = question.solution
 
     if question.question_type_id == QuestionType.query.filter_by(code='S').first().id:
         options = [None]

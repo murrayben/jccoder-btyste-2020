@@ -162,7 +162,7 @@ def check():
     if (not status) and (not try_again):
         # Got it wrong
         score = 0
-        solution_html = question.solution_html
+        solution_html = question.get_explanation()
     else:
         solution_html = ""
 
@@ -171,7 +171,7 @@ def check():
         # if not data.get("used_hint", False):
         session["user_results"].append(answer)
         session["no_attempts"].append(attempt_no)
-        session["explanations"].append(question.solution_html)
+        session["explanations"].append(question.get_explanation())
     if current_user.is_authenticated:
         user_answer = UserAnswer(keyed_answer=answer, answer_status=answer_status, score=score, user=current_user._get_current_object(),
                                 question=question, attempt_no=attempt_no)
