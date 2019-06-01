@@ -68,6 +68,7 @@ def take_quiz(id):
     session["user_results"] = []
     session["no_attempts"] = []
     session["scores"] = []
+    session["explanations"] = []
     return render_template('take_quiz.html', title="JCCoder - Take Quiz", quiz=quiz, questions=questions)
 
 @main.route('/chapter/<int:id>')
@@ -170,6 +171,7 @@ def check():
         # if not data.get("used_hint", False):
         session["user_results"].append(answer)
         session["no_attempts"].append(attempt_no)
+        session["explanations"].append(question.solution_html)
     if current_user.is_authenticated:
         user_answer = UserAnswer(keyed_answer=answer, answer_status=answer_status, score=score, user=current_user._get_current_object(),
                                 question=question, attempt_no=attempt_no)
@@ -201,7 +203,7 @@ def summary():
     return jsonify(success=True, question_ids=question_ids, questions=questions, no_attempts=session["no_attempts"],
             last_attempts=session["user_results"], scores=session["scores"],
             correct_answers=correct_answers, user_ans_status=user_ans_status,
-            overall_score=overall_score)
+            explanations=session["explanations"], overall_score=overall_score)
 
 @main.route('/update-quiz-attempts', methods=["GET", "POST"])
 def update_quiz_attempts():
@@ -217,7 +219,7 @@ def update_quiz_attempts():
         quiz_attempt = QuizAttempt.query.filter_by(quiz_id=data["id"], user_id=current_user.id).order_by(QuizAttempt.datetime.desc()).first()
         attempt_time = moment.create(quiz_attempt.datetime)
         formatted_time = attempt_time.format('YYYY-MM-DD hh:mm:ss')
-        return jsonify(success=True, authenticated=True, overall_score=quiz_attempt.percent, datetime_string=attempt_time.utc(), formatted_datetime=formatted_time)
+        return jsonify(success=True, authenticated=True, overall_score=quiz_attempt.percent, datetime_string=attempt_time.fromNow(), formatted_datetime=formatted_time)
     else:
         return jsonify(success=True, authenticated=False)
 

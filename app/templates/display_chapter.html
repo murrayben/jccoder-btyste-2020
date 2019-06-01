@@ -352,9 +352,19 @@
                         var datetime_span = best_score.siblings('span');
                         console.log(datetime_span);
                         console.log(response);
-                        datetime_span.attr('title', response.formatted_datetime);
-                        datetime_span.children('em').children('span').attr('data-timestamp', response.datetime_string);
-                        flask_moment_render_all();
+                        var $temp = $(response.formatted_datetime);
+                        $temp.appendTo('body'); // Only for less than a second
+                        flask_moment_render($temp);
+                        var title = $temp.text();
+                        $temp.remove();
+                        datetime_span.attr('title', title);
+                        $temp = $(response.datetime_string);
+                        $temp.appendTo('body'); // Same as above
+                        flask_moment_render($temp)
+                        var fromNow = $temp.text();
+                        $temp.remove();
+                        datetime_span.children('em').children('span').attr('data-timestamp', $(response.datetime_string).text()).text(fromNow);
+                        flask_moment_render(momentFromNow);
                     },
                     error: function(error) {
                         console.error(error);

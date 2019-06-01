@@ -380,6 +380,8 @@
                 });
             });
 
+            $('.blank').attr('max-width', Number($('.draggable-btn').first().width()) + 50);
+
             function updateAttemptNo(reset=false) {
                 if (reset) {
                     attemptNo = 1;
@@ -529,6 +531,7 @@
                                                     $rowChildren.filter('.last-attempt').text(response.last_attempts[i]);
                                                     $rowChildren.filter('.correct-ans').text(response.correct_answers[i]);
                                                     $rowChildren.filter('.score').text(response.scores[i]);
+                                                    $('#explanation-' + thisQuesID).html(response.explanations[i]);
                                                     if (response.user_ans_status[i]) {
                                                         $rowChildren.filter('.ans-status').append(tick.clone());
                                                         $rowChildren.parent().addClass('table-success');
