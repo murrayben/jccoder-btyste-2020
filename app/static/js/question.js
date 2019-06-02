@@ -34,12 +34,12 @@ function updateFields(field) {
         $('[name="options1"]').parent().fadeIn(1000);
         $('[name="options1"]').val("");
         $deleteOptionBtn.prependTo($('#btns')).hide();
-        $deleteOptionBtn.on('click', deleteInput);
+        $deleteOptionBtn.off('click').on('click', deleteInput);
         if ($('[name="options1"]').length > 2) {
             $deleteOptionBtn.fadeIn(1000)
         }
         $newOptionBtn.prependTo($('#btns')).hide().fadeIn(1000);
-        $newOptionBtn.on('click', addInput);
+        $newOptionBtn.off('click').on('click', addInput);
         $('#answer').prev().text('Answer (first option is 1, second option is 2, etc.)');
         $('#answer').attr('type', 'number');
         $('#answer').attr('min', 1);
@@ -49,12 +49,12 @@ function updateFields(field) {
         $('[name="options1"]').parent().fadeIn(1000);
         $('[name="options1"]').val("");
         $deleteOptionBtn.prependTo($('#btns')).hide();
-        $deleteOptionBtn.on('click', deleteInput);
+        $deleteOptionBtn.off('click').on('click', deleteInput);
         if ($('[name="options1"]').length > 2) {
-            $deleteOptionBtn.fadeIn(1000)
+            $deleteOptionBtn.fadeIn(1000);
         }
         $newOptionBtn.prependTo($('#btns')).hide().fadeIn(1000);
-        $newOptionBtn.on('click', addInput);
+        $newOptionBtn.off('click').on('click', addInput);
         $('#answer').prev().text('Answer (in format: table_box_row=option_num)');
         $('#answer').attr('type', 'input');
     } else if (Number($this.val()) === 3) {
