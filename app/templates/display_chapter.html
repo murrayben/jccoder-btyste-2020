@@ -169,6 +169,9 @@
 <div class="row">
     <div class="col-lg-3 d-none d-lg-block" id="scrollspy">
         <ul class="nav nav-pills flex-column position-fixed">
+            <li class="nav-item">
+                <span class="nav-link text-uppercase text-muted">Contents</span>
+            </li>
             {% for lesson in lessons %}
             <li class="lesson-link nav-item">
                 <a href="#lesson-{{ lesson.id }}" class="nav-link">{{ lesson.title }}</a>
@@ -178,12 +181,13 @@
     </div>
     <div class="col-12 col-lg-9 position-relative">
         <h1>{{ chapter.title }}</h1>
+        <p class="font-weight-normal">{{ chapter.description }}</p>
         <hr>
         {% for lesson in lessons %}
         <div id="lesson-{{ lesson.id }}" class="mb-4">
-            <div class="card border-dark">
-                <div class="card-header">
-                    <h3>{{ lesson.title }}</h3>
+            <div class="card border-primary">
+                <div class="card-header bg-primary">
+                    <h3 class="text-white mb-0">{{ lesson.title }}</h3>
                 </div>
                 <div class="card-body">
                     <div class="lesson-overview">
@@ -239,6 +243,7 @@
 {% else %}
 <div class="page-header">
     <h1>{{ chapter.title }}</h1>
+    <p class="font-weight-normal">{{ chapter.description }}</p>
 </div>
 <p>Sorry, but this chapter has no content. Content will be coming soon.</p>
 {% endif %}

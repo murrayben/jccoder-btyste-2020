@@ -138,7 +138,7 @@
                     {% endfor %}
                 </div>
                 <h5>Drag the above tiles to the correct box on the right.</h5>
-                <p class="text-danger">WARNING: When you drag all 3 tiles to a box, they're positions cannot be changed.</p>
+                <p class="text-danger">WARNING: When you drag all {{ question.options[:-1] | length }} tiles to a box, they're positions cannot be changed.</p>
 {% endmacro %}
 {% macro add_question_input(question, enable_input=True) %}
                 {% if question.question_type.code == 'C' %}
