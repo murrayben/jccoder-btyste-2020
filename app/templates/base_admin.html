@@ -224,5 +224,6 @@
 
 {% block scripts %}
     {{ super() }}
+    <script src="{{ url_for('static', filename='js/base_scripts.js') }}"></script>
     <script src="{{ url_for('static', filename='js/base_scripts_admin.js') }}"></script>
 {% endblock %}

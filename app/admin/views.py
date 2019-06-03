@@ -428,7 +428,9 @@ def edit_lesson(id):
         lesson.chapter_id = form.chapter.data
         lesson.next_lesson_id = form.next_lesson.data
         if not form.next_lesson.data == 0:
-            Lesson.query.get(form.next_lesson.data).prev_lesson = lesson
+            next_lesson = Lesson.query.get(form.next_lesson.data)
+            next_lesson.chapter_id = form.chapter.data
+            next_lesson.prev_lesson = lesson
         else:
             lesson.next_lesson = None # MySQL doesn't like 0
         db.session.add(lesson)
