@@ -96,7 +96,7 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
             recording_drag_and_drop = True
             line = ''
         elif '::/drag-and-drop::' in line:
-            table = """<table class="table bg-primary table-bordered text-white">\n"""
+            table = """<table class="table bg-info table-bordered text-white">\n"""
             for option in drag_and_drop_options:
                 table += """    <tr>
         <td>{0}</td>
@@ -131,6 +131,17 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
             line = "</div></div></div>"
             recording_collapse = False
 
+        elif ':glossary-item::' in line:
+            glossary_item = line.split('::')[1].strip()
+            line = """<div class="card mb-3">
+    <h5 class="card-header">{0}</h5>
+    <div class="card-body pb-1">""".format(glossary_item)
+            recording_collapse = True
+        
+        elif '::/glossary-item::' in line:
+            line = "</div></div>"
+            recording_collapse = False
+        
         elif recording_collapse:
             line = markdown(line, output_format='html')
         if add_line:

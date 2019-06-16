@@ -130,7 +130,7 @@
 {% endblock %}
 
 {% macro add_drag_n_drop_text(question, draggable_buttons=True) %}
-                <div class="draggable-items-box card bg-primary mb-3 p-3 flex-row align-items-stretch" style="min-height: 80px;">
+                <div class="draggable-items-box card bg-info mb-3 p-3 flex-row align-items-stretch" style="min-height: 80px;">
                     {% for item in question.options[:-1] %}
                     <span class="{% if not draggable_buttons %}un{% endif %}draggable-btn bg-white mr-3 d-flex" data-position="{{ loop.index }}">
                         <span class="m-auto text-dark">{{ item.text | safe }}</span>
@@ -138,7 +138,9 @@
                     {% endfor %}
                 </div>
                 <h5>Drag the above tiles to the correct box on the right.</h5>
+                {% if draggable_buttons %}
                 <p class="text-danger">WARNING: When you drag all {{ question.options[:-1] | length }} tiles to a box, they're positions cannot be changed.</p>
+                {% endif %}
 {% endmacro %}
 {% macro add_question_input(question, enable_input=True) %}
                 {% if question.question_type.code == 'C' %}
