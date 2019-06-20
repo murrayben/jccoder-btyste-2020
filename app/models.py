@@ -818,3 +818,48 @@ class Skill(db.Model):
     def what_model(self):
         return "Skill"
 
+class Class(db.Model):
+    __tablename__ = 'classes'
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(8), unique=True)
+    name = db.Column(db.String(50))
+    description = db.Column(db.Text)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    students = db.relationship('User', secondary='class_students',
+        backref=db.backref('classes', lazy='dynamic'), lazy='dynamic')
+
+    def __repr__(self):
+        return "<Class, Name: %s Code: %s>" % (self.name, self.code)
+
+class ClassStudent(db.Model):
+    __tablename__ = 'class_students'
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    class_id = db.Column(db.Integer, db.ForeignKey('classes.id'))
+    date_joined = db.Column(db.DateTime, default=datetime.utcnow)
+    student_status = db.Column(db.Boolean, default=True)
+
+class Assignment(db.Model):
+    __tablename__ = 'assignments'
+    id = db.Column(db.Integer, primary_key=True)
+    due_time = db.Column(db.DateTime)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    class_id = db.Column(db.Integer, db.ForeignKey('classes.id'))
+    page_id = db.Column(db.Integer, db.ForeignKey('pages.id'))    # One will be null because pages
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'))  # and quizzes are different model
+    students = db.relationship('User', secondary='student_assignments', 
+        backref=db.backref('assignments', lazy='dynamic'), lazy='dynamic')
+
+    def is_quiz(self):
+        if self.quiz_id is not None:
+            return True
+        else:
+            return False
+
+class StudentAssignment(db.Model):
+    __tablename__ = 'student_assignments'
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    assignment_id = db.Column(db.Integer, db.ForeignKey('assignments.id'))
+    score = db.Column(db.Integer)
