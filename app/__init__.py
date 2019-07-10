@@ -50,8 +50,11 @@ def create_app(config_class=Config):
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
     
-    from app.announcements import announcements as announcements_blueprint
+    from .announcements import announcements as announcements_blueprint
     app.register_blueprint(announcements_blueprint, url_prefix='/announcements')
+
+    from .teacher import teacher as teacher_blueprint
+    app.register_blueprint(teacher_blueprint, url_prefix='/teacher')
 
     # Return app
     return app

@@ -1,0 +1,1 @@
+$('div.form-group.has-danger .form-control').addClass('is-invalid');

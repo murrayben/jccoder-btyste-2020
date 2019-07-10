@@ -1,3 +1,5 @@
+{% import "bootstrap/wtf.html" as wtf %}
+
 {% macro addPagination(pagination, endpoint) %}
     <ul class="pagination">
         <li{% if not pagination.has_prev %} class="page-item disabled" {% endif %}>

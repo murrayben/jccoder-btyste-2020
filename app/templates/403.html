@@ -5,5 +5,5 @@
     <h1>Sorry! You are unable to access this page.</h1>    
 </div>
 <p>{% if current_user.is_authenticated %}{{ current_user.username }},{% else %}You are not logged in so{% endif %} you do not have permission to access that page.</p>
-<a href="{{ url_for('main.index') }}" type="button" class="btn btn-primary">Home page</a>
+<a href="{{ url_for('main.index') }}" role="button" class="btn btn-primary">Home page</a>
 {% endblock %}

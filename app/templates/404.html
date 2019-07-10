@@ -1,17 +1,8 @@
 {% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
 
-{% block styles %}
-    {{ super() }}
-    <style type="text/css">
-        #home-page {
-            margin-top: 10px;
-        }
-    </style>
-{% endblock %}
-
 {% block page_content %}
 <div class="page-header">
-    <h1>Sorry! That page was not found.</h1>
-    <a href="{{ url_for('main.index') }}" type="button" class="btn btn-primary" id="home-page">Home page</a>
+    <h1 class="mb-3">Sorry! That page was not found.</h1>
+    <a href="{{ url_for('main.index') }}" role="button" class="btn btn-primary">Home page</a>
 </div>
 {% endblock %}

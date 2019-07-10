@@ -50,8 +50,8 @@
         $('#comBtn').on("click", function() {
             $('#formAcc').slideToggle();
         });
-        if ($('#formAcc form div.has-error').length > 0) {
-            $('#formAcc').show();
+        if ($('#formAcc form div.has-danger').length > 0) {
+            $('#comBtn').click();
         }
     </script>
     {% endif %}

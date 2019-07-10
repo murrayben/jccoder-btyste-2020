@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% set class = _class %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>You are about to join {{ class.name }} ({{ class.code }}).</h1>
+    </div>
+    <p>Do you want to join this class?</p>
+    <button id="yes" type="button" class="btn btn-success" data-class-id="{{ class.id }}">Yes</button>
+    <button id="no" type="button" class="btn btn-danger">No</button>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script type="text/javascript">
+        $('#yes').on('click', function() {
+            var class_id = $(this).attr('data-class-id');
+            data = {"class_id": class_id};
+            $.ajax({
+                url: "{{ url_for('.join_class') }}",
+                data: JSON.stringify(data),
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                type: 'POST',
+                success: function(response) {
+                    $('.container').html(`<div class="page-header">
+    <h1>You have successfully joined {{ class.name }}.</h1>
+</div>
+<a href="{{ url_for('.index') }}" class="btn btn-success">Home page</a>`);
+                },
+                error: function(error) {
+                    console.error(error);
+                    $('.container').html(`<div class="page-header">
+    <h1>Sorry, but an unexpected error has occured.</h1>
+</div>
+<p>We apologise for this inconvenience.</p>`);
+                }
+            });
+        });
+
+        $('#no').on('click', function() {
+            window.location.href = "{{ url_for('main.index') }}";
+        });
+    </script>
+{% endblock %}

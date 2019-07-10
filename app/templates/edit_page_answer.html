@@ -15,12 +15,13 @@
     <div class="page-header">
         <h1>Edit Answer</h1>
     </div>
-    {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
+    {{ wtf.quick_form(form, button_map={'submit': 'success'}, novalidate=True) }}
 {% endblock %}
 
 {% block scripts %}
     {{ super() }}
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
     <script type="text/javascript">
         new SimpleMDE({element: $('#answer')[0], forceSync: true, hideIcons: ["guide"]});
     </script>

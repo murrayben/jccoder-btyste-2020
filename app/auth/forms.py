@@ -10,6 +10,10 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 class RegistrationForm(FlaskForm):
+    user_type = RadioField("This will not be visible to anyone",
+                                choices=[('student', 'Student'),
+                                         ('teacher', 'Teacher')],
+                                default="student", validators=[DataRequired()])
     username = StringField('Username', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])

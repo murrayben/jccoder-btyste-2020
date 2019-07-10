@@ -423,7 +423,7 @@ def edit_lesson(id):
     form = NewLesson()
     if form.validate_on_submit():
         lesson.title = form.title.data
-        lesson.overview = form.overview.data
+        lesson.overview = form.overview.data    
         lesson.icon = form.icon.data
         lesson.chapter_id = form.chapter.data
         lesson.next_lesson_id = form.next_lesson.data

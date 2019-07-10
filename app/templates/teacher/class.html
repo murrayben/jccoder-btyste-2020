@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% set class = _class %}
+
+{% block styles %}
+    {{ super() }}
+    <style type="text/css">
+        .content:hover > div[data-toggle="collapse"] {
+            background-color: #ffffff;
+            cursor: pointer;
+        }
+
+        #content-dropdown:hover {
+            color: #007bff;
+            text-decoration: underline;
+        }
+
+        .dropdown-header {
+            font-size: 1.05rem;
+        }
+    </style>
+{% endblock %}
+
+{% macro display_dropdown(item, last=True, arrow=True, missing_items=False, parent=None) %}
+    {%- set item_type = item.__class__.__name__ -%}
+    {% set is_page = (item_type == "Page" or item_type == "Quiz") %}
+    <div class="content{% if is_page %} bg-white{% endif %}"{% if parent %} data-parent-type="{{ parent.__class__.__name__|lower }}" data-parent-id="{{ parent.id }}"{% endif %}>
+        <div class="border-top{% if last %} border-bottom{% endif %} {% if missing_items %}px-4 py-3{% else %}px-3 py-2{% endif %} text-dark{% if not missing_items %} content-toggler{% endif %}"{% if not missing_items and not is_page %} data-toggle="collapse" data-target="#{{ item_type|lower }}-{{ item.id }}-collapse" aria-expanded="false" aria-controls="{{ item_type|lower }}-{{ item.id }}-collapse"{% endif %}>
+            {% if missing_items %}
+            <p class="mb-0">No {{ item }} yet. Please wait for them to be added.</p>
+            {% else %}
+            <div class="d-flex">
+                {%- if arrow or is_page %}
+                    {%- if item_type == "Page" %}
+                        {% if item.page_type.description == "Article" %}
+                            {% set icon_class = 'fas fa-file fa-fw' %}
+                        {% elif item.page_type.description == "Quiz" %}
+                            {% set icon_class = 'fas fa-tasks fa-fw' %}
+                        {% elif item.page_type.description == "Video" %}
+                            {% set icon_class = 'fas fa-play fa-fw' %}
+                        {% elif item.page_type.description == "Glossary" %}
+                            {% set icon_class = 'fas fa-list-alt fa-fw' %}
+                        {% endif %}
+                    {% elif item_type == "Quiz" %}
+                        {% set icon_class = 'fas fa-pencil-alt fa-fw' %}
+                    {% else %}
+                        {% set icon_class = 'fas fa-chevron-right fa-fw' %}
+                    {% endif -%}
+                <div class="{% if not is_page %}arrow {% endif %}align-self-center"><i class="{{ icon_class }}" aria-hidden="true"></i></div>
+                {% endif -%}
+                <div class="position-relative{% if not missing_items %} mr-auto{% endif %}" style="left: 10px;">
+                    <p class="position-relative font-weight-normal mb-0" style="top: 2px;">{{ item.title if item.title else item.name if item.name else item.tested_skills.first().description }}</p>
+                    <small class="position-relative text-muted" style="bottom: 2px;">{{ item_type }}{% if item_type == "Page" %} &mdash; {{ item.page_type.description }}{% endif %}</small>
+                </div>
+                {% if not missing_items %}
+                <div class="custom-control custom-checkbox align-self-center assignment-checkbox">
+                    <input type="checkbox" class="custom-control-input {{ item_type|lower }}-checkbox" id="{{ item_type|lower }}-{{ item.id }}-checkbox" data-type="{{ item_type|lower }}" data-id="{{ item.id }}">
+                    <label class="custom-control-label" for="{{ item_type|lower }}-{{ item.id }}-checkbox"></label>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+{% endmacro %}
+
+{% block page_content %}
+    <div class="page-header mt-2">
+        <div class="row justify-content-between">
+            <div class="col-auto mr-auto">
+                <p class="mb-0"><a href="{{ url_for('.dashboard') }}" class="text-dark">&larr; Back to all classes</a></p>
+                <h2>{{ class.name }}</h2>
+            </div>
+            <div class="col-auto">
+                <p class="mb-0 text-right">Class code</p>
+                <h2>{{ class.code }}</h2>
+            </div>
+        </div>
+    </div>
+    <ul class="nav nav-pills mb-3" id="class-nav-pills" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="content-tab" data-toggle="tab" href="#content" role="tab" aria-controls="content" aria-selected="true">Content</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="assignments-tab" data-toggle="tab" href="#assignments" role="tab" aria-controls="assignments" aria-selected="false">Assignments</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="students-tab" data-toggle="tab" href="#students" role="tab" aria-controls="students" aria-selected="false">Students</a>
+        </li>
+    </ul>
+    <div class="tab-content" id="class-nav-pills-content">
+        <div class="tab-pane fade show active" id="content" role="tabpanel" aria-labelledby="content-tab">
+            <div class="d-flex mb-2">
+                <div class="dropdown mr-auto align-self-center">
+                    <a class="dropdown-toggle" href="#" role="button" id="content-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        View more content
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="content-dropdown">
+                        {% for strand in Strand.query.all() %}
+                        {%- set first = loop.first -%}
+                        <h6 class="dropdown-header">{{ strand.name }}</h6>
+                        <div class="dropdown-divider"></div>
+                        {%- for module in strand.all_ordered_children() %}
+                        <a class="dropdown-item module-dropdown pl-5{% if first and loop.first %} active{% endif %}" href="#" data-module="{{ module.id }}">{{ module.title }}</a>
+                        {%- if loop.last %}
+
+                        <div class="dropdown-divider"></div>
+
+                        {% endif -%}
+                        {% endfor -%}
+                        {% endfor -%}
+                    </div>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-primary" id="assign-btn">Assign <span class="badge badge-pill badge-light"></span></button>
+                </div>
+            </div>
+            {%- for strand in Strand.query.all() %}
+                {%- for module in strand.all_ordered_children() %}
+                    {%- if module.chapters.filter_by(active=True).count() > 0 %}
+                        {%- for chapter in module.all_ordered_children() %}
+                            {%- if chapter.active %}
+                                {{ display_dropdown(chapter, loop.last, parent=module) }}
+                                {%- set last = loop.last -%}
+                                <div class="collapse ml-3 content-collapse" id="chapter-{{ chapter.id }}-collapse">
+                                    {%- if chapter.all_ordered_children()|length > 0 %}
+                                        {%- for lesson in chapter.all_ordered_children() %}
+                                            {{ display_dropdown(lesson, last, parent=chapter) }}
+                                            {%- set last = loop.last -%}
+                                            <div class="collapse ml-3 content-collapse" id="lesson-{{ lesson.id }}-collapse">
+                                                {%- set items = lesson.all_ordered_children() -%}
+                                                {%- if items.extend(lesson.all_ordered_quizzes()) %}{% endif -%}{# A Jinja trick #}
+                                                {%- if items %}
+                                                    {%- for item in items %}
+                                                        {{ display_dropdown(item, last, arrow=False, parent=lesson) }}
+                                                    {% endfor -%}
+                                                {% else %}
+                                                    {{ display_dropdown('pages', missing_items=True) }}
+                                                {% endif -%}
+                                            </div>
+                                        {% endfor -%}
+                                    {% else %}
+                                        {{ display_dropdown('lessons', missing_items=True) }}
+                                    {% endif -%}      
+                                </div>
+                            {% endif -%}
+                        {% endfor -%}
+                    {% else %}
+                        {{ display_dropdown('chapters', missing_items=True, parent=module) }}
+                    {% endif -%}
+                {% endfor -%}
+            {% endfor -%}
+        </div>
+        <div class="tab-pane fade" id="assignments" role="tabpanel" aria-labelledby="assignments-tab">
+            {% set assignments = Assignment.query.filter_by(class_id=class.id).all() %}
+            {% if assignments|length > 0 %}
+            {% for assignment in assignments %}
+            <!-- TODO: Add assignments functionality -->
+            {% endfor %}
+            {% else %}
+            <p class="mb-0">No assignments at the moment.</p>
+            {% endif %}
+        </div>
+        <div class="tab-pane fade" id="students" role="tabpanel" aria-labelledby="students-tab">
+            {% if class.students.all()|length > 0 %}
+            <ul class="list-group">
+            {% for student in class.students.all() %}
+            <li class="list-group-item">{{ student.username }}</li>
+            {% endfor %}
+            </ul>
+            {% else %}
+            <p class="mb-0">No students yet. Please share the link <span class="text-primary">{{ url_for('main.join_class_confirm', code=class.code, _external=True) }}</span> with your students.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script type="text/javascript">
+        $(function () {
+            // Preventing collapse from opening/closing when checkboxes are clicked
+            $('.content-toggler .assignment-checkbox').on('click', function(e) {
+                e.stopPropagation();
+            });
+
+            // Collapse arrows
+            $('.content div').on('click', function() {
+                var $arrow = $(this).children('.d-flex').children('.arrow');
+                if ($arrow.children('.fa-chevron-right').length > 0) {
+                    $arrow.html('<i class="fas fa-chevron-down fa-fw" aria-hidden="true"></i>')
+                } else {
+                    $arrow.html('<i class="fas fa-chevron-right fa-fw" aria-hidden="true"></i>')
+                }
+            });
+
+            // View more content dropdown
+            $('.module-dropdown').on('click', function(e) {
+                e.preventDefault();
+                $('.module-dropdown.active').removeClass('active');
+                $(this).addClass('active');
+                showContent();
+            });
+            showContent();
+
+            function showContent() {
+                $('.content[data-parent-type="module"]').hide();
+                $('.content-collapse').collapse('hide');
+                var $content = $('.content[data-parent-type="module"][data-parent-id="' + $('.module-dropdown.active').data('module') + '"]');
+                $content.show();
+                $($content.data('target') + '.content').show(); // Because of nested collapses
+                $('.arrow').html('<i class="fas fa-chevron-right fa-fw" aria-hidden="true"></i>'); // Reset arrows
+            }
+
+            // Checkbox tick all functionality
+            $('.assignment-checkbox input').on('change', function() {
+                var $this = $(this);
+                if (!$this.hasClass('page-checkbox') && !$this.hasClass('quiz-checkbox')) {
+                    $('.content[data-parent-type="' + $this.data('type') + '"][data-parent-id="' + $this.data('id') + '"]').children('.content-toggler').children('.d-flex').children('.assignment-checkbox').children('input').prop('checked', this.checked).change();
+                }
+                if ($this.data('type') !== 'chapter') {
+                    var $parent = $this.parent().parent().parent().parent();
+                    var $inputs = $('.content[data-parent-type="' + $parent.attr('data-parent-type') + '"][data-parent-id="' + $parent.attr('data-parent-id') + '"] .assignment-checkbox input')
+                    var count_checked = 0;
+                    $inputs.each(function() {
+                        if (this.checked) {
+                            count_checked++;
+                        }
+                    });
+                    if (this.checked && (count_checked === $inputs.length)) {
+                        $('.assignment-checkbox input[data-type="' + $parent.attr('data-parent-type') + '"][data-id="' + $parent.attr('data-parent-id') + '"]').prop('checked', true);
+                    } else if (!this.checked && (count_checked !== $inputs.length)) {
+                        $('.assignment-checkbox input[data-type="' + $parent.attr('data-parent-type') + '"][data-id="' + $parent.attr('data-parent-id') + '"]').prop('checked', false);
+                    }
+                }
+
+                var count = $('.assignment-checkbox input:checked.page-checkbox, .assignment-checkbox input:checked.quiz-checkbox').length;
+                if (count === 0) {
+                    count = "";
+                }
+                var $assign_btn = $('#assign-btn');
+                $assign_btn.children('.badge').text(count);
+                if (!count) {
+                    $assign_btn.prop('disabled', true);
+                } else {
+                    $assign_btn.prop('disabled', false);
+                }
+            });
+            $('#assign-btn').prop('disabled', true);
+        });
+    </script>
+{% endblock %}

@@ -704,6 +704,16 @@ class Lesson(db.Model):
             append_page(self.pages.filter_by(prev_page=None).first())
         return ordered
 
+    def all_ordered_quizzes(self):
+        ordered = []
+        if len(self.quizzes.all()) > 0:
+            def append_quiz(quiz):
+                ordered.append(quiz)
+                if quiz.next_quiz:
+                    append_quiz(quiz.next_quiz)
+            append_quiz(self.quizzes.filter_by(prev_quiz=None).first())
+        return ordered
+
 db.event.listen(Lesson.overview, 'set', Lesson.generate_new_html)
 
 class LessonType(db.Model):

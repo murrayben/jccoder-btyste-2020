@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block styles %}
+    {{ super() }}
+    <style type="text/css">
+        .class-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+{% endblock %}
+
+{% block modals %}
+    <div class="modal fade" id="newClassModal" tabindex="-1" role="dialog" aria-labelledby="newClassModal" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Create a new class</h3>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    {{ wtf.quick_form(form, novalidate=True) }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" id="footer-submit">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+{% block page_content %}
+    <div class="page-header border-bottom-0 mb-0">
+        <h1>Your Classes</h1>
+    </div>
+    {% if classes|length > 0 %}
+    {% for class in classes %}
+    <div class="class border-top{% if loop.last %} border-bottom mb-3{% endif %} p-3">
+        <h5><a href="{{ url_for('.display_class', id=class.id) }}" class="text-dark class-link">{{ class.name }}</a></h5>
+        <p class="mb-0">{{ class.students.count() }} student{% if class.students.count() != 1 %}s{% endif %}</p>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>No classes yet. Click below to create one!</p>
+    {% endif %}
+    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#newClassModal">Create new class</button>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script type="text/javascript">
+        $('#submit').hide();
+        $('#footer-submit').on('click', function() {
+            $('#submit').click();
+        });
+        var $submit_buttons = $('#submit, #footer-submit');
+        $submit_buttons.attr('disabled', 'disabled');
+        $('#name, #description').on('change', function() {
+            var name_length = $('#name').val().length;
+            if ((name_length > 0 && name_length <= 50) && $('#description').val().length > 0) {
+                if ($submit_buttons.attr('disabled') == "disabled") {
+                    $submit_buttons.removeAttr('disabled');
+                }
+            } else {
+                if (!$submit_buttons.attr('disabled')) {
+                    $submit_buttons.attr('disabled', 'disabled');
+                }
+            }
+        });
+        $('#submit').on('click', function(e) {
+            e.preventDefault();
+            data = {'name': $('#name').val(), 'description': $('#description').val()};
+            $.ajax({
+                url: "{{ url_for('.new_class') }}",
+                data: JSON.stringify(data),
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                type: 'POST',
+                success: function(response) {
+                    message = `<h4>That's it!</h4><p>The class code is <strong>` + response.code + `</strong>. Please share this with your students.`;
+                    $submit_buttons.hide();
+                    $('#newClassModal .modal-body').html(message);
+                    $('#newClassModal').on('hidden.bs.modal', function() {
+                        window.location.href = "{{ url_for('teacher.dashboard', _external=True) }}";
+                    });
+                },
+                error: function(error) {
+                    $('#newClassModal .modal-body').html('<p>Sorry but an unexpected error has occured.</p>');
+                    console.error(error);
+                }
+            });
+        });
+    </script>
+{% endblock %}

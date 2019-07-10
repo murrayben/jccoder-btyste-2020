@@ -1,7 +1,7 @@
-from flask import abort, current_app, jsonify, redirect, render_template, url_for, session, request, g
+from flask import abort, current_app, flash, jsonify, redirect, render_template, url_for, session, request, g
 from flask_login import current_user, login_required
 from datetime import datetime
-from ..models import db, Chapter, Page, PageAnswer, PageQuestion, Project, Quiz, Lesson, UserAnswer, Question, AnswerStatus, Hint, QuizAttempt
+from ..models import db, Chapter, Class, ClassStudent, Page, PageAnswer, PageQuestion, Permission, Project, Quiz, Lesson, UserAnswer, Question, AnswerStatus, Hint, QuizAttempt
 from .. import moment
 from .forms import NewPageQuestion, NewPageAnswer, EditPageAnswer, SearchForm
 from . import main
@@ -14,6 +14,8 @@ def before_request():
 
 @main.route('/')
 def index():
+    if current_user.is_authenticated and current_user.can(Permission.MANAGE_CLASS) and not current_user.is_admin():
+        return redirect(url_for('teacher.dashboard'))
     return render_template('index.html', title="JCCoder")
 
 @main.route('/content')
@@ -254,3 +256,35 @@ def search():
     prev_url = url_for('main.search', q=q, page=page - 1) \
         if page > 1 else None
     return render_template('search_results.html', title="Search results for \"{0}\"".format(q), q=q, pages=pages.all(), total=total, prev_url=prev_url, next_url=next_url)
+
+@main.route('/join', methods=["GET", "POST"])
+@login_required
+def join_class():
+    if request.method == "GET":
+        abort(404)
+    data = request.get_json()
+    class_id = int(data["class_id"])
+    if not Class.query.get(class_id):
+        abort(400)
+    if ClassStudent.query.filter_by(student_id=current_user.id, class_id=class_id, student_status=True).first():
+        # Can't join a class twice
+        abort(400)
+    class_student = ClassStudent(student_id=current_user.id, class_id=class_id)
+    db.session.add(class_student)
+    db.session.commit()
+    return jsonify(success=True)
+
+
+@main.route('/join/<code>')
+@login_required
+def join_class_confirm(code):
+    if current_user.can(Permission.MANAGE_CLASS):
+        # Teachers can't join classes
+        return redirect(url_for('.index'))
+    
+    _class = Class.query.filter_by(code=code).first()
+    if ClassStudent.query.filter_by(student_id=current_user.id, class_id=_class.id, student_status=True).first():
+        # Can't join a class twice
+        flash('You have already joined that class.', 'info')
+        return redirect(url_for('.index'))
+    return render_template('join_class.html', title="JCCoder - Join class {0}".format(code), _class=_class)
