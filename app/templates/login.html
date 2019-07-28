@@ -5,7 +5,7 @@
     <div class="page-header">
         <h1>Login</h1>
     </div>
-    {{ wtf.quick_form(form, button_map={'submit': 'primary'}) }}
+    {{ wtf.quick_form(form, button_map={'submit': 'primary'}, novalidate=True) }}
 {% endblock %}
 
 {% block scripts %}

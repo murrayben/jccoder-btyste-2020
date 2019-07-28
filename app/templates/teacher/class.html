@@ -1,9 +1,12 @@
 {% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
 
 {% set class = _class %}
 
 {% block styles %}
     {{ super() }}
+    <!-- JQuery UI is for datepicker -->
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <style type="text/css">
         .content:hover > div[data-toggle="collapse"] {
             background-color: #ffffff;
@@ -17,6 +20,10 @@
 
         .dropdown-header {
             font-size: 1.05rem;
+        }
+
+        #assignments table th {
+            width: 92px;
         }
     </style>
 {% endblock %}
@@ -65,6 +72,30 @@
     
 {% endmacro %}
 
+{% block modals %}
+    <div class="modal fade" id="assign-modal" tabindex="-1" role="dialog" aria-labelledby="assignModal" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Assign <span class="no-assigned-items"></span> items</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>To select multiple options, hold down Ctrl or &#8984; while clicking the different options.</p>
+                    <hr />
+                    {{ wtf.quick_form(form, form_type="horizontal", novalidate=True) }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link text-danger" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="assign-submit-btn">Assign <span class="badge badge-pill badge-light no-assigned-items"></span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
 {% block page_content %}
     <div class="page-header mt-2">
         <div class="row justify-content-between">
@@ -86,7 +117,7 @@
             <a class="nav-link" id="assignments-tab" data-toggle="tab" href="#assignments" role="tab" aria-controls="assignments" aria-selected="false">Assignments</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="students-tab" data-toggle="tab" href="#students" role="tab" aria-controls="students" aria-selected="false">Students</a>
+            <a class="nav-link" id="students-tab" data-toggle="tab" href="#students-list" role="tab" aria-controls="students" aria-selected="false">Students</a>
         </li>
     </ul>
     <div class="tab-content" id="class-nav-pills-content">
@@ -113,7 +144,7 @@
                     </div>
                 </div>
                 <div>
-                    <button type="button" class="btn btn-primary" id="assign-btn">Assign <span class="badge badge-pill badge-light"></span></button>
+                    <button type="button" class="btn btn-primary" id="assign-btn" data-toggle="modal" data-target="#assign-modal">Assign <span class="badge badge-pill badge-light no-assigned-items"></span></button>
                 </div>
             </div>
             {%- for strand in Strand.query.all() %}
@@ -155,14 +186,64 @@
         <div class="tab-pane fade" id="assignments" role="tabpanel" aria-labelledby="assignments-tab">
             {% set assignments = Assignment.query.filter_by(class_id=class.id).all() %}
             {% if assignments|length > 0 %}
-            {% for assignment in assignments %}
-            <!-- TODO: Add assignments functionality -->
+            <table class="table table-bordered">
+                <thead>
+                    <tr>   
+                        <th class="text-muted">Students</th>
+                        {% for assignment in assignments %}
+                        <th class="font-weight-normal text-center">
+                            <div class="d-flex flex-column">
+                                {%- if not assignment.is_quiz() %}
+                                    {% if assignment.page.page_type.description == "Article" %}
+                                        {% set icon_class = 'fas fa-file fa-fw' %}
+                                    {% elif assignment.page.page_type.description == "Quiz" %}
+                                        {% set icon_class = 'fas fa-tasks fa-fw' %}
+                                    {% elif assignment.page.page_type.description == "Video" %}
+                                        {% set icon_class = 'fas fa-play fa-fw' %}
+                                    {% elif assignment.page.page_type.description == "Glossary" %}
+                                        {% set icon_class = 'fas fa-list-alt fa-fw' %}
+                                    {% endif %}
+                                {% else %}
+                                    {% set icon_class = 'fas fa-pencil-alt fa-fw' %}
+                                {% endif %}
+                                <div class="mb-auto">
+                                    <i class="{{ icon_class }}" aria-hidden="true"></i>
+                                </div>
+                                <div>
+                                    <small>{{ assignment.page.title if assignment.page else assignment.quiz.tested_skills.first().description }}</small>
+                                </div>
+                                <div>
+                                    <small class="text-muted">{{ moment(assignment.due_date).format('MMM Do') }}</small>
+                                </div>
+                            </div>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+            {% for student in class.students %}
+                <tr>
+                    <td>{{ student.username }}</td>
+                    {% for assignment in assignments %}
+                    <td class="text-center">
+                        {% set best_score = StudentAssignment.query.filter_by(student_id=student.id, assignment_id=assignment.id).order_by(StudentAssignment.score.desc()).first() %}
+                        {% set best_score = best_score.score|int if best_score and best_score.score else None %}
+                        {% if assignment.is_quiz() and best_score %}
+                        <span class="badge badge-{% if best_score == 100 %}success{% elif best_score > 69 %}warning{% else %}danger{% endif %} p-2">{{ best_score }}</span>
+                        {% elif student in assignment.students %}
+                        <span class="badge badge-secondary p-2">&mdash;</span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
             {% endfor %}
+                </tbody>
+            </table>
             {% else %}
             <p class="mb-0">No assignments at the moment.</p>
             {% endif %}
         </div>
-        <div class="tab-pane fade" id="students" role="tabpanel" aria-labelledby="students-tab">
+        <div class="tab-pane fade" id="students-list" role="tabpanel" aria-labelledby="students-tab">
             {% if class.students.all()|length > 0 %}
             <ul class="list-group">
             {% for student in class.students.all() %}
@@ -178,6 +259,10 @@
 
 {% block scripts %}
     {{ super() }}
+    <!-- JQuery UI is for datepicker -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
+    {{ moment.include_moment() }}
     <script type="text/javascript">
         $(function () {
             // Preventing collapse from opening/closing when checkboxes are clicked
@@ -240,7 +325,7 @@
                     count = "";
                 }
                 var $assign_btn = $('#assign-btn');
-                $assign_btn.children('.badge').text(count);
+                $('.no-assigned-items').text(count);
                 if (!count) {
                     $assign_btn.prop('disabled', true);
                 } else {
@@ -248,6 +333,53 @@
                 }
             });
             $('#assign-btn').prop('disabled', true);
+
+            $('#due_date').attr('autocomplete', 'off').datepicker({dateFormat: 'dd-mm-yy', minDate: '+1D'});
+            $('#submit').hide();
+            $('#assign-submit-btn').on('click', function() {
+                var objects = {pages: [], quizzes: []}
+                $('.assignment-checkbox input:checked').each(function() {
+                    var $this = $(this);
+                    if ($this.hasClass('page-checkbox')) {
+                        objects.pages.push(Number($this.data('id')));
+                    } else if ($this.hasClass('quiz-checkbox')) {
+                        objects.quizzes.push(Number($this.data('id')));
+                    }
+                });
+                $.ajax({
+                    url: "{{ url_for('teacher.save_items') }}",
+                    data: JSON.stringify(objects),
+                    dataType: 'json',
+                    contentType: "application/json; charset=utf-8",
+                    type: 'POST',
+                    success: function() {
+                        $('#submit').click(); // Click actual submit button
+                    },
+                    error: function(error) {
+                        has_error = true;
+                        var error_message = $('<p>Sorry an unexpected error has occured.</p>');
+                        $('#assign-modal .modal-body').append(error_message);
+                        console.error(error);
+                    }
+                });
+            });
+
+            var objects = JSON.parse(`{{ objects | safe }}`);
+            var type = "page";
+            var object;
+            for (var i = 0; i < objects.length; i++) {
+                var object = objects[i];
+                if (object === -1) {
+                    type = "quiz";
+                    continue;
+                }
+                $('#' + type + '-' + object + '-checkbox').prop('checked', true).change();
+                console.log('#' + type + '-' + object + '-checkbox');
+
+            }
+            if (window.location.href.indexOf('assignments-page=') > -1) {
+                setTimeout(function() {$('a[href="#assignments"]').click();}, 100);
+            }
         });
     </script>
 {% endblock %}

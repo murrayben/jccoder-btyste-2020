@@ -1,5 +1,69 @@
 {% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
 
+{% macro display_assignments(assignments, type) %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>All {{ type }}</th>
+                        <th>Due date</th>
+                        <th>Class</th>
+                        <th>Your progress</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if assignments %}
+                    {% for assignment in assignments %}
+                    <tr>
+                        <td>
+                            {%- if not assignment.is_quiz() %}
+                                {% if assignment.page.page_type.description == "Article" %}
+                                    {% set icon_class = 'fas fa-file fa-fw' %}
+                                {% elif assignment.page.page_type.description == "Quiz" %}
+                                    {% set icon_class = 'fas fa-tasks fa-fw' %}
+                                {% elif assignment.page.page_type.description == "Video" %}
+                                    {% set icon_class = 'fas fa-play fa-fw' %}
+                                {% elif assignment.page.page_type.description == "Glossary" %}
+                                    {% set icon_class = 'fas fa-list-alt fa-fw' %}
+                                {% endif %}
+                            {% else %}
+                                {% set icon_class = 'fas fa-pencil-alt fa-fw' %}
+                            {% endif %}
+                            <i class="{{ icon_class }}" aria-hidden="true"></i>
+                            <span>{{ assignment.page.title if assignment.page else assignment.quiz.tested_skills.first().description }}</span>
+                        </td>
+                        {% set is_late = False if StudentAssignment.query.filter_by(student_id=current_user.id, assignment_id=assignment.id).first().score is not none or type != "past" or not assignment.is_quiz() else True %}
+                        <td>{% if is_late %}<span class="text-danger">Late: {% endif %}{{ moment(assignment.due_date).format('dddd, Do MMMM YYYY') }}{% if is_late %}</span>{% endif %}</td>
+                        <td>{{ assignment._class.name }}</td>
+                        <td>
+                            {% if assignment.is_quiz() %}
+                            {% set best_score = StudentAssignment.query.filter_by(student_id=current_user.id, assignment_id=assignment.id).order_by(StudentAssignment.score.desc()).first() %}
+                            {% set best_score = best_score.score|int if best_score and best_score.score else None %}
+                            {% set quiz_url = url_for('main.chapter', id=assignment.quiz.lesson.chapter.id, item='quiz_' + assignment.quiz.id|string) %}
+                            {% if best_score %}
+                            {% if not best_score == 100 %}
+                            <a href="{{ quiz_url }}" role="button">Try again</a> |
+                            {% else %}
+                            Completed |
+                            {% endif %}
+                            <span class="badge badge-{% if best_score == 100 %}success{% elif best_score > 69 %}warning{% else %}danger{% endif %} p-2">{{ best_score }}%</span>
+                            {% else %}
+                            <a class="btn btn-primary btn-sm" href="{{ quiz_url }}" role="button">Start</a>
+                            {% endif %}
+                            {% else %}
+                            Recommended by your teacher
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td>You don't have any {{ type }} assignments.</td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+{% endmacro %}
+
 {% block styles %}
     {{ super() }}
     <style type="text/css">
@@ -25,6 +89,10 @@
 
         #text p {
             font-weight: 400;
+        }
+
+        #assignments th {
+            text-transform: uppercase;
         }
     </style>
 {% endblock %}
@@ -53,6 +121,27 @@
 {% endblock %}
 
 {% block page_content %}
+    {% if current_user.is_authenticated %}
+    <div class="page-header border-bottom-0 pb-0">
+        <h1>My Assignments</h1>
+    </div>
+    <ul class="nav nav-pills mb-3" role="tablist">
+        <li class="nav-item">
+            <a href="#upcoming-assignments" class="nav-link active" data-toggle="tab" aria-controls="upcoming-assignments" aria-selected="true">Upcoming</a>
+        </li>
+        <li class="nav-item">
+            <a href="#past-assignments" class="nav-link" data-toggle="tab" aria-controls="past-assignments" aria-selected="false">Past</a>
+        </li>
+    </ul>
+    <div class="tab-content" id="assignments">
+        <div class="tab-pane fade show active" id="upcoming-assignments" role="tabpanel" aria-labelledby="upcoming-tab">
+            {{ display_assignments(upcoming_assignments, 'upcoming') }}
+        </div>
+        <div class="tab-pane fade" id="past-assignments" role="tabpanel" aria-labelledby="past-tab">
+            {{ display_assignments(past_assignments, 'past') }}
+        </div>
+    </div>
+    {% else %}
     <div class="jumbotron">
         <div class="row">
             <h1 class="col-sm-12 col-md-8 col-lg-9" id="heading">
@@ -103,10 +192,14 @@
             <img src="/static/images/hexToDec.png" class="img img-fluid" />
         </div>
     </div>
+    {% endif %}
 {% endblock %}
 
 {% block scripts %}
     {{ super() }}
+    {% if current_user.is_authenticated %}
+    {{ moment.include_moment() }}
+    {% endif %}
     <script type="text/javascript">
         $("#intro-btn").on("click", function() {
             var src = "https://www.youtube.com/embed/DLGITIXru_c?rel=0"

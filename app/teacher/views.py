@@ -1,9 +1,9 @@
 import random, string
 
-from flask import abort, jsonify, redirect, render_template, request, url_for
+from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
-from ..models import Class, Permission, db
-from .forms import NewClass
+from ..models import Assignment, Class, Page, Permission, Quiz, StudentAssignment, User, db
+from .forms import AssignmentForm, NewClass
 from . import teacher
 
 @teacher.before_request
@@ -39,9 +39,60 @@ def new_class():
     db.session.commit()
     return jsonify(success=True, code=random_code)
 
-@teacher.route('/class/<int:id>')
+@teacher.route('/class/<int:id>', methods=["GET", "POST"])
 def display_class(id):
     _class = Class.query.get_or_404(id)
     if _class.teacher_id != current_user.id:
         abort(403)
-    return render_template('teacher/class.html', title="JCCoder - " + _class.name, _class=_class)
+    form = AssignmentForm(id)
+    objects = []
+    if form.validate_on_submit():
+        # Merging them into one list
+        items = session.get("assigned_pages", [])
+        items.append('change')
+        items.extend(session.get("assigned_quizzes", []))
+
+        item_type = "page"
+        for item in items:
+            if item == "change":
+                item_type = "quiz"
+                continue
+            assignment = Assignment(class_id=id, teacher_id=current_user.id, due_date=form.due_date.data)
+            if item_type == "page":
+                assignment.page_id = item
+            else:
+                assignment.quiz_id = item
+            db.session.add(assignment)
+            db.session.commit()
+            for student_id in form.students.data:
+                # Confirming that student is a real user and in the class.
+                student = User.query.get(student_id)
+                if student and (student in _class.students.all()):
+                    student_assignment = StudentAssignment(student_id=student_id, assignment_id=assignment.id)
+                    db.session.add(student_assignment)
+                else:
+                    flash('Invalid student id(s)', 'warning')
+                    db.session.delete(assignment)
+                    db.session.commit()
+        return redirect(url_for('.display_class', id=id))
+    elif form.is_submitted() and not form.validate():
+        objects = session.get("assigned_pages", [])
+        objects.append(-1)
+        objects.extend(session.get("assigned_quizzes", []))
+    return render_template('teacher/class.html', title="JCCoder - " + _class.name, _class=_class, form=form, objects=objects)
+
+@teacher.route('/save-items', methods=["GET", "POST"])
+def save_items():
+    if request.method == "GET":
+        abort(404)
+    data = request.get_json()
+    # Check if all ids are valid
+    for page in data["pages"]:
+        if not Page.query.get(page):
+            abort(400)
+    for quiz in data["quizzes"]:
+        if not Quiz.query.get(quiz):
+            abort(400)
+    session["assigned_pages"] = data["pages"]
+    session["assigned_quizzes"] = data["quizzes"]
+    return jsonify(success=True)

@@ -34,7 +34,7 @@ def register():
 
     if form.validate_on_submit():
         under_13 = True if form.check_email.data == 'over_13' else False
-        role = Role.query.filter_by(name="Student").first() if form.user_type == 'student' else Role.query.filter_by(name="Teacher").first()
+        role = Role.query.filter_by(name="Student").first() if form.user_type.data == 'student' else Role.query.filter_by(name="Teacher").first()
         user = User(username=form.username.data, email=form.email.data, password=form.password.data, under_13=under_13, role=role)
         db.session.add(user)
         db.session.commit()

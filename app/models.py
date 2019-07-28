@@ -461,6 +461,7 @@ class Quiz(db.Model):
     type_id = db.Column(db.Integer, db.ForeignKey('quiztypes.id'))
     next_quiz = db.relationship('Quiz', backref=db.backref('prev_quiz', uselist=False), remote_side=[id], uselist=False)
     questions = db.relationship('Question', backref='quiz', lazy='dynamic')
+    assignments = db.relationship('Assignment', backref='quiz', lazy='dynamic')
     tested_skills = db.relationship('Skill', secondary=quiz_skills,
                         backref=db.backref('quizzes_tested', lazy='dynamic'),
                         lazy='dynamic')
@@ -745,6 +746,7 @@ class Page(SearchableMixin, db.Model):
     next_page_id = db.Column(db.Integer, db.ForeignKey('pages.id'), nullable=True)
     next_page = db.relationship('Page', backref=db.backref('prev_page', uselist=False), remote_side=[id], uselist=False)
     questions = db.relationship('PageQuestion', backref='page', lazy='dynamic')
+    assignments = db.relationship('Assignment', backref='page', lazy='dynamic')
     lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'))
 
     def what_model(self):
@@ -836,6 +838,7 @@ class Class(db.Model):
     description = db.Column(db.Text)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
     teacher_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    assignments = db.relationship('Assignment', backref='_class', lazy='dynamic')
     students = db.relationship('User', secondary='class_students',
         backref=db.backref('classes', lazy='dynamic'), lazy='dynamic')
 
@@ -853,7 +856,7 @@ class ClassStudent(db.Model):
 class Assignment(db.Model):
     __tablename__ = 'assignments'
     id = db.Column(db.Integer, primary_key=True)
-    due_time = db.Column(db.DateTime)
+    due_date = db.Column(db.DateTime)
     teacher_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     class_id = db.Column(db.Integer, db.ForeignKey('classes.id'))
     page_id = db.Column(db.Integer, db.ForeignKey('pages.id'))    # One will be null because pages
@@ -872,4 +875,5 @@ class StudentAssignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     assignment_id = db.Column(db.Integer, db.ForeignKey('assignments.id'))
+    datetime = db.Column(db.DateTime, default=datetime.utcnow)
     score = db.Column(db.Integer)

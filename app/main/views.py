@@ -1,7 +1,7 @@
 from flask import abort, current_app, flash, jsonify, redirect, render_template, url_for, session, request, g
 from flask_login import current_user, login_required
 from datetime import datetime
-from ..models import db, Chapter, Class, ClassStudent, Page, PageAnswer, PageQuestion, Permission, Project, Quiz, Lesson, UserAnswer, Question, AnswerStatus, Hint, QuizAttempt
+from ..models import db, Assignment, Chapter, Class, ClassStudent, Page, PageAnswer, PageQuestion, Permission, Project, Quiz, StudentAssignment, Lesson, UserAnswer, Question, AnswerStatus, Hint, QuizAttempt
 from .. import moment
 from .forms import NewPageQuestion, NewPageAnswer, EditPageAnswer, SearchForm
 from . import main
@@ -14,9 +14,16 @@ def before_request():
 
 @main.route('/')
 def index():
-    if current_user.is_authenticated and current_user.can(Permission.MANAGE_CLASS) and not current_user.is_admin():
-        return redirect(url_for('teacher.dashboard'))
-    return render_template('index.html', title="JCCoder")
+    upcoming_assignments = None
+    past_assignments = None
+    title = "JCCoder"
+    if current_user.is_authenticated:
+        if current_user.can(Permission.MANAGE_CLASS) and not current_user.is_admin():
+            return redirect(url_for('teacher.dashboard'))
+        upcoming_assignments = [assignment for assignment in current_user.assignments if assignment.due_date > datetime.now()]
+        past_assignments = [assignment for assignment in current_user.assignments if assignment.due_date < datetime.now()]
+        title = "JCCoder - Dashboard"
+    return render_template('index.html', title=title, upcoming_assignments=upcoming_assignments, past_assignments=past_assignments)
 
 @main.route('/content')
 def chapters():
@@ -201,6 +208,16 @@ def summary():
         quiz_attempt = QuizAttempt(user_id=current_user.id, quiz_id=data['id'], percent=overall_score)
         UserAnswer.query.filter_by(user_id=current_user.id).delete()
         db.session.add(quiz_attempt)
+        assignments = Assignment.query.filter_by(quiz_id=data['id']).all()
+        for assignment in assignments:
+            if assignment.students.filter_by(username=current_user.username).first():
+                #student_assignment = StudentAssignment(assignment_id=assignment.id, student_id=current_user.id, score=overall_score)
+                student_assignments = StudentAssignment.query.filter_by(assignment_id=assignment.id, student_id=current_user.id).all()
+                for student_assignment in student_assignments:
+                    if not student_assignment.score or (student_assignment.score < overall_score):
+                        student_assignment.score = overall_score
+                        db.session.add(student_assignment)
+
 
     return jsonify(success=True, question_ids=question_ids, questions=questions, no_attempts=session["no_attempts"],
             last_attempts=session["user_results"], scores=session["scores"],
@@ -282,7 +299,7 @@ def join_class_confirm(code):
         # Teachers can't join classes
         return redirect(url_for('.index'))
     
-    _class = Class.query.filter_by(code=code).first()
+    _class = Class.query.filter_by(code=code).first_or_404()
     if ClassStudent.query.filter_by(student_id=current_user.id, class_id=_class.id, student_status=True).first():
         # Can't join a class twice
         flash('You have already joined that class.', 'info')
