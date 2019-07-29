@@ -3,6 +3,7 @@ import random, string
 from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
 from ..models import Assignment, Class, Page, Permission, Quiz, StudentAssignment, User, db
+from .. import moment
 from .forms import AssignmentForm, NewClass
 from . import teacher
 
@@ -44,6 +45,7 @@ def display_class(id):
     _class = Class.query.get_or_404(id)
     if _class.teacher_id != current_user.id:
         abort(403)
+    page = request.args.get('assignments_page', 1, int)
     form = AssignmentForm(id)
     objects = []
     if form.validate_on_submit():
@@ -79,7 +81,23 @@ def display_class(id):
         objects = session.get("assigned_pages", [])
         objects.append(-1)
         objects.extend(session.get("assigned_quizzes", []))
-    return render_template('teacher/class.html', title="JCCoder - " + _class.name, _class=_class, form=form, objects=objects)
+    assignment_pagination = _class.assignments.paginate(page, per_page=8)
+    return render_template('teacher/class.html', title="JCCoder - " + _class.name, _class=_class, form=form, objects=objects, assignments_pagination=assignment_pagination)
+
+@teacher.route('/class/assignment-page', methods=["GET", "POST"])
+def assignment_page():
+    if request.method == "GET":
+        abort(404)
+    data = request.get_json()
+    page = int(data["page"])
+    _class = Class.query.get(int(data["class_id"]))
+    if not _class:
+        abort(400)
+    elif _class.teacher_id != current_user.id:
+        abort(400)
+    assignments_pagination = _class.assignments.paginate(page + data["direction"], per_page=8)
+    html = render_template('teacher/_assignment.html', _class=_class, assignments_pagination=assignments_pagination, moment=moment.create)
+    return jsonify(success=True, html=html)
 
 @teacher.route('/save-items', methods=["GET", "POST"])
 def save_items():

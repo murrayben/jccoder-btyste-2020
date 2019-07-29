@@ -22,8 +22,16 @@
             font-size: 1.05rem;
         }
 
+        #assignments table th.text-center {
+            width: 100px;
+        }
+
         #assignments table th {
-            width: 92px;
+            height: 122px;
+        }
+
+        #assignments-table-header {
+            width: 150px;
         }
     </style>
 {% endblock %}
@@ -184,61 +192,8 @@
             {% endfor -%}
         </div>
         <div class="tab-pane fade" id="assignments" role="tabpanel" aria-labelledby="assignments-tab">
-            {% set assignments = Assignment.query.filter_by(class_id=class.id).all() %}
-            {% if assignments|length > 0 %}
-            <table class="table table-bordered">
-                <thead>
-                    <tr>   
-                        <th class="text-muted">Students</th>
-                        {% for assignment in assignments %}
-                        <th class="font-weight-normal text-center">
-                            <div class="d-flex flex-column">
-                                {%- if not assignment.is_quiz() %}
-                                    {% if assignment.page.page_type.description == "Article" %}
-                                        {% set icon_class = 'fas fa-file fa-fw' %}
-                                    {% elif assignment.page.page_type.description == "Quiz" %}
-                                        {% set icon_class = 'fas fa-tasks fa-fw' %}
-                                    {% elif assignment.page.page_type.description == "Video" %}
-                                        {% set icon_class = 'fas fa-play fa-fw' %}
-                                    {% elif assignment.page.page_type.description == "Glossary" %}
-                                        {% set icon_class = 'fas fa-list-alt fa-fw' %}
-                                    {% endif %}
-                                {% else %}
-                                    {% set icon_class = 'fas fa-pencil-alt fa-fw' %}
-                                {% endif %}
-                                <div class="mb-auto">
-                                    <i class="{{ icon_class }}" aria-hidden="true"></i>
-                                </div>
-                                <div>
-                                    <small>{{ assignment.page.title if assignment.page else assignment.quiz.tested_skills.first().description }}</small>
-                                </div>
-                                <div>
-                                    <small class="text-muted">{{ moment(assignment.due_date).format('MMM Do') }}</small>
-                                </div>
-                            </div>
-                        </th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-            {% for student in class.students %}
-                <tr>
-                    <td>{{ student.username }}</td>
-                    {% for assignment in assignments %}
-                    <td class="text-center">
-                        {% set best_score = StudentAssignment.query.filter_by(student_id=student.id, assignment_id=assignment.id).order_by(StudentAssignment.score.desc()).first() %}
-                        {% set best_score = best_score.score|int if best_score and best_score.score else None %}
-                        {% if assignment.is_quiz() and best_score %}
-                        <span class="badge badge-{% if best_score == 100 %}success{% elif best_score > 69 %}warning{% else %}danger{% endif %} p-2">{{ best_score }}</span>
-                        {% elif student in assignment.students %}
-                        <span class="badge badge-secondary p-2">&mdash;</span>
-                        {% endif %}
-                    </td>
-                    {% endfor %}
-                </tr>
-            {% endfor %}
-                </tbody>
-            </table>
+            {% if assignments_pagination.items|length > 0 %}
+            {% include "teacher/_assignment.html" %}
             {% else %}
             <p class="mb-0">No assignments at the moment.</p>
             {% endif %}
@@ -356,7 +311,6 @@
                         $('#submit').click(); // Click actual submit button
                     },
                     error: function(error) {
-                        has_error = true;
                         var error_message = $('<p>Sorry an unexpected error has occured.</p>');
                         $('#assign-modal .modal-body').append(error_message);
                         console.error(error);
@@ -374,11 +328,37 @@
                     continue;
                 }
                 $('#' + type + '-' + object + '-checkbox').prop('checked', true).change();
-                console.log('#' + type + '-' + object + '-checkbox');
 
             }
-            if (window.location.href.indexOf('assignments-page=') > -1) {
-                setTimeout(function() {$('a[href="#assignments"]').click();}, 100);
+            if (window.location.href.indexOf('assignments_page=') > -1) {
+                setTimeout(function() {$('#assignments-tab').click();}, 50);
+            }
+
+            var page = "{{ assignments_pagination.page }}";
+            $('.pagination-link').on('click', showAssignments);
+            
+            function showAssignments(e) {
+                e.preventDefault();
+                var direction = this.id == 'prev-btn' ? -1 : 1;
+                var data = {class_id: "{{ class.id }}", page: page, direction: direction};
+                $.ajax({
+                    url: "{{ url_for('teacher.assignment_page') }}",
+                    data: JSON.stringify(data),
+                    dataType: 'json',
+                    contentType: "application/json; charset=utf-8",
+                    type: 'POST',
+                    success: function(response) {
+                        $('#assignments').html(response.html);
+                        flask_moment_render_all();
+                        $('.pagination-link').on('click', showAssignments);
+                        page = Number(page) + direction;
+                    },
+                    error: function(error) {
+                        var error_message = $('<p>Sorry an unexpected error has occured.</p>');
+                        $('#assignments').append(error_message);
+                        console.error(error);
+                    }
+                });
             }
         });
     </script>
