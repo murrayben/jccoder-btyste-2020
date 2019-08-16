@@ -1,69 +1,5 @@
 {% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
 
-{% macro display_assignments(assignments, type) %}
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>All {{ type }}</th>
-                        <th>Due date</th>
-                        <th>Class</th>
-                        <th>Your progress</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% if assignments %}
-                    {% for assignment in assignments %}
-                    <tr>
-                        <td>
-                            {%- if not assignment.is_quiz() %}
-                                {% if assignment.page.page_type.description == "Article" %}
-                                    {% set icon_class = 'fas fa-file fa-fw' %}
-                                {% elif assignment.page.page_type.description == "Quiz" %}
-                                    {% set icon_class = 'fas fa-tasks fa-fw' %}
-                                {% elif assignment.page.page_type.description == "Video" %}
-                                    {% set icon_class = 'fas fa-play fa-fw' %}
-                                {% elif assignment.page.page_type.description == "Glossary" %}
-                                    {% set icon_class = 'fas fa-list-alt fa-fw' %}
-                                {% endif %}
-                            {% else %}
-                                {% set icon_class = 'fas fa-pencil-alt fa-fw' %}
-                            {% endif %}
-                            <i class="{{ icon_class }}" aria-hidden="true"></i>
-                            <span>{{ assignment.page.title if assignment.page else assignment.quiz.tested_skills.first().description }}</span>
-                        </td>
-                        {% set is_late = False if StudentAssignment.query.filter_by(student_id=current_user.id, assignment_id=assignment.id).first().score is not none or type != "past" or not assignment.is_quiz() else True %}
-                        <td>{% if is_late %}<span class="text-danger">Late: {% endif %}{{ moment(assignment.due_date).format('dddd, Do MMMM YYYY') }}{% if is_late %}</span>{% endif %}</td>
-                        <td>{{ assignment._class.name }}</td>
-                        <td>
-                            {% if assignment.is_quiz() %}
-                            {% set best_score = StudentAssignment.query.filter_by(student_id=current_user.id, assignment_id=assignment.id).order_by(StudentAssignment.score.desc()).first() %}
-                            {% set best_score = best_score.score|int if best_score and best_score.score else None %}
-                            {% set quiz_url = url_for('main.chapter', id=assignment.quiz.lesson.chapter.id, item='quiz_' + assignment.quiz.id|string) %}
-                            {% if best_score %}
-                            {% if not best_score == 100 %}
-                            <a href="{{ quiz_url }}" role="button">Try again</a> |
-                            {% else %}
-                            Completed |
-                            {% endif %}
-                            <span class="badge badge-{% if best_score == 100 %}success{% elif best_score > 69 %}warning{% else %}danger{% endif %} p-2">{{ best_score }}%</span>
-                            {% else %}
-                            <a class="btn btn-primary btn-sm" href="{{ quiz_url }}" role="button">Start</a>
-                            {% endif %}
-                            {% else %}
-                            Recommended by your teacher
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td>You don't have any {{ type }} assignments.</td>
-                    </tr>
-                {% endif %}
-                </tbody>
-            </table>
-{% endmacro %}
-
 {% block styles %}
     {{ super() }}
     <style type="text/css">
@@ -135,10 +71,16 @@
     </ul>
     <div class="tab-content" id="assignments">
         <div class="tab-pane fade show active" id="upcoming-assignments" role="tabpanel" aria-labelledby="upcoming-tab">
-            {{ display_assignments(upcoming_assignments, 'upcoming') }}
+            {% set pagination = upcoming_assignments %}
+            {% set assignments = upcoming_assignments.items %}
+            {% set type = 'upcoming' %}
+            {% include "_upcoming_past_assignments.html" %}
         </div>
         <div class="tab-pane fade" id="past-assignments" role="tabpanel" aria-labelledby="past-tab">
-            {{ display_assignments(past_assignments, 'past') }}
+            {% set pagination = past_assignments %}
+            {% set assignments = past_assignments.items %}
+            {% set type = 'past' %}
+            {% include "_upcoming_past_assignments.html" %}
         </div>
     </div>
     {% else %}
@@ -209,5 +151,44 @@
         $("#intro-vid-modal").on("hide.bs.modal", function() {
             $("#intro-vid").removeAttr("src");
         });
+
+        if (window.location.href.indexOf('past_page=') > -1) {
+            setTimeout(function() {$('[href="#past-assignments"]').click();}, 100);
+        }
+
+        var upcoming_page = "{{ upcoming_assignments.page }}";
+        var past_page = "{{ past_assignments.page }}";
+        $('.pagination-link').on('click', showAssignments);
+        
+        function showAssignments(e) {
+            e.preventDefault();
+            var type = $(this).siblings('.table').hasClass('upcoming-assignments') ? 'upcoming' : 'past';
+            var direction = this.id == 'prev-btn' ? -1 : 1;
+            var page = type == 'upcoming' ? upcoming_page : past_page;
+            var data = {page: page, direction: direction, type: type};
+            $.ajax({
+                url: "{{ url_for('.assignment_table') }}",
+                data: JSON.stringify(data),
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                type: 'POST',
+                success: function(response) {
+                    $('#' + type + '-assignments').html(response.html);
+                    flask_moment_render_all();
+                    $('.pagination-link').on('click', showAssignments);
+                    var current_page = Number(page) + direction;
+                    if (type == "upcoming") {
+                        upcoming_page = current_page;
+                    } else {
+                        past_page = current_page;
+                    }
+                },
+                error: function(error) {
+                    var error_message = $('<p>Sorry an unexpected error has occured.</p>');
+                    $('#' + type + '-assignments').append(error_message);
+                    console.error(error);
+                }
+            });
+        }
     </script>
 {% endblock %}

@@ -263,7 +263,7 @@
             if (url.indexOf('item') > -1) {
                 var values = url.split('item=')[1].split('_');
                 var $btn = $('.' + values[0] + '-hyperlink[data-' + values[0] + '-id="' + values[1] + '"]');
-                setTimeout(function(){ $btn.click()}, 100);
+                setTimeout(function(){ $btn.click();}, 100);
             }
 
             function destroyExtras() {

@@ -1,0 +1,70 @@
+<table class="table {{ type }}-assignments">
+    <thead>
+        <tr>
+            <th>All {{ type }}</th>
+            <th>Due date</th>
+            <th>Class</th>
+            <th>Your progress</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% if assignments %}
+        {% for assignment in assignments %}
+        <tr>
+            <td>
+                {%- if not assignment.is_quiz() %}
+                    {% if assignment.page.page_type.description == "Article" %}
+                        {% set icon_class = 'fas fa-file fa-fw' %}
+                    {% elif assignment.page.page_type.description == "Quiz" %}
+                        {% set icon_class = 'fas fa-tasks fa-fw' %}
+                    {% elif assignment.page.page_type.description == "Video" %}
+                        {% set icon_class = 'fas fa-play fa-fw' %}
+                    {% elif assignment.page.page_type.description == "Glossary" %}
+                        {% set icon_class = 'fas fa-list-alt fa-fw' %}
+                    {% endif %}
+                {% else %}
+                    {% set icon_class = 'fas fa-pencil-alt fa-fw' %}
+                {% endif %}
+                <i class="{{ icon_class }}" aria-hidden="true"></i>
+                <span>{{ assignment.page.title if assignment.page else assignment.quiz.tested_skills.first().description }}</span>
+            </td>
+            {% set is_late = False if StudentAssignment.query.filter_by(student_id=current_user.id, assignment_id=assignment.id).first().score is not none or type != "past" or not assignment.is_quiz() else True %}
+            <td>{% if is_late %}<span class="text-danger">Late: {% endif %}{{ moment(assignment.due_date).format('dddd, Do MMMM YYYY') }}{% if is_late %}</span>{% endif %}</td>
+            <td>{{ assignment._class.name }}</td>
+            <td>
+                {% if assignment.is_quiz() %}
+                {% set best_score = StudentAssignment.query.filter_by(student_id=current_user.id, assignment_id=assignment.id).order_by(StudentAssignment.score.desc()).first() %}
+                {% set best_score = best_score.score|int if best_score and best_score.score else None %}
+                {% set quiz_url = url_for('main.chapter', id=assignment.quiz.lesson.chapter.id, item='quiz_' + assignment.quiz.id|string) %}
+                {% if best_score %}
+                <span class="badge badge-{% if best_score == 100 %}success{% elif best_score > 69 %}warning{% else %}danger{% endif %} p-2">{{ best_score }}%</span>
+                {% if not best_score == 100 %}
+                | <a href="{{ quiz_url }}" role="button">Try again</a>
+                {% endif %}
+                {% else %}
+                <a class="btn btn-primary btn-sm" href="{{ quiz_url }}" role="button">Start</a>
+                {% endif %}
+                {% else %}
+                Recommended by your teacher
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    {% else %}
+        <tr>
+            <td>You don't have any {{ type }} assignments.</td>
+        </tr>
+    {% endif %}
+    </tbody>
+</table>
+{% set has_prev = pagination.has_prev %}
+{% set has_next = pagination.has_next %}
+{% if type == "upcoming" %}
+    {% set prev_link = url_for('.index', upcoming_page=pagination.prev_num) if has_prev else '#' %}
+    {% set next_link = url_for('.index', upcoming_page=pagination.next_num) if has_next else '#' %}
+{% else %}
+    {% set prev_link = url_for('.index', past_page=pagination.prev_num) if has_prev else '#' %}
+    {% set next_link = url_for('.index', past_page=pagination.next_num) if has_next else '#' %}
+{% endif %}
+<a href="{{ prev_link }}" class="btn btn-link pagination-link{% if not has_prev %} disabled{% endif %}" id="prev-btn">Previous</a>
+<a href="{{ next_link }}" class="btn btn-link pagination-link{% if not has_next %} disabled{% endif %}" id="next-btn">Next</a>

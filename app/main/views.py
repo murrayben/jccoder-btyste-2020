@@ -20,10 +20,29 @@ def index():
     if current_user.is_authenticated:
         if current_user.can(Permission.MANAGE_CLASS) and not current_user.is_admin():
             return redirect(url_for('teacher.dashboard'))
-        upcoming_assignments = [assignment for assignment in current_user.assignments if assignment.due_date > datetime.now()]
-        past_assignments = [assignment for assignment in current_user.assignments if assignment.due_date < datetime.now()]
+        upcoming_page = request.args.get('upcoming_page', 1, int)
+        past_page = request.args.get('past_page', 1, int)
+        upcoming_assignments = current_user.assignments.filter(Assignment.due_date > datetime.now()).paginate(upcoming_page, per_page=10)
+        past_assignments = current_user.assignments.filter(Assignment.due_date < datetime.now()).paginate(past_page, per_page=10)
         title = "JCCoder - Dashboard"
     return render_template('index.html', title=title, upcoming_assignments=upcoming_assignments, past_assignments=past_assignments)
+
+@main.route('/assignment-table', methods=['GET', 'POST'])
+def assignment_table():
+    if request.method == 'GET':
+        abort(400)
+    data = request.get_json()
+    page = int(data["page"])
+    assignments_type = data["type"]
+    pagination = current_user.assignments
+    if assignments_type == 'upcoming':
+        pagination = pagination.filter(Assignment.due_date > datetime.now())
+    else:
+        pagination = pagination.filter(Assignment.due_date < datetime.now())
+    pagination = pagination.paginate(page + data["direction"], per_page=10)
+    html = render_template('_upcoming_past_assignments.html', type=assignments_type, pagination=pagination, assignments=pagination.items)
+    return jsonify(success=True, html=html)
+
 
 @main.route('/content')
 def chapters():
