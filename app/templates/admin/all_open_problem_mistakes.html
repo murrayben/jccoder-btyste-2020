@@ -1,0 +1,19 @@
+{% extends "base_admin.html" %}
+
+{% set count = problem_mistakes | length %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>Open Problem Mistakes{% if count > 0 %} <span class="badge badge-pill badge-danger">{{ count }}</span>{% endif %}</h1>
+        <a class="btn btn-primary" href="{{ url_for('.all_problem_mistakes') }}" role="button">View all problem mistakes</a>
+    </div>
+    {% if count > 0 %}
+    <ul>
+    {% for problem_mistake in problem_mistakes %}
+        <li><a href="{{ url_for('.view_problem_mistake', id=problem_mistake.id) }}">Problem is in Quiz: {{ problem_mistake.question.quiz.title() }}</a></li>
+    {% endfor %}
+    </ul>
+    {% else %}
+    <p class="bg-success text-white p-2 pl-3">There are no open mistakes.</p>
+    {% endif %}
+{% endblock %}

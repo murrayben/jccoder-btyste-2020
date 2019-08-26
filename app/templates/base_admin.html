@@ -81,6 +81,13 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ url_for('admin.open_problem_mistakes') }}">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% set open_problem_mistake_count = ProblemMistake.query.filter_by(is_closed=False).count() %}
+                            Problem Issues{% if open_problem_mistake_count > 0 %} <span class="badge badge-pill badge-danger">{{ open_problem_mistake_count }}{% endif %}</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ url_for('admin.all_glossaries') }}">
                             <i class="fas fa-list-alt"></i>
                             Glossaries

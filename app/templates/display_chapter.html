@@ -322,7 +322,6 @@
             $(document).on('update_check_btn', function(event, action) {
                 // Update text or state of quiz check button
                 var $check_btn = $('#check-btn');
-                console.log(action);
                 if (action === "disable-btn") {
                     $check_btn.attr('disabled', 'disabled');
                 } else if (action === "enable-btn") {

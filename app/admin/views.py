@@ -1,6 +1,6 @@
 from flask import abort, jsonify, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
-from ..models import customTagMarkdown, AnswerStatus, Strand, Module, Chapter, Lesson, Skill, Glossary, Page, UserAnswer, Question, QuestionAnswer, QuestionOption, QuestionType, Quiz, PageType, Project, ProjectStep, Hint
+from ..models import customTagMarkdown, AnswerStatus, Strand, Module, Chapter, Lesson, Skill, Glossary, Page, ProblemMistake, UserAnswer, Question, QuestionAnswer, QuestionOption, QuestionType, Quiz, PageType, Project, ProjectStep, Hint
 from .forms import NewQuestion, NewStrand, NewModule, NewChapter, NewLesson, EditLessonContent, NewSkill, NewQuiz, NewGlossary, NewPage, NewProject
 from .. import db
 from . import admin
@@ -319,6 +319,19 @@ def all_projects():
                 groups.extend(lesson.all_ordered_children())
     return render_template('admin/all_something.html', title="JCCoder - All Projects", list_items="Projects", items=projects, groups=groups)
 
+@admin.route('/all/problem-mistakes')
+@login_required
+def all_problem_mistakes():
+    open_problem_mistakes = ProblemMistake.query.filter_by(is_closed=False).order_by(ProblemMistake.datetime.desc()).all()
+    closed_problem_mistakes = ProblemMistake.query.filter_by(is_closed=True).order_by(ProblemMistake.datetime.desc()).all()
+    return render_template('admin/all_problem_mistakes.html', title="JCCoder - All Problem Mistakes", open_problem_mistakes=open_problem_mistakes, closed_problem_mistakes=closed_problem_mistakes)
+
+@admin.route('/all/problem-mistakes/open')
+@login_required
+def open_problem_mistakes():
+    problem_mistakes = ProblemMistake.query.filter_by(is_closed=False).order_by(ProblemMistake.datetime.desc()).all()
+    return render_template('admin/all_open_problem_mistakes.html', title="JCCoder - All Open Problem Mistakes", problem_mistakes=problem_mistakes)
+
 @admin.route('/all/module/<int:id>')
 @login_required
 def strands_modules(id):
@@ -603,6 +616,27 @@ def edit_project(id):
         
     steps = json.dumps(steps, sort_keys=True).replace('    ', '\t')
     return render_template('admin/edit_project.html', title="JCCoder - Edit Project", form=form, project=project, steps=steps)
+
+@admin.route('/problem-mistake/<int:id>')
+def view_problem_mistake(id):
+    problem_mistake = ProblemMistake.query.get_or_404(id)
+    return render_template('admin/view_problem_mistake.html', title="JCCoder - View Problem Mistake", problem_mistake=problem_mistake)
+
+@admin.route('/problem-mistake/<int:id>/close')
+def close_problem_mistake(id):
+    problem_mistake = ProblemMistake.query.get_or_404(id)
+    problem_mistake.is_closed = True
+    db.session.add(problem_mistake)
+    flash('The issue is now closed.', 'success')
+    return redirect(url_for('.open_problem_mistakes'))
+
+@admin.route('/problem-mistake/<int:id>/reopen')
+def reopen_problem_mistake(id):
+    problem_mistake = ProblemMistake.query.get_or_404(id)
+    problem_mistake.is_closed = False
+    db.session.add(problem_mistake)
+    flash('The issue has been reopened.', 'danger')
+    return redirect(url_for('.open_problem_mistakes'))
 
 @admin.route('/preview-project', methods=["GET", "POST"])
 def preview_project():

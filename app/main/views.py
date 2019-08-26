@@ -1,7 +1,11 @@
 from flask import abort, current_app, flash, jsonify, redirect, render_template, url_for, session, request, g
 from flask_login import current_user, login_required
 from datetime import datetime
-from ..models import db, Assignment, Chapter, Class, ClassStudent, Page, PageAnswer, PageQuestion, Permission, Project, Quiz, StudentAssignment, Lesson, UserAnswer, Question, AnswerStatus, Hint, QuizAttempt
+from ..models import (db, AnswerStatus, Assignment, Chapter, Class,
+                      ClassStudent, Hint, Lesson, Page, PageAnswer,
+                      PageQuestion, Permission, ProblemMistake,
+                      ProblemMistakeType, Project, Quiz, StudentAssignment,
+                      UserAnswer, Question, QuizAttempt)
 from .. import moment
 from .forms import NewPageQuestion, NewPageAnswer, EditPageAnswer, SearchForm
 from . import main
@@ -98,6 +102,25 @@ def take_quiz(id):
     session["scores"] = []
     session["explanations"] = []
     return render_template('take_quiz.html', title="JCCoder - Take Quiz", quiz=quiz, questions=questions)
+
+@main.route('/submit-mistake', methods=["GET", "POST"])
+def submit_mistake():
+    # AJAX url for reporting mistake in a problem
+    if request.method == 'GET':
+        abort(404)
+
+    data = request.get_json()
+    mistake_type_id = data["mistake_type_id"]
+    description = data["mistake_description"]
+    question_id = data["problem_id"]
+    if not ProblemMistakeType.query.get(mistake_type_id):
+        abort(400)
+    if not Question.query.get(question_id):
+        abort(400)
+    user_id = current_user.id if current_user.is_authenticated else None
+    mistake = ProblemMistake(description=description, problem_mistake_type_id=mistake_type_id, user_id=user_id, question_id=question_id)
+    db.session.add(mistake)
+    return jsonify(success=True)
 
 @main.route('/chapter/<int:id>')
 def chapter(id):

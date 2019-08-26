@@ -223,7 +223,44 @@
         </div>
         <!-- <button role="button" class="btn btn-primary" id="next-btn">Check</button> -->
         <button id="next-btn" style="display: none;">Check</button>
-        <button role="button" class="btn btn-success" id="help-btn">Need help?</button>
+        <div class="row justify-content-between">
+            <div class="col-sm-auto">
+                <button role="button" class="btn btn-success" id="help-btn">Need help?</button>
+            </div>
+            <div class="col-sm-auto mt-2 mt-sm-0">
+                <button href="#" class="btn btn-outline-secondary" id="report-mistake">Report a problem <i class="fas fa-flag"></i></button>
+            </div>
+        </div>
+        <div class="card mt-2 d-none" id="mistake-form">
+            <div class="card-body" id="mistake-form-card">
+                <h5 class="card-title">Report a mistake in the question</h5>
+                <div class="card-text">
+                    <p>Remember to read through all the hints and to double check your answer. Thank you for your help!</p>
+                    <div id="mistake-types" class="mb-2">
+                        What's wrong?
+                        {% for mistake_type in ProblemMistakeType.query.all() %}
+                        <div class="custom-control custom-radio mistake-type" data-description="{{ mistake_type.description }}">
+                            <input type="radio" class="custom-control-input" name="mistake-type" id="mistake-type-{{ mistake_type.id }}" data-id="{{ mistake_type.id }}">
+                            <label class="custom-control-label" for="mistake-type-{{ mistake_type.id }}">{{ mistake_type.mistake_type }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="form-group">
+                        <label for="mistake-description">Description of issue</label>
+                        <textarea class="form-control" id="mistake-description"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="submit-mistake">Submit issue</button>
+                    <button type="button" class="btn btn-link" id="cancel-mistake">Cancel</button>
+                </div>
+            </div>
+            <div class="card-body d-none" id="mistake-form-feedback">
+                <h5 class="card-title">Thank you!</h5>
+                <div class="card-text">
+                    <p>Your feedback has been submitted and is greatly appreciated.</p>
+                    <a id="close-feedback" href="#">Close</a>
+                </div>
+            </div>
+        </div>
         <div id="summary">
             <div class="table-responsive">
                 <table class="table table-bordered">
@@ -400,6 +437,58 @@
 
             $('.blank').css('max-width', Number($('.draggable-btn').first().width()) + 50);
 
+            // Report mistake in problem
+            $('#report-mistake').on('click', function() {
+                $(this).hide();
+                $('#mistake-form').removeClass('d-none');
+                setTimeout(function() {
+                    updateModalHeight();
+                }, 50);
+            });
+
+            $('#cancel-mistake').on('click', function() {
+                $('#report-mistake').show();
+                $('#mistake-form').addClass('d-none');
+                setTimeout(function() {
+                    updateModalHeight();
+                }, 50);
+            });
+
+            $('#close-feedback').on('click', function() {
+                $('#mistake-form').addClass('d-none');
+                setTimeout(function() {updateModalHeight();}, 50);
+            });
+
+            $('.mistake-type').on('click', function() {
+                $('#mistake-description').attr('placeholder', $(this).data('description'));
+            });
+
+            $('#submit-mistake').on('click', function(e) {
+                e.preventDefault();
+                var mistake_type_id = $('[name="mistake-type"]:checked');
+                var mistake_description = $('#mistake-description').val();
+                if (mistake_type_id.length > 0 && mistake_description) {
+                    mistake_type_id = Number(mistake_type_id.first().data('id'));
+                    data = {mistake_type_id: mistake_type_id, mistake_description: mistake_description, problem_id: Number($currentQuestion.attr('id'))}
+                    $.ajax({
+                        url: "{{ url_for('main.submit_mistake') }}",
+                        data: JSON.stringify(data),
+                        dataType: 'json',
+                        contentType: "application/json; charset=utf-8",
+                        type: 'POST',
+                        success: function(response) {
+                            $('#mistake-form-card').addClass('d-none');
+                            $('#mistake-form-feedback').removeClass('d-none');
+                            setTimeout(function() {updateModalHeight();}, 50); // To give time for the methods to finish
+                        }, error: function(error) {
+                            $('#submit-mistake').before($('<p>').text('Sorry an unexpected error has occurred.'));
+                            console.error(error);
+                            updateModalHeight();
+                        }
+                    });
+                }
+            });
+
             function updateModalHeight() {
                 parent.$(parent.document).trigger('quiz_height_update');
             }
@@ -427,6 +516,11 @@
                 $('.answer-status').fadeOut(1000, function() {
                     updateModalHeight();
                 });
+                $('#report-mistake').show();
+                $('#mistake-form-card').removeClass('d-none');
+                $('#mistake-form-feedback').addClass('d-none');
+                $('[name="mistake-type"]').prop('checked', false);
+                $('#mistake-description').val('').attr('placeholder', '');
             }
 
             function checkQuestion() {

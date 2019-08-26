@@ -1,0 +1,26 @@
+{% extends "base_admin.html" %}
+
+{% set open_count = open_problem_mistakes | length %}
+{% set closed_count = closed_problem_mistakes | length %}
+
+{% macro list_problem_mistakes(problem_mistakes, count, type, missing_category) %}
+    <h3>{{ type }}</h3>
+    {% if count > 0 %}
+    <ul>
+    {% for problem_mistake in problem_mistakes %}
+        <li><a href="{{ url_for('.view_problem_mistake', id=problem_mistake.id) }}">Problem is in Quiz: {{ problem_mistake.question.quiz.title() }}</a></li>
+    {% endfor %}
+    </ul>
+    {% else %}
+    <p class="bg-{{ missing_category }} text-white p-2 pl-3">There are no {{ type | lower }} mistakes.</p>
+    {% endif %}
+{% endmacro %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>All Problem Mistakes</h1>
+        <a class="btn btn-primary" href="{{ url_for('.open_problem_mistakes') }}" role="button">View all open problem mistakes</a>
+    </div>
+    {{ list_problem_mistakes(open_problem_mistakes, open_count, 'Open', 'success') }}
+    {{ list_problem_mistakes(closed_problem_mistakes, closed_count, 'Closed', 'info') }}
+{% endblock %}

@@ -5,7 +5,8 @@ admin = Blueprint('admin', __name__)
 from . import views, forms
 from ..models import (Strand, Module, Chapter, Lesson, Page, PageType,
                       Permission, Tag, db, Post, QuizAttempt, Class,
-                      ClassStudent, Assignment, StudentAssignment)
+                      ClassStudent, Assignment, StudentAssignment,
+                      ProblemMistake, ProblemMistakeType, QuestionAnswer)
 
 model_singulars = {'Strands': 'strand', 'Modules': 'module',
     'Chapters': 'chapter', 'Lessons': 'lesson', 'Pages': 'page',
@@ -18,4 +19,6 @@ def inject_models():
         Tag=Tag, db=db, Page=Page, PageType=PageType, Post=Post,
         Permission=Permission, QuizAttempt=QuizAttempt, Class=Class,
         ClassStudent=ClassStudent, Assignment=Assignment,
-        StudentAssignment=StudentAssignment, model_singulars=model_singulars)
+        StudentAssignment=StudentAssignment, ProblemMistake=ProblemMistake,
+        ProblemMistakeType=ProblemMistakeType, QuestionAnswer=QuestionAnswer,
+        model_singulars=model_singulars)

@@ -264,6 +264,7 @@ class User(UserMixin, db.Model):
     answers = db.relationship('UserAnswer', backref='user', lazy='dynamic')
     page_questions = db.relationship('PageQuestion', backref='author', lazy='dynamic')
     page_answers = db.relationship('PageAnswer', backref='author', lazy='dynamic')
+    reported_problem_mistakes = db.relationship('ProblemMistake', backref='user', lazy='dynamic')
     quizzes_attempted = db.relationship('Quiz', secondary='quizattempts',
                         backref=db.backref('users_attempted', lazy='dynamic'),
                         lazy='dynamic') # For quiz results
@@ -395,6 +396,7 @@ class Question(db.Model):
     answer = db.relationship('QuestionAnswer', backref='question', lazy='dynamic')
     user_answer = db.relationship('UserAnswer', backref='question', lazy='dynamic')
     hints = db.relationship('Hint', backref='question', lazy='dynamic')
+    reported_mistakes = db.relationship('ProblemMistake', backref='question', lazy='dynamic')
 
     def what_model(self):
         return "Question"
@@ -466,11 +468,16 @@ class Quiz(db.Model):
                         backref=db.backref('quizzes_tested', lazy='dynamic'),
                         lazy='dynamic')
 
+    def title(self):
+        if self.type == QuizType.query.filter_by(code='P').first():
+            return self.tested_skills.first().description
+
     def what_model(self):
         return "Quiz"
 
     def model_one_lower(self):
         return "Questions"
+
 
 class QuizType(db.Model):
     __tablename__ = 'quiztypes'
@@ -877,3 +884,32 @@ class StudentAssignment(db.Model):
     assignment_id = db.Column(db.Integer, db.ForeignKey('assignments.id'))
     datetime = db.Column(db.DateTime, default=datetime.utcnow)
     score = db.Column(db.Integer)
+
+class ProblemMistake(db.Model):
+    __tablename__ = 'problemmistakes'
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.Text)
+    datetime = db.Column(db.DateTime, default=datetime.utcnow)
+    is_closed = db.Column(db.Boolean, default=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'))
+    problem_mistake_type_id = db.Column(db.Integer, db.ForeignKey('problemmistaketypes.id'))
+
+class ProblemMistakeType(db.Model):
+    __tablename__ = 'problemmistaketypes'
+    id = db.Column(db.Integer, primary_key=True)
+    mistake_type = db.Column(db.Text)
+    description = db.Column(db.Text)
+    problem_mistakes = db.relationship('ProblemMistake', backref='problem_mistake_type', lazy='dynamic')
+
+    @staticmethod
+    def insert_types():
+        types = [('The answer is not correct.', 'What should be the correct answer and what are the steps to get to that answer?'), 
+                 ('There is a typo.', 'What does the incorrect text say and what should it be instead?'),
+                 ('The question or hints are confusing or unclear.', 'What exactly confused you and how would you reword the question?'),
+                 ('Something isn\'t working or something seems broken.', 'What exactly happened and what had you expected to happen instead?')]
+        for mistake_type, description in types:
+            if not ProblemMistakeType.query.filter_by(mistake_type=mistake_type).first():
+                t = ProblemMistakeType(mistake_type=mistake_type, description=description)
+                db.session.add(t)
+        db.session.commit()
