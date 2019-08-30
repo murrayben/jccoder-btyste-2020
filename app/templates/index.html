@@ -57,7 +57,7 @@
 {% endblock %}
 
 {% block page_content %}
-    {% if current_user.is_authenticated %}
+    {% if current_user.is_authenticated and not current_user.can(Permission.MANAGE_CLASS) %}
     <div class="page-header border-bottom-0 pb-0">
         <h1>My Assignments</h1>
     </div>

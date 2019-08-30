@@ -12,36 +12,34 @@
             <tr class="table-light">   
                 <th class="text-muted border-right" id="assignments-table-header">Students</th>
                 {% for assignment in assignments %}
-                <th class="font-weight-normal text-center align-bottom">
-                    <div class="position-relative">
-                        {%- if not assignment.is_quiz() %}
-                            {% if assignment.page.page_type.description == "Article" %}
-                                {% set icon_class = 'fas fa-file fa-fw' %}
-                            {% elif assignment.page.page_type.description == "Quiz" %}
-                                {% set icon_class = 'fas fa-tasks fa-fw' %}
-                            {% elif assignment.page.page_type.description == "Video" %}
-                                {% set icon_class = 'fas fa-play fa-fw' %}
-                            {% elif assignment.page.page_type.description == "Glossary" %}
-                                {% set icon_class = 'fas fa-list-alt fa-fw' %}
-                            {% endif %}
-                        {% else %}
-                            {% set icon_class = 'fas fa-pencil-alt fa-fw' %}
+                <th class="font-weight-normal text-center position-relative align-top">
+                    {%- if not assignment.is_quiz() %}
+                        {% if assignment.page.page_type.description == "Article" %}
+                            {% set icon_class = 'fa-file' %}
+                        {% elif assignment.page.page_type.description == "Quiz" %}
+                            {% set icon_class = 'fa-tasks' %}
+                        {% elif assignment.page.page_type.description == "Video" %}
+                            {% set icon_class = 'fa-play' %}
+                        {% elif assignment.page.page_type.description == "Glossary" %}
+                            {% set icon_class = 'fa-list-alt' %}
                         {% endif %}
-                        <div>
-                            <i class="{{ icon_class }}" aria-hidden="true"></i>
+                    {% else %}
+                        {% set icon_class = 'fa-pencil-alt' %}
+                    {% endif %}
+                    <div>
+                        <i class="fas {{ icon_class }} fa-lg fa-fw" aria-hidden="true"></i>
+                    </div>
+                    <div class="position-absolute" style="bottom: 0.75rem; right: 25%; left: 25%;">
+                        <div class="small">
+                            {{ assignment.page.title if assignment.page else assignment.quiz.tested_skills.first().description }}
                         </div>
-                        <div>
-                            <div class="small">
-                                {{ assignment.page.title if assignment.page else assignment.quiz.tested_skills.first().description }}
-                            </div>
-                            <div class="small text-muted">
-                                {{ moment(assignment.due_date).format('MMM Do') }}
-                            </div>
+                        <div class="small text-muted">
+                            {{ moment(assignment.due_date).format('MMM Do') }}
                         </div>
                     </div>
                 </th>
                 {% endfor %}
-                <th></th>
+                <th class="position-relative"></th>
             </tr>
         </thead>
         {% for student in class.students %}

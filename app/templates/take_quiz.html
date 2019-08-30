@@ -223,7 +223,7 @@
         </div>
         <!-- <button role="button" class="btn btn-primary" id="next-btn">Check</button> -->
         <button id="next-btn" style="display: none;">Check</button>
-        <div class="row justify-content-between">
+        <div class="row justify-content-between" id="question-buttons">
             <div class="col-sm-auto">
                 <button role="button" class="btn btn-success" id="help-btn">Need help?</button>
             </div>
@@ -629,6 +629,7 @@
                                         $currentQuestion.fadeOut();
                                         $('.page-header').fadeOut();
                                         $('.answer-status').fadeOut();
+                                        $('#question-buttons, #mistake-form').fadeOut();
                                         var data = {'id': '{{ quiz.id }}'};
                                         $.ajax({
                                             url: "{{ url_for('main.summary') }}",

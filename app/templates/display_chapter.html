@@ -41,7 +41,13 @@
                                     {%- set sorted_attempts = sorted_attempts | sort -%} -->
                                     {%- set best_score = quiz_attempts.order_by(QuizAttempt.percent.desc()).first().percent -%}
                                     {%- set most_recent = quiz_attempts.order_by(QuizAttempt.datetime.desc()).first() -%}
-                                    <div class="best-score mb-1">Best score: <span class="score">{{ best_score }}</span>% <span class="float-right attempt-datetime" title="{{ most_recent.datetime }}"><em>({{ moment(most_recent.datetime).fromNow(refresh=True) }})</em></span></div>
+                                    <div class="best-score">
+                                        Best score: <span class="score">{{ best_score }}</span>%
+                                    </div>
+                                    <div class="most-recent-attempt mb-1">
+                                        Most recent attempt:
+                                        <span class="attempt-datetime" title="{{ most_recent.datetime }}">{{ moment(most_recent.datetime).fromNow(refresh=True) }}</span>
+                                    </div>
                                     {% endif -%}
                                     <button type="button" data-quiz-id="{{ quiz.id }}" class="btn btn-sm btn-outline-primary quiz-hyperlink">Start</button>
                                 </div>
@@ -359,11 +365,12 @@
                         success: function(response) {
                             if (response.authenticated) {
                                 var score = response.overall_score;
-                                var best_score = $('.quiz-hyperlink[data-quiz-id="' + quiz_id + '"]').prev().children('.score').first();
+                                var best_score = $('.quiz-hyperlink[data-quiz-id="' + quiz_id + '"]').siblings('.best-score').children('.score').first();
+                                console.log(best_score);
                                 if (score > Number(best_score.text())) {
                                     best_score.text(score);
                                 }
-                                var datetime_span = best_score.siblings('span');
+                                var datetime_span = best_score.parent().siblings('.most-recent-attempt');
                                 var $temp = $(response.formatted_datetime);
 
                                 $temp.appendTo('body'); // Only for less than a second
@@ -379,7 +386,7 @@
                                 var fromNow = $temp.text();
                                 $temp.remove();
                                 
-                                datetime_span.children('em').children('span').attr('data-timestamp', $(response.datetime_string).text()).text(fromNow);
+                                datetime_span.children('.attempt-datetime').attr('data-timestamp', $(response.datetime_string).text()).text(fromNow);
                                 flask_moment_render_all();
                             }   
                         },
