@@ -175,8 +175,9 @@ def check():
     #     session["user_results"].append("Used hint")
     #     session["no_attempts"].append("N/A")
     #     return jsonify(success=True)
-
-    answer = data['answer'].strip()
+    answer = data['answer']
+    if not type(answer) == list:
+        answer = answer.strip()
     question = Question.query.get(data['question_id'])
     if not question:
         # Return error as id is invalid
@@ -190,9 +191,6 @@ def check():
         # No hints available (shouldn't happen)
         print('No hints')
         score = 100
-    else:
-        print(hints_used)
-        print(total_num_hints)
     
     # Get QuestionAnswer object then QuestionOption and then the text
     status = question.check(answer)
@@ -224,7 +222,10 @@ def check():
         session["no_attempts"].append(attempt_no)
         session["explanations"].append(question.get_explanation())
     if current_user.is_authenticated:
-        user_answer = UserAnswer(keyed_answer=answer, answer_status=answer_status, score=score, user=current_user._get_current_object(),
+        keyed_answer = answer
+        if type(answer) == list:
+            keyed_answer = ", ".join(answer)
+        user_answer = UserAnswer(keyed_answer=keyed_answer, answer_status=answer_status, score=score, user=current_user._get_current_object(),
                                 question=question, attempt_no=attempt_no)
     return jsonify(success=True, answer_status=status, try_again=try_again, solution_html=solution_html)
 
@@ -341,9 +342,9 @@ def join_class_confirm(code):
         # Teachers can't join classes
         return redirect(url_for('.index'))
     
-    _class = Class.query.filter_by(code=code).first_or_404()
-    if ClassStudent.query.filter_by(student_id=current_user.id, class_id=_class.id, student_status=True).first():
+    class_ = Class.query.filter_by(code=code).first_or_404()
+    if ClassStudent.query.filter_by(student_id=current_user.id, class_id=class_.id, student_status=True).first():
         # Can't join a class twice
         flash('You have already joined that class.', 'info')
         return redirect(url_for('.index'))
-    return render_template('join_class.html', title="JCCoder - Join class {0}".format(code), _class=_class)
+    return render_template('join_class.html', title="JCCoder - Join class {0}".format(code), class_=class_)

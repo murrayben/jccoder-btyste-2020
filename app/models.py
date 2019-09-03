@@ -406,11 +406,13 @@ class Question(db.Model):
 
     def check(self, answer):
         if answer == self.correct_answer():
-            return 1
+            return True
         else:
-            return 0
+            return False
     
     def correct_answer(self):
+        if self.question_type == QuestionType.query.filter_by(code='M').first():
+            return [answer.option.text for answer in self.answer.all()]
         return self.answer.first().option.text
 
     def get_explanation(self):
@@ -527,7 +529,7 @@ class QuestionOption(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text)
     question_id = db.Column(db.Integer, db.ForeignKey('questions.id'))
-    answers = db.relationship('QuestionAnswer', backref='option', lazy='dynamic')
+    answer = db.relationship('QuestionAnswer', backref='option', uselist=False)
 
     def __repr__(self):
         return self.text
@@ -845,7 +847,7 @@ class Class(db.Model):
     description = db.Column(db.Text)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
     teacher_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    assignments = db.relationship('Assignment', backref='_class', lazy='dynamic')
+    assignments = db.relationship('Assignment', backref='class_', lazy='dynamic')
     students = db.relationship('User', secondary='class_students',
         backref=db.backref('classes', lazy='dynamic'), lazy='dynamic')
 

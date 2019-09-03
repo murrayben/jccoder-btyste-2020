@@ -30,7 +30,7 @@
             </td>
             {% set is_late = False if StudentAssignment.query.filter_by(student_id=current_user.id, assignment_id=assignment.id).first().score is not none or type != "past" or not assignment.is_quiz() else True %}
             <td>{% if is_late %}<span class="text-danger">Late: {% endif %}{{ moment(assignment.due_date).format('dddd, Do MMMM YYYY') }}{% if is_late %}</span>{% endif %}</td>
-            <td>{{ assignment._class.name }}</td>
+            <td>{{ assignment.class_.name }}</td>
             <td>
                 {% if assignment.is_quiz() %}
                 {% set best_score = StudentAssignment.query.filter_by(student_id=current_user.id, assignment_id=assignment.id).order_by(StudentAssignment.score.desc()).first() %}

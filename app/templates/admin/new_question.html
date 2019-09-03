@@ -10,11 +10,12 @@
     <div class="page-header">
         <h1>New Question</h1>
     </div>
-    {{ wtf.quick_form(form) }}
+    {{ wtf.quick_form(form, novalidate=True) }}
 {% endblock %}
 
 {% block scripts %}
     {{ super() }}
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
     <script src="{{ url_for('static', filename='js/question.js') }}"></script>
 {% endblock %}

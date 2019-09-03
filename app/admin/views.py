@@ -55,14 +55,13 @@ def new_question():
             db.session.add(hint)
         question_type = question.question_type
         question_answer = None
+        options = request.form.getlist('options1')
         if question_type == QuestionType.query.filter_by(code='C').first(): # Multiple Choice
-            options = request.form.getlist('options1')
             for option in options:
                 db.session.add(QuestionOption(text=option, question_id=question.id))
             db.session.commit()
             question_answer = QuestionAnswer(option=QuestionOption.query.filter_by(text=options[int(form.answer.data)-1]).first(), question=question)
         elif question_type == QuestionType.query.filter_by(code='D').first(): # Drag and drop
-            options = request.form.getlist('options1')
             for option in options:
                 if option.startswith('img:'):
                     option = option[4:]
@@ -77,6 +76,12 @@ def new_question():
             db.session.add(question_option)
             db.session.commit()
             question_answer = QuestionAnswer(option=QuestionOption.query.filter_by(text=form.answer.data).first(), question=question)
+        else:
+            for option in options:
+                db.session.add(QuestionOption(text=option, question_id=question.id))
+            db.session.commit()
+            for answer in form.answer.data.split(','):
+                question_answer = QuestionAnswer(option=QuestionOption.query.filter_by(text=options[int(answer)-1]).first(), question=question)
         db.session.add(question_answer)
         return redirect(url_for('admin.all_questions'))
     return render_template('admin/new_question.html', title="JCCoder - New Question", form=form, QuestionType=QuestionType)
@@ -548,7 +553,23 @@ def edit_question(id):
         question.text = form.text.data
         question.max_attempts = form.max_attempts.data
         if question.question_type_id == QuestionType.query.filter_by(code='C').first().id:
+            # Multiple Choice
             question.answer.first().option_id = question.options.all()[int(form.answer.data) - 1].id
+        elif question.question_type_id == QuestionType.query.filter_by(code='M').first().id:
+            # Multiple Answer
+            answers = [QuestionOption.query.get(question.options.all()[int(answer)-1].id) for answer in form.answer.data.split(',')]
+            original_answers = [answer.option for answer in question.answer.all()]
+            if not sorted([option.id for option in answers]) == sorted([option.id for option in original_answers]):
+                # If answers have changed:
+                for answer in answers:
+                    if answer in original_answers:
+                        original_answers.pop(original_answers.index(answer))
+                    else:
+                        question_answer = QuestionAnswer(option=answer, question=question)
+                        db.session.add(question_answer)
+                for answer in original_answers:
+                    # Delete remaining
+                    db.session.delete(answer.answer)
         else:
             question.answer.first().option.text = form.answer.data
 
@@ -573,6 +594,8 @@ def edit_question(id):
         options[i] = option.text
     if question.question_type_id == QuestionType.query.filter_by(code='C').first().id:
         form.answer.data = options.index(question.correct_answer()) + 1
+    elif question.question_type_id == QuestionType.query.filter_by(code='M').first().id:
+        form.answer.data = ", ".join([str(question.options.all().index(answer.option) + 1) for answer in question.answer.all()])
     else:
         form.answer.data = question.correct_answer()
 

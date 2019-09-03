@@ -19,11 +19,11 @@ $('#type').on('change', function () {
 $newOptionBtn.click();
 
 function updateMaxAttempts() {
-    isSingleAnswer = Number($('#type').val()) === 3 ? true : false;
-    if (isSingleAnswer) {
-        $('#max_attempts').attr('max', 10);
-    } else {
+    isMultipleChoice = Number($('#type').val()) === 1 ? true : false;
+    if (isMultipleChoice) {
         $('#max_attempts').attr('max', $('[name="options1"]').length - 1);
+    } else {
+        $('#max_attempts').attr('max', 10);
     }
 }
 
@@ -57,6 +57,7 @@ function updateFields(field) {
         $newOptionBtn.off('click').on('click', addInput);
         $('#answer').prev().text('Answer (in format: table_box_row=option_num)');
         $('#answer').attr('type', 'input');
+        updateMaxAttempts();
     } else if (Number($this.val()) === 3) {
         // Single Answer (input type='text')
         $('[name="options1"]').parent().fadeOut(1000, function() {
@@ -69,6 +70,20 @@ function updateFields(field) {
             $(this).remove();
         });
         $('#answer').prev().text('Answer');
+        $('#answer').attr('type', 'input');
+        updateMaxAttempts();
+    } else {
+        // Multiple Answer
+        $('[name="options1"]').parent().fadeIn(1000);
+        $('[name="options1"]').val("");
+        $deleteOptionBtn.prependTo($('#btns')).hide();
+        $deleteOptionBtn.off('click').on('click', deleteInput);
+        if ($('[name="options1"]').length > 2) {
+            $deleteOptionBtn.fadeIn(1000)
+        }
+        $newOptionBtn.prependTo($('#btns')).hide().fadeIn(1000);
+        $newOptionBtn.off('click').on('click', addInput);
+        $('#answer').prev().text('Answer (first option is 1, second option is 2, etc.) seperate each answer with a comma (eg. 1, 3, 4)');
         $('#answer').attr('type', 'input');
         updateMaxAttempts();
     }

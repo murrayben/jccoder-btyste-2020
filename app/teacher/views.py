@@ -42,8 +42,8 @@ def new_class():
 
 @teacher.route('/class/<int:id>', methods=["GET", "POST"])
 def display_class(id):
-    _class = Class.query.get_or_404(id)
-    if _class.teacher_id != current_user.id:
+    class_ = Class.query.get_or_404(id)
+    if class_.teacher_id != current_user.id:
         abort(403)
     page = request.args.get('assignments_page', 1, int)
     form = AssignmentForm(id)
@@ -69,7 +69,7 @@ def display_class(id):
             for student_id in form.students.data:
                 # Confirming that student is a real user and in the class.
                 student = User.query.get(student_id)
-                if student and (student in _class.students.all()):
+                if student and (student in class_.students.all()):
                     student_assignment = StudentAssignment(student_id=student_id, assignment_id=assignment.id)
                     db.session.add(student_assignment)
                 else:
@@ -81,8 +81,8 @@ def display_class(id):
         objects = session.get("assigned_pages", [])
         objects.append(-1)
         objects.extend(session.get("assigned_quizzes", []))
-    assignment_pagination = _class.assignments.paginate(page, per_page=8)
-    return render_template('teacher/class.html', title="JCCoder - " + _class.name, _class=_class, form=form, objects=objects, assignments_pagination=assignment_pagination)
+    assignment_pagination = class_.assignments.paginate(page, per_page=8)
+    return render_template('teacher/class.html', title="JCCoder - " + class_.name, class_=class_, form=form, objects=objects, assignments_pagination=assignment_pagination)
 
 @teacher.route('/class/assignment-page', methods=["GET", "POST"])
 def assignment_page():
@@ -90,13 +90,13 @@ def assignment_page():
         abort(404)
     data = request.get_json()
     page = int(data["page"])
-    _class = Class.query.get(int(data["class_id"]))
-    if not _class:
+    class_ = Class.query.get(int(data["class_id"]))
+    if not class_:
         abort(400)
-    elif _class.teacher_id != current_user.id:
+    elif class_.teacher_id != current_user.id:
         abort(400)
-    assignments_pagination = _class.assignments.paginate(page + data["direction"], per_page=8)
-    html = render_template('teacher/_assignment.html', _class=_class, assignments_pagination=assignments_pagination, moment=moment.create)
+    assignments_pagination = class_.assignments.paginate(page + data["direction"], per_page=8)
+    html = render_template('teacher/_assignment.html', class_=class_, assignments_pagination=assignments_pagination, moment=moment.create)
     return jsonify(success=True, html=html)
 
 @teacher.route('/save-items', methods=["GET", "POST"])

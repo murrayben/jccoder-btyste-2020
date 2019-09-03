@@ -17,18 +17,21 @@
                     {{ question.html | safe }}
                     <h5>Options:</h5>
                     {% if question.question_type.code != 'S' %}
+                    {% set answer = question.correct_answer() %}
                     <ul class="list-group">
                         {% for option in question.options %}
-                        <li class="list-group-item{% if QuestionAnswer.query.filter_by(question_id=question.id, option_id=option.id).first() %} list-group-item-success{% endif %}">{{ option.text | safe }}</li>
+                        <li class="list-group-item{% if option == answer or option.text in answer %} list-group-item-success{% endif %}">{{ option.text | safe }}</li>
                         {% endfor %}
                     </ul>
                     {% else %}
-                    <p>This is a Single Answer question.</p>
+                    <p class="mb-1">This is a Single Answer question.</p>
+                    <p>The correct answer is {{ question.correct_answer() }}.</p>
                     {% endif %}
 
                     <h5 class="mt-3">Hints:</h5>
                     {% for hint in question.hints %}
                     <div>{{ hint.html | safe }}</div>
+                    {% if not loop.last %}<hr />{% endif %}
                     {% endfor %}
                 </div>
                 <div class="modal-footer">

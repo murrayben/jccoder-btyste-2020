@@ -144,6 +144,7 @@
 {% endmacro %}
 {% macro add_question_input(question, enable_input=True) %}
                 {% if question.question_type.code == 'C' %}
+                <p class="mb-0">Choose <em>one</em> of the options:</p>
                 {% for option in question.options %}
                 <div class="custom-control custom-radio">
                     <input type="radio" id="options-{{ loop.index }}-{{ question.id }}" name="options-{{ question.id }}" class="custom-control-input"{% if not enable_input %} disabled{% endif %} />
@@ -152,7 +153,16 @@
                     </label>
                 </div>
                 {% endfor %}
-
+                {% elif question.question_type.code == 'M' %}
+                <p class="mb-0">Choose <em>all</em> the options that apply:</p>
+                {% for option in question.options %}
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" id="options-{{ loop.index }}-{{ question.id }}" name="options-{{ question.id }}" class="custom-control-input"{% if not enable_input %} disabled{% endif %} />
+                    <label class="custom-control-label" for="options-{{ loop.index }}-{{ question.id }}">
+                        {{ option.text }}
+                    </label>
+                </div>
+                {% endfor %}
                 {% elif question.question_type.code == 'S' %}
                 <input autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" type="text" id="answer" value=""{% if not enable_input %} disabled{% endif %} />
                 {% endif %}
@@ -526,7 +536,7 @@
             function checkQuestion() {
                 $('#next-btn').attr('disabled', 'disabled');
                 parent.$(parent.document).trigger('update_check_btn', ["disable-btn"])
-                var $checkedRadioBtns = $currentQuestion.children('.custom-radio').children('input').filter(':checked');
+                var $checkedOptions = $currentQuestion.children('.custom-control').children('input').filter(':checked');
                 var draggedItems = $currentQuestion.children('.draggable-items-box');
                 if (draggedItems.length !== 0) {
                     draggedItems = draggedItems.children('.draggable-btn').length;
@@ -534,11 +544,11 @@
                     draggedItems = undefined;
                 }
                 var singleAnswer = $currentQuestion.children('#answer');
-                singleAnswer =  singleAnswer.length !== 0 ? singleAnswer.val().trim() : false
-                if ($checkedRadioBtns.length === 1 || draggedItems === 0 || singleAnswer) {
+                singleAnswer = singleAnswer.length !== 0 ? singleAnswer.val().trim() : false
+                if ($checkedOptions.length > 0 || draggedItems === 0 || singleAnswer) {
                     // Check question
-                    if ($checkedRadioBtns.length === 1) {
-                        var data = {"answer": $checkedRadioBtns.next().text(), "question_id": $currentQuestion.attr('id')};
+                    if ($checkedOptions.length === 1 && $checkedOptions.attr('type') === 'radio') {
+                        var data = {"answer": $checkedOptions.next().text(), "question_id": $currentQuestion.attr('id')};
                     } else if (draggedItems === 0) {
                         var answerDragDrop = "";
                         for (var i = 0; i < $('.draggable-btn:visible').length; i++) {
@@ -546,6 +556,12 @@
                         }
                         answerDragDrop = answerDragDrop.trim();
                         var data = {"answer": answerDragDrop, "question_id": $currentQuestion.attr('id')}
+                    } else if ($checkedOptions.length >= 1 && $checkedOptions.attr('type') === 'checkbox') {
+                        var answers = [];
+                        $checkedOptions.each(function() {
+                            answers.push($(this).next().text().trim());
+                        });
+                        var data = {"answer": answers, "question_id": $currentQuestion.attr('id')};
                     } else {
                         var data = {"answer": singleAnswer, "question_id": $currentQuestion.attr('id')};
                     }
@@ -645,8 +661,16 @@
                                                     //$rowChildren.filter('.question-text').text('Question ' + (i+1)).attr('data-content', response.questions[i]);
                                                     //$rowChildren.filter('.question-text').children('.collapse').children('.actual-question-html').html(response.questions[i]);
                                                     $rowChildren.filter('.no-attempts').text(response.no_attempts[i]);
-                                                    $rowChildren.filter('.last-attempt').text(response.last_attempts[i]);
-                                                    $rowChildren.filter('.correct-ans').text(response.correct_answers[i]);
+                                                    var last_attempt = response.last_attempts[i];
+                                                    if (last_attempt instanceof Array) {
+                                                        last_attempt = last_attempt.join(', ')
+                                                    }
+                                                    $rowChildren.filter('.last-attempt').text(last_attempt);
+                                                    var correct_answer = response.correct_answers[i];
+                                                    if (correct_answer instanceof Array) {
+                                                        correct_answer = correct_answer.join(', ')
+                                                    }
+                                                    $rowChildren.filter('.correct-ans').text(correct_answer);
                                                     $rowChildren.filter('.score').text(response.scores[i]);
                                                     $('#explanation-' + thisQuesID).html(response.explanations[i]);
                                                     if (response.user_ans_status[i]) {
