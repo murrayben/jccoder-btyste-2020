@@ -169,7 +169,7 @@ def new_quiz():
     form = NewQuiz()
     if form.validate_on_submit():
         skills = parseSkillIDs(form.tested_skills.data)
-        quiz = Quiz(description=form.description.data, lesson=Lesson.query.get(form.lesson.data), tested_skills=skills)
+        quiz = Quiz(description=form.description.data, lesson=Lesson.query.get(form.lesson.data), no_questions=form.no_questions.data, tested_skills=skills)
         db.session.add(quiz)
         return redirect(url_for('admin.all_quizzes'))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Quiz", new_thing="Quiz", form=form)
@@ -534,11 +534,13 @@ def edit_quiz(id):
     form = NewQuiz()
     if form.validate_on_submit():
         quiz.description = form.description.data
+        quiz.no_questions = form.no_questions.data
         quiz.tested_skills = parseSkillIDs(form.tested_skills.data)
         quiz.lesson_id = form.lesson.data
         db.session.add(quiz)
         return redirect(url_for('.all_quizzes'))
     form.description.data = quiz.description
+    form.no_questions.data = quiz.no_questions
     form.tested_skills.data = unparseSkillObjects(quiz)
     form.lesson.data = quiz.lesson_id
     return render_template('admin/edit_quiz.html', title="JCCoder - Edit Quiz in Lesson " + quiz.lesson.title, form=form, quiz=quiz)

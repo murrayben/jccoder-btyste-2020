@@ -1,5 +1,6 @@
 from flask import abort, current_app, flash, jsonify, redirect, render_template, url_for, session, request, g
 from flask_login import current_user, login_required
+from sqlalchemy.sql.expression import func
 from datetime import datetime
 from ..models import (db, AnswerStatus, Assignment, Chapter, Class,
                       ClassStudent, Hint, Lesson, Page, PageAnswer,
@@ -95,8 +96,10 @@ def edit_page_answer(id):
 @main.route('/take-quiz/<int:id>')
 def take_quiz(id):
     quiz = Quiz.query.get_or_404(id)
-    questions = quiz.questions.all()
+    #questions = quiz.questions.all()
+    questions = quiz.questions.order_by(func.rand()).limit(quiz.no_questions).all()
     session["attempt_no"] = 0
+    session["questions"] = [question.id for question in questions]
     session["user_results"] = []
     session["no_attempts"] = []
     session["scores"] = []
@@ -239,9 +242,11 @@ def summary():
     correct_answers = []
     user_ans_status = []
     i = 0
-    for question in Quiz.query.filter_by(id=data['id']).first().questions:
+    # for question in Quiz.query.filter_by(id=data['id']).first().questions:
+    for question in [Question.query.get(question_id) for question_id in session["questions"]]:
         question_ids.append(question.id)
         questions.append((question.html or question.text))
+        questions.append(question)
         correct_answers.append(question.correct_answer())
         user_ans_status.append(question.check(session["user_results"][i]))
         i += 1
@@ -262,7 +267,7 @@ def summary():
                         db.session.add(student_assignment)
 
 
-    return jsonify(success=True, question_ids=question_ids, questions=questions, no_attempts=session["no_attempts"],
+    return jsonify(success=True, question_ids=question_ids, questions=session["questions"], no_attempts=session["no_attempts"],
             last_attempts=session["user_results"], scores=session["scores"],
             correct_answers=correct_answers, user_ans_status=user_ans_status,
             explanations=session["explanations"], overall_score=overall_score)

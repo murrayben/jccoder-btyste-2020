@@ -99,6 +99,7 @@ class NewQuiz(FlaskForm):
                                 for skill in Skill.query.all()]
 
     description = TextAreaField('Description', validators=[DataRequired()])
+    no_questions = IntegerField('Number of questions asked', widget=NumberInput(min=1), validators=[DataRequired()])
     tested_skills = SelectMultipleField('Skills Tested', coerce=int)
     lesson = SelectField('Lesson', coerce=int)
     submit = SubmitField('Submit Quiz')

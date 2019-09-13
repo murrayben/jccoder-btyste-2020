@@ -460,6 +460,7 @@ class Quiz(db.Model):
     __tablename__ = 'quizzes'
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.Text)
+    no_questions = db.Column(db.Integer)
     lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'))
     next_quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'), nullable=True)
     type_id = db.Column(db.Integer, db.ForeignKey('quiztypes.id'))
