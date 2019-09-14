@@ -390,8 +390,22 @@
                         dataType: 'json',
                         contentType: "application/json; charset=utf-8",
                         type: 'POST',
+                        beforeSend: function() {
+                            $hints_box.append('<i class="fas fa-sync-alt fa-2x fa-spin"></i>');
+                        },
                         success: function(response) {
-                            $hints_box.append(response.hint_html);
+                            $('.fa-sync-alt').before(response.hint_html);
+                            if (/(\<img)+/.test(response.hint_html)) {
+                                updateModalHeight();
+                                $("body img").on("load", function () {
+                                    $hints_box.children('i.fa-sync-alt').remove();
+                                    updateModalHeight();
+                                });
+                            } else {
+                                $hints_box.children('i.fa-sync-alt').remove();
+                                updateModalHeight();
+                            }
+                            
                             $currentQuestion.attr('data-at-hint', Number($currentQuestion.attr('data-at-hint')) + 1)
                             if ($currentQuestion.attr('data-at-hint') === "1") {
                                 /*data = {"hint_used_mark_incorrect": true};
@@ -417,8 +431,6 @@
                         },
                         error: function(error) {
                             $hints_box.append("<p>An error has occurred while retriving the hint.</p>");
-                        },
-                        complete: function(response) {
                             updateModalHeight();
                         }
                     });
@@ -523,14 +535,14 @@
                 $("#max-attempts").text($currentQuestion.data('max-attempts'));
                 updateModalHeight();
                 parent.$(parent.document).trigger('update_check_btn', ["destroy-popover"]);
-                $('.answer-status').fadeOut(1000, function() {
-                    updateModalHeight();
-                });
+                $('.answer-status').fadeOut(1000);
                 $('#report-mistake').show();
+                $('#mistake-form').addClass('d-none');
                 $('#mistake-form-card').removeClass('d-none');
                 $('#mistake-form-feedback').addClass('d-none');
                 $('[name="mistake-type"]').prop('checked', false);
                 $('#mistake-description').val('').attr('placeholder', '');
+                updateModalHeight();
             }
 
             function checkQuestion() {
