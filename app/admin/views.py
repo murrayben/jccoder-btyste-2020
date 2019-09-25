@@ -554,6 +554,32 @@ def edit_question(id):
         question.question_type_id = form.type.data
         question.text = form.text.data
         question.max_attempts = form.max_attempts.data
+
+        # Options
+        options = request.form.getlist('options1')
+        original_options = question.options.all()
+
+        print(options)
+        print(question.options.all())
+
+        for option in options:
+            try:
+                if option != original_options[0].text:
+                    original_options[0].text = option
+                    db.session.add(original_options[0])
+                del original_options[0]
+            except IndexError:
+                # No original options left
+                new_option = QuestionOption(text=option, question_id=question.id)
+                db.session.add(new_option)
+        
+        for option in original_options:
+            # Any left over original options
+            db.session.delete(option)
+        
+        db.session.commit()
+
+        # Correct answer
         if question.question_type_id == QuestionType.query.filter_by(code='C').first().id:
             # Multiple Choice
             question.answer.first().option_id = question.options.all()[int(form.answer.data) - 1].id
@@ -575,6 +601,7 @@ def edit_question(id):
         else:
             question.answer.first().option.text = form.answer.data
 
+        # Hints
         for i, hint_text in enumerate(form.hints.data.split('::sep::'), 1):
             hint_text = hint_text.strip()   # Remove extra whitespace such as the newline character
             existing_hint = Hint.query.filter_by(hint_no=i, question_id=question.id).first()
