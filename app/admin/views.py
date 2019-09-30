@@ -126,7 +126,7 @@ def new_chapter():
         if not form.next_chapter.data == 0:
             Chapter.query.get(form.next_chapter.data).prev_chapter = chapter
         else:
-            chapter.next_chapter = None # MySQL doesn't like 0
+            chapter.next_chapter_id = None # MySQL doesn't like 0
         db.session.add(chapter)
         return redirect(url_for('admin.all_chapters'))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Chapter", new_thing="Chapter", form=form)
@@ -147,7 +147,7 @@ def new_lesson():
         if not form.next_lesson.data == 0:
             Lesson.query.get(form.next_lesson.data).prev_lesson = lesson
         else:
-            lesson.next_lesson = None # MySQL doesn't like 0
+            lesson.next_lesson_id = None # MySQL doesn't like 0
         db.session.add(lesson)
         return redirect(url_for('admin.all_lessons'))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Lesson", new_thing="Lesson", form=form)
@@ -422,7 +422,7 @@ def edit_chapter(id):
         if not form.next_chapter.data == 0:
             Chapter.query.get(form.next_chapter.data).prev_chapter = chapter
         else:
-            chapter.next_chapter = None # MySQL doesn't like 0
+            chapter.next_chapter_id = None # MySQL doesn't like 0
         db.session.add(chapter)
         return redirect(url_for('.all_chapters'))
     form.title.data = chapter.title
@@ -450,7 +450,7 @@ def edit_lesson(id):
             next_lesson.chapter_id = form.chapter.data
             next_lesson.prev_lesson = lesson
         else:
-            lesson.next_lesson = None # MySQL doesn't like 0
+            lesson.next_lesson_id = None # MySQL doesn't like 0
         db.session.add(lesson)
         return redirect(url_for('.all_lessons'))
     form.title.data = lesson.title
