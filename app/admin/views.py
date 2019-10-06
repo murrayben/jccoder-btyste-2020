@@ -137,7 +137,7 @@ def new_lesson():
     form = NewLesson()
     if form.validate_on_submit():
         lesson = Lesson(title=form.title.data, overview=form.overview.data, icon=form.icon.data,
-                        chapter=Chapter.query.get(form.chapter.data))
+                        chapter=Chapter.query.get(form.chapter.data), type_id=form.lesson_type.data)
         number = 1
         lessons_in_chapter = Lesson.query.filter_by(chapter=lesson.chapter).all()
         if len(lessons_in_chapter) > 1:
@@ -169,7 +169,9 @@ def new_quiz():
     form = NewQuiz()
     if form.validate_on_submit():
         skills = parseSkillIDs(form.tested_skills.data)
-        quiz = Quiz(description=form.description.data, lesson=Lesson.query.get(form.lesson.data), no_questions=form.no_questions.data, tested_skills=skills)
+        quiz = Quiz(description=form.description.data, lesson=Lesson.query.get(form.lesson.data),
+                    no_questions=form.no_questions.data, tested_skills=skills,
+                    type_id=form.quiz_type.data)
         db.session.add(quiz)
         return redirect(url_for('admin.all_quizzes'))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Quiz", new_thing="Quiz", form=form)
@@ -441,6 +443,7 @@ def edit_lesson(id):
     form = NewLesson()
     if form.validate_on_submit():
         lesson.title = form.title.data
+        lesson.type_id = form.lesson_type.data
         lesson.overview = form.overview.data    
         lesson.icon = form.icon.data
         lesson.chapter_id = form.chapter.data
@@ -454,6 +457,7 @@ def edit_lesson(id):
         db.session.add(lesson)
         return redirect(url_for('.all_lessons'))
     form.title.data = lesson.title
+    form.lesson_type.data = lesson.type_id
     form.overview.data = lesson.overview
     form.icon.data = lesson.icon
     form.chapter.data = lesson.chapter_id
@@ -533,12 +537,14 @@ def edit_quiz(id):
     quiz = Quiz.query.get_or_404(id)
     form = NewQuiz()
     if form.validate_on_submit():
+        quiz.type_id = form.quiz_type.data
         quiz.description = form.description.data
         quiz.no_questions = form.no_questions.data
         quiz.tested_skills = parseSkillIDs(form.tested_skills.data)
         quiz.lesson_id = form.lesson.data
         db.session.add(quiz)
         return redirect(url_for('.all_quizzes'))
+    form.quiz_type.data = quiz.type_id
     form.description.data = quiz.description
     form.no_questions.data = quiz.no_questions
     form.tested_skills.data = unparseSkillObjects(quiz)

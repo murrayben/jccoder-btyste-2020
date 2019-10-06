@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import FileField, IntegerField, SelectMultipleField, PasswordField, RadioField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.widgets.html5 import NumberInput, URLInput
 from wtforms.validators import DataRequired, Length, Optional
-from ..models import QuestionType, Strand, Module, Chapter, Lesson, Quiz, Page, PageType, Skill
+from ..models import QuestionType, Strand, Module, Chapter, Lesson, LessonType, Quiz, QuizType, Page, PageType, Skill
 
 class NewQuestion(FlaskForm):
     def __init__(self, *args, **kwargs):
@@ -58,6 +58,7 @@ class NewChapter(FlaskForm):
 class NewLesson(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(NewLesson, self).__init__(*args, **kwargs)
+        self.lesson_type.choices = [(lesson_type.id, lesson_type.description) for lesson_type in LessonType.query.all()]
         self.chapter.choices = [(chapter.id, chapter.module.title + ' > ' + chapter.title)
                                for chapter in Chapter.query.all()]
         self.next_lesson.choices = [(0, '..........')]
@@ -65,6 +66,7 @@ class NewLesson(FlaskForm):
                                          for lesson in Lesson.query.all()])
     
     title = StringField('Title', validators=[DataRequired(), Length(1, 64)])
+    lesson_type = SelectField('Lesson Type', coerce=int)
     overview = TextAreaField('Overview', validators=[DataRequired()])
     icon = StringField('Icon URL (don\'t forget the http://)', widget=URLInput(), validators=[DataRequired()], default="http://")
     next_lesson = SelectField('Next Lesson', coerce=int)
@@ -90,6 +92,7 @@ class NewSkill(FlaskForm):
 class NewQuiz(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(NewQuiz, self).__init__(*args, **kwargs)
+        self.quiz_type.choices = [(quiz_type.id, quiz_type.description) for quiz_type in QuizType.query.all()]
         self.lesson.choices = [(lesson.id, lesson.chapter.module.title + ' > ' + lesson.chapter.title + ' > ' + lesson.title)
                                for lesson in Lesson.query.all()]
         self.tested_skills.choices = [(skill.id, skill.lesson.chapter.module.title + ' > '
@@ -98,6 +101,7 @@ class NewQuiz(FlaskForm):
                                 + skill.description)
                                 for skill in Skill.query.all()]
 
+    quiz_type = SelectField('Quiz Type', coerce=int)
     description = TextAreaField('Description', validators=[DataRequired()])
     no_questions = IntegerField('Number of questions asked', widget=NumberInput(min=1), validators=[DataRequired()])
     tested_skills = SelectMultipleField('Skills Tested', coerce=int)

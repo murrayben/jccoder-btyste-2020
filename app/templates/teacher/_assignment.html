@@ -31,7 +31,13 @@
                     </div>
                     <div class="position-absolute" style="bottom: 0.75rem; right: 25%; left: 25%;">
                         <div class="small">
-                            {{ assignment.page.title if assignment.page else assignment.quiz.tested_skills.first().description }}
+                                {% if assignment.page %}
+                                {{ assignment.page.title }}
+                                {% elif assignment.quiz.type.code != 'P' %}
+                                Chapter {{ assignment.quiz.lesson.chapter.title }}: {{ assignment.quiz.lesson.title }}
+                                {% else %}
+                                {{ assignment.quiz.tested_skills.first().description }}
+                                {% endif %}
                         </div>
                         <div class="small text-muted">
                             {{ moment(assignment.due_date).format('MMM Do') }}

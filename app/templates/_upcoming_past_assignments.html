@@ -26,7 +26,15 @@
                     {% set icon_class = 'fas fa-pencil-alt fa-fw' %}
                 {% endif %}
                 <i class="{{ icon_class }}" aria-hidden="true"></i>
-                <span>{{ assignment.page.title if assignment.page else assignment.quiz.tested_skills.first().description }}</span>
+                <span>
+                    {% if assignment.page %}
+                    {{ assignment.page.title }}
+                    {% elif assignment.quiz.type.code != 'P' %}
+                    Chapter {{ assignment.quiz.lesson.chapter.title }}: {{ assignment.quiz.lesson.title }}
+                    {% else %}
+                    {{ assignment.quiz.tested_skills.first().description }}
+                    {% endif %}
+                </span>
             </td>
             {% set is_late = False if StudentAssignment.query.filter_by(student_id=current_user.id, assignment_id=assignment.id).first().score is not none or type != "past" or not assignment.is_quiz() else True %}
             <td>{% if is_late %}<span class="text-danger">Late: {% endif %}{{ moment(assignment.due_date).format('dddd, Do MMMM YYYY') }}{% if is_late %}</span>{% endif %}</td>

@@ -196,6 +196,7 @@
                     <h3 class="text-white mb-0">{{ lesson.title }}</h3>
                 </div>
                 <div class="card-body">
+                    {% if lesson.type.code == 'L' %}
                     <div class="lesson-overview">
                         {{ lesson.overview_html|safe }}
                     </div>
@@ -240,6 +241,41 @@
                         {% endfor -%}
                     </div>
                     {% endif %}
+                    {% elif lesson.type.code == 'Q' or lesson.type.code == 'U' %}
+                    {# Chapter-level Quiz or Unit test #}
+                    {%- set quiz = lesson.quizzes.first() -%}
+                    {%- set quiz_attempts = QuizAttempt.query.filter_by(user_id=current_user.id, quiz_id=quiz.id) -%}
+                    {%- set attempted_quiz = (current_user.is_authenticated and quiz_attempts.count() > 0) -%}
+                    {%- set is_chapter_quiz = lesson.type.code == 'Q' -%}
+                    {% if is_chapter_quiz %}
+                    <p>This quiz tests your knowledge on:</p>
+                    <ul>
+                        {% for skill in quiz.tested_skills.all() %}
+                        <li>{{ skill.description }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p>This Unit Test tests everything in this chapter.</p>
+                    {% endif %}
+                    {% if attempted_quiz %}
+                    {%- set best_score = quiz_attempts.order_by(QuizAttempt.percent.desc()).first().percent -%}
+                    {%- set most_recent = quiz_attempts.order_by(QuizAttempt.datetime.desc()).first() -%}
+                    <div>Best score: {{ best_score }}%</div>
+                    <div class="mb-1">
+                        Most recent attempt:
+                        <span class="attempt-datetime" title="{{ most_recent.datetime }}">{{ moment(most_recent.datetime).fromNow(refresh=True) }}</span>
+                    </div>
+                    {% endif %}
+                    <button class="btn btn-outline-primary btn-lg btn-block w-25 {% if is_chapter_quiz %}chapter-level{% else %}unit-test{% endif %}-quiz" data-quiz-id="{{ quiz.id }}">
+                        {% if attempted_quiz %}
+                        Take {{ "quiz" if is_chapter_quiz else "unit test" }} again
+                        {% elif is_chapter_quiz %}
+                        Start quiz
+                        {% else %}
+                        Start Unit test
+                        {% endif %}
+                    </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -269,6 +305,9 @@
             if (url.indexOf('item') > -1) {
                 var values = url.split('item=')[1].split('_');
                 var $btn = $('.' + values[0] + '-hyperlink[data-' + values[0] + '-id="' + values[1] + '"]');
+                if ($btn.length === 0) {
+                    var $btn = $('.chapter-level-quiz[data-' + values[0] + '-id="' + values[1] + '"]');
+                }
                 setTimeout(function(){ $btn.click();}, 100);
             }
 
@@ -297,14 +336,19 @@
                 $('#page-html').empty();
             });
 
-            $('.quiz-hyperlink').on('click', function() {
+            $('.quiz-hyperlink, .chapter-level-quiz, .unit-test-quiz').on('click', function() {
+                var isPracticeQuiz = $(this).hasClass('.quiz-hyperlink');
+
                 $('#pageModal').modal('show');
                 
                 var quizID = $(this).attr('data-quiz-id');
                 
                 $('#go-to-page').css('visibility', 'hidden');
                 $('#next-page').hide();
-                $('#page-title').text($(this).siblings().first().text());
+                if (isPracticeQuiz) {
+                    $('#page-title').text($(this).siblings().first().text());
+                } else {
+                    $('#page-title').text($(this).parent().prev('.card-header').children('h3').text());                }
                 $('#page-html').html('<iframe src="/take-quiz/' + quizID + '" frameborder="0" width="95%" height="95%" id="quiz-' + quizID + '" class="quiz position-absolute"></iframe>');
                 $('#modal-close-btn').hide();
                 $('#check-btn').show().text("Check").attr('disabled', 'disabled').on('click', function() { // Iframe will trigger event to enable it

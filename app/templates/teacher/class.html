@@ -39,13 +39,14 @@
 {% macro display_dropdown(item, last=True, arrow=True, missing_items=False, parent=None) %}
     {%- set item_type = item.__class__.__name__ -%}
     {% set is_page = (item_type == "Page" or item_type == "Quiz") %}
+    {% set is_not_regular_quiz = item_type == "Lesson" and (not item.type.code == 'L') %}
     <div class="content{% if is_page %} bg-white{% endif %}"{% if parent %} data-parent-type="{{ parent.__class__.__name__|lower }}" data-parent-id="{{ parent.id }}"{% endif %}>
-        <div class="border-top{% if last %} border-bottom{% endif %} {% if missing_items %}px-4 py-3{% else %}px-3 py-2{% endif %} text-dark{% if not missing_items %} content-toggler{% endif %}"{% if not missing_items and not is_page %} data-toggle="collapse" data-target="#{{ item_type|lower }}-{{ item.id }}-collapse" aria-expanded="false" aria-controls="{{ item_type|lower }}-{{ item.id }}-collapse"{% endif %}>
+        <div class="border-top{% if last %} border-bottom{% endif %} {% if missing_items %}px-4 py-3{% else %}px-3 py-2{% endif %} text-dark{% if not missing_items %} content-toggler{% endif %}"{% if (not missing_items) and (not is_page) and (not is_not_regular_quiz) %} data-toggle="collapse" data-target="#{{ item_type|lower }}-{{ item.id }}-collapse" aria-expanded="false" aria-controls="{{ item_type|lower }}-{{ item.id }}-collapse"{% endif %}>
             {% if missing_items %}
             <p class="mb-0">No {{ item }} yet. Please wait for them to be added.</p>
             {% else %}
             <div class="d-flex">
-                {%- if arrow or is_page %}
+                {%- if (arrow or is_page) and not is_not_regular_quiz %}
                     {%- if item_type == "Page" %}
                         {% if item.page_type.description == "Article" %}
                             {% set icon_class = 'fas fa-file fa-fw' %}
@@ -65,11 +66,20 @@
                 {% endif -%}
                 <div class="position-relative{% if not missing_items %} mr-auto{% endif %}" style="left: 10px;">
                     <p class="position-relative font-weight-normal mb-0" style="top: 2px;">{{ item.title if item.title else item.name if item.name else item.tested_skills.first().description }}</p>
+                    {% if is_not_regular_quiz %}
+                    <p>This quiz tests students knowledge on:</p>
+                    <ul>
+                        {% for skill in item.quizzes.first().tested_skills.all() %}
+                        <li>{{ skill.description }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
                     <small class="position-relative text-muted" style="bottom: 2px;">{{ item_type }}{% if item_type == "Page" %} &mdash; {{ item.page_type.description }}{% endif %}</small>
+                    {% endif %}
                 </div>
                 {% if not missing_items %}
                 <div class="custom-control custom-checkbox align-self-center assignment-checkbox">
-                    <input type="checkbox" class="custom-control-input {{ item_type|lower }}-checkbox" id="{{ item_type|lower }}-{{ item.id }}-checkbox" data-type="{{ item_type|lower }}" data-id="{{ item.id }}">
+                    <input type="checkbox" class="custom-control-input {{ item_type|lower if not is_not_regular_quiz else 'quiz' }}-checkbox" id="{{ item_type|lower }}-{{ item.id }}-checkbox" data-type="{{ item_type|lower }}" data-id="{{ item.id if not is_not_regular_quiz else item.quizzes.first().id }}">
                     <label class="custom-control-label" for="{{ item_type|lower }}-{{ item.id }}-checkbox"></label>
                 </div>
                 {% endif %}
@@ -77,7 +87,6 @@
             {% endif %}
         </div>
     </div>
-    
 {% endmacro %}
 
 {% block modals %}
@@ -166,6 +175,7 @@
                                     {%- if chapter.all_ordered_children()|length > 0 %}
                                         {%- for lesson in chapter.all_ordered_children() %}
                                             {{ display_dropdown(lesson, last, parent=chapter) }}
+                                            {%- if lesson.type.code == 'L' %}
                                             {%- set last = loop.last -%}
                                             <div class="collapse ml-3 content-collapse" id="lesson-{{ lesson.id }}-collapse">
                                                 {%- set items = lesson.all_ordered_children() -%}
@@ -178,6 +188,7 @@
                                                     {{ display_dropdown('pages', missing_items=True) }}
                                                 {% endif -%}
                                             </div>
+                                            {% endif -%}
                                         {% endfor -%}
                                     {% else %}
                                         {{ display_dropdown('lessons', missing_items=True) }}
