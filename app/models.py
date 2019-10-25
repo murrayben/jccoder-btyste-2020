@@ -848,9 +848,9 @@ class Class(db.Model):
     description = db.Column(db.Text)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
     teacher_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    assignments = db.relationship('Assignment', backref='class_', lazy='dynamic')
+    assignments = db.relationship('Assignment', backref='class_', lazy='dynamic', cascade='all')
     students = db.relationship('User', secondary='class_students',
-        backref=db.backref('classes', lazy='dynamic'), lazy='dynamic')
+        backref=db.backref('classes', lazy='dynamic', cascade='all'), lazy='dynamic')
 
     def __repr__(self):
         return "<Class, Name: %s Code: %s>" % (self.name, self.code)
@@ -872,7 +872,7 @@ class Assignment(db.Model):
     page_id = db.Column(db.Integer, db.ForeignKey('pages.id'))    # One will be null because pages
     quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'))  # and quizzes are different model
     students = db.relationship('User', secondary='student_assignments', 
-        backref=db.backref('assignments', lazy='dynamic'), lazy='dynamic')
+        backref=db.backref('assignments', lazy='dynamic', cascade='all'), lazy='dynamic')
 
     def is_quiz(self):
         if self.quiz_id is not None:

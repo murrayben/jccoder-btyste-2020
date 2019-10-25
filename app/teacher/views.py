@@ -2,7 +2,7 @@ import random, string
 
 from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
-from ..models import Assignment, Class, Page, Permission, Quiz, StudentAssignment, User, db
+from ..models import Assignment, Class, ClassStudent, Page, Permission, Quiz, StudentAssignment, User, db
 from .. import moment
 from .forms import AssignmentForm, NewClass
 from . import teacher
@@ -114,3 +114,17 @@ def save_items():
     session["assigned_pages"] = data["pages"]
     session["assigned_quizzes"] = data["quizzes"]
     return jsonify(success=True)
+
+@teacher.route('/delete/class/<int:id>')
+def delete_class(id):
+    class_ = Class.query.get_or_404(id)
+    if class_.teacher_id != current_user.id:
+        abort(403)
+    students_ids = [student.id for student in class_.students]
+    assignments_ids = [assignment.id for assignment in class_.assignments]
+    for class_student in ClassStudent.query.filter(db.and_(ClassStudent.class_id==class_.id, ClassStudent.student_id.in_(students_ids))).all():
+        db.session.delete(class_student)
+    for student_assignment in StudentAssignment.query.filter(db.and_(StudentAssignment.student_id.in_(students_ids), StudentAssignment.assignment_id.in_(assignments_ids))):
+        db.session.delete(student_assignment)
+    db.session.delete(class_)
+    return redirect(url_for('.dashboard'))

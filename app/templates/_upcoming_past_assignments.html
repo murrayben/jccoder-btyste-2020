@@ -42,9 +42,9 @@
             <td>
                 {% if assignment.is_quiz() %}
                 {% set best_score = StudentAssignment.query.filter_by(student_id=current_user.id, assignment_id=assignment.id).order_by(StudentAssignment.score.desc()).first() %}
-                {% set best_score = best_score.score|int if best_score and best_score.score else None %}
+                {% set best_score = best_score.score|int if best_score and best_score.score is number else None %}
                 {% set quiz_url = url_for('main.chapter', id=assignment.quiz.lesson.chapter.id, item='quiz_' + assignment.quiz.id|string) %}
-                {% if best_score %}
+                {% if best_score is number %}
                 <span class="badge badge-{% if best_score == 100 %}success{% elif best_score > 69 %}warning{% else %}danger{% endif %} p-2">{{ best_score }}%</span>
                 {% if not best_score == 100 %}
                 | <a href="{{ quiz_url }}" role="button">Try again</a>

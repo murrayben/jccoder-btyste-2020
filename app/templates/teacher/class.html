@@ -136,6 +136,9 @@
         <li class="nav-item">
             <a class="nav-link" id="students-tab" data-toggle="tab" href="#students-list" role="tab" aria-controls="students" aria-selected="false">Students</a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" id="settings-tab" data-toggle="tab" href="#settings" role="tab" aria-controls="settings" aria-selected="false">Settings</a>
+        </li>
     </ul>
     <div class="tab-content" id="class-nav-pills-content">
         <div class="tab-pane fade show active" id="content" role="tabpanel" aria-labelledby="content-tab">
@@ -219,6 +222,9 @@
             {% else %}
             <p class="mb-0">No students yet. Please share the link <span class="text-primary">{{ url_for('main.join_class_confirm', code=class.code, _external=True) }}</span> with your students.</p>
             {% endif %}
+        </div>
+        <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
+            <a class="btn btn-danger" href="{{ url_for('.delete_class', id=class.id) }}" role="button">Delete this class</a>
         </div>
     </div>
 {% endblock %}
