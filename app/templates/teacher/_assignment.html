@@ -30,7 +30,7 @@
                         <i class="fas {{ icon_class }} fa-lg fa-fw" aria-hidden="true"></i>
                     </div>
                     <div class="position-absolute" style="bottom: 0.75rem; right: 25%; left: 25%;">
-                        <div class="small">
+                        <div style="font-size: 70%;">
                                 {% if assignment.page %}
                                 {{ assignment.page.title }}
                                 {% elif assignment.quiz.type.code != 'P' %}
@@ -39,7 +39,7 @@
                                 {{ assignment.quiz.tested_skills.first().description }}
                                 {% endif %}
                         </div>
-                        <div class="small text-muted">
+                        <div class="text-muted" style="font-size: 70%;">
                             {{ moment(assignment.due_date).format('MMM Do') }}
                         </div>
                     </div>
@@ -54,11 +54,13 @@
             {% for assignment in assignments %}
             <td class="text-center">
                 {% set best_score = StudentAssignment.query.filter_by(student_id=student.id, assignment_id=assignment.id).order_by(StudentAssignment.score.desc()).first() %}
-                {% set best_score = best_score.score|int if best_score and best_score.score else None %}
+                {% set best_score = best_score.score|int if best_score and best_score.score is number else None %}
                 {% if assignment.is_quiz() and best_score %}
                 <span class="badge badge-{% if best_score == 100 %}success{% elif best_score > 69 %}warning{% else %}danger{% endif %} p-2">{{ best_score }}</span>
                 {% elif student in assignment.students %}
-                <span class="badge badge-secondary p-2">&mdash;</span>
+                <span class="badge badge-light border border-danger p-2">&mdash;</span>
+                {% else %}
+                <span class="text-muted">&mdash;</span>
                 {% endif %}
             </td>
             {% endfor %}

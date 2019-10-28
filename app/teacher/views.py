@@ -46,6 +46,7 @@ def display_class(id):
     if class_.teacher_id != current_user.id:
         abort(403)
     page = request.args.get('assignments_page', 1, int)
+    session["usernames"] = []
     form = AssignmentForm(id)
     objects = []
     if form.validate_on_submit():
@@ -128,3 +129,55 @@ def delete_class(id):
         db.session.delete(student_assignment)
     db.session.delete(class_)
     return redirect(url_for('.dashboard'))
+
+@teacher.route('/generate-username', methods=['GET', 'POST'])
+def generate_username():
+    if request.method == 'GET':
+        abort(404)
+    data = request.get_json()
+    try:
+        name = data['name']
+    except KeyError:
+        abort(400)
+    else:
+        if not name.strip():
+            return jsonify(success=True, username='')
+        name = name.split()
+        first_name = name[0].lower()
+        if len(name) == 1:
+            username = first_name
+        else:
+            last_name = ''.join(name[1:]).lower()
+            username = first_name[0] + last_name
+        new_username = username
+        i = 1
+        while User.query.filter_by(username=new_username).first() or new_username in session["usernames"]: # Prevent duplicates
+            i += 1
+            new_username = username + str(i)
+        usernames = session['usernames']
+        usernames.append(new_username)
+        session['usernames'] = usernames
+        return jsonify(success=True, username=new_username)
+
+@teacher.route('/create-accounts', methods=['GET', 'POST'])
+def create_accounts():
+    if request.method == 'GET':
+        abort(404)
+    data = request.get_json()
+    students = data["students"]
+    class_id = int(data["class_id"])
+    if current_user.id != Class.query.get(class_id).teacher_id:
+        abort(403)
+    for student_object in students:
+        username = student_object["username"]
+        password = student_object["password"]
+        if User.query.filter_by(username=username).first():
+            # Not unique username - Problem!
+            abort(400)
+        else:
+            student = User(username=username, password=password, under_13=True)
+            db.session.add(student)
+            db.session.commit()
+            class_student = ClassStudent(student_id=student.id, class_id=class_id)
+            db.session.add(class_student)
+    return jsonify(success=True)

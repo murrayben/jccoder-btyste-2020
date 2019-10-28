@@ -57,9 +57,9 @@
         });
         var $submit_buttons = $('#submit, #footer-submit');
         $submit_buttons.attr('disabled', 'disabled');
-        $('#name, #description').on('change', function() {
+        $('#name').on('input', function() {
             var name_length = $('#name').val().length;
-            if ((name_length > 0 && name_length <= 50) && $('#description').val().length > 0) {
+            if ((name_length > 0 && name_length <= 50)) {
                 if ($submit_buttons.attr('disabled') == "disabled") {
                     $submit_buttons.removeAttr('disabled');
                 }
@@ -79,7 +79,8 @@
                 contentType: "application/json; charset=utf-8",
                 type: 'POST',
                 success: function(response) {
-                    message = `<h4>That's it!</h4><p>The class code is <strong>` + response.code + `</strong>. Please share this with your students.`;
+                    //message = `<h4>That's it!</h4><p>The class code is <strong>` + response.code + `</strong>. Please share this with your students.`;
+                    var message = `<h4>That's it!</h4><p>Now go into your class and start adding students.</p>`;
                     $submit_buttons.hide();
                     $('#newClassModal .modal-body').html(message);
                     $('#newClassModal').on('hidden.bs.modal', function() {

@@ -1,12 +1,12 @@
 from datetime import datetime
 from flask_wtf import FlaskForm
 from wtforms import DateTimeField, SelectMultipleField, StringField, SubmitField, TextAreaField
-from wtforms.validators import DataRequired, Length, ValidationError
+from wtforms.validators import DataRequired, Length, Optional, ValidationError
 from ..models import Class, Permission, User
 
 class NewClass(FlaskForm):
     name = StringField('Name (for example, Mr. Smith\'s class. Max 50 characters)', validators=[DataRequired(), Length(1, 50)])
-    description = TextAreaField('Description', validators=[DataRequired()])
+    description = TextAreaField('Description (Optional)', validators=[Optional()])
     submit = SubmitField('Submit Class')
 
 class AssignmentForm(FlaskForm):
