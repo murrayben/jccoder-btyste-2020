@@ -317,8 +317,8 @@
                             <div class="card">                               
                                 <div class="card-body text-center">
                                     <h3 class="card-title">{{ chapter.title }}</h3>
-                                    <p><img class="img img-fluid" src="/static/images/digitalWorld2.jpg" alt="card image"></p>
-                                    <h4 class="card-title">Computers In Our World</h4>
+                                    <p><img class="img img-fluid" src="{{ chapter.image_url }}" alt="card image"></p>
+                                    <h4 class="card-title">{{ chapter.name }}</h4>
                                     <p class="card-text card-progress">
                                         {% if vars.unlocked %}
                                         You have completed {{ chapter.student_progress(current_user) }}%
@@ -332,7 +332,7 @@
                         <div class="backside">
                             <div class="card">
                                 <div class="card-body text-center mt-4">
-                                    <h4 class="card-title">Computers In Our World</h4>
+                                    <h4 class="card-title">{{ chapter.name }}</h4>
                                     <p class="card-text text-grey">{{ chapter.description }}</p>
                                     <p>
                                         

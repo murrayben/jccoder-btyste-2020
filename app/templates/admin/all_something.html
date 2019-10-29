@@ -19,10 +19,10 @@
                 {%- endif %}
             </li>
             {% elif item.what_model() == "Chapter" %}
-            <li><a href="{{ url_for('admin.edit_chapter', id=item.id) }}">{{ item.title }}</a> (In module: <a href="{{ url_for('admin.edit_module', id=item.module.id) }}">{{ item.module.title }}</a>
+            <li><a href="{{ url_for('admin.edit_chapter', id=item.id) }}">{{ item.title }}: {{ item.name if item.name else "No name yet" }}</a> (In module: <a href="{{ url_for('admin.edit_module', id=item.module.id) }}">{{ item.module.title }}</a>
                 {% if item.next_chapter %} and Next Chapter: <a href="{{ url_for('admin.edit_chapter', id=item.next_chapter.id) }}">{{ item.next_chapter.title }}</a>{% endif %})</li>
             {% elif item.what_model() == "Quiz" %}
-            <li>In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a> (<a href="{{ url_for('main.take_quiz', id=item.id) }}">Take Quiz</a>) <a href="{{ url_for('admin.edit_quiz', id=item.id) }}" class="badge badge-danger">Edit</a></li>
+            <li><a href="{{ url_for('admin.edit_quiz', id=item.id) }}">{{ item.title() }}</a> (In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a>) <a href="{{ url_for('main.take_quiz', id=item.id) }}" class="badge badge-danger">Take Quiz</a></li>
             {% elif item.what_model() == "Question" %}
             <li><a href="{{ url_for('admin.edit_question', id=item.id) }}" class="text-truncate d-inline-block" style="max-width: 50%; margin-bottom: -7px;">{{ item.text }}</a> (In quiz: in lesson: <a href="{{ url_for('admin.edit_quiz', id=item.quiz.id) }}">{{ item.quiz.lesson.title }}</a>)</li>
             {% elif item.what_model() == "Skill" %}

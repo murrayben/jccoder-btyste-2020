@@ -120,7 +120,8 @@ def new_module():
 def new_chapter():
     form = NewChapter()
     if form.validate_on_submit():
-        chapter = Chapter(title=form.title.data, description=form.description.data,
+        chapter = Chapter(title=form.title.data, name=form.name.data,
+                        image_url=form.image_url.data, description=form.description.data,
                         module=Module.query.get(form.module.data))
         chapter.next_chapter_id = form.next_chapter.data
         if not form.next_chapter.data == 0:
@@ -418,6 +419,8 @@ def edit_chapter(id):
     form = NewChapter()
     if form.validate_on_submit():
         chapter.title = form.title.data
+        chapter.name = form.name.data
+        chapter.image_url = form.image_url.data
         chapter.description = form.description.data
         chapter.module_id = form.module.data
         chapter.next_chapter_id = form.next_chapter.data
@@ -428,6 +431,8 @@ def edit_chapter(id):
         db.session.add(chapter)
         return redirect(url_for('.all_chapters'))
     form.title.data = chapter.title
+    form.name.data = chapter.name
+    form.image_url.data = chapter.image_url
     form.description.data = chapter.description
     form.module.data = chapter.module_id
     try:
