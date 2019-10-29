@@ -490,6 +490,8 @@ class Quiz(db.Model):
     def title(self):
         if self.type == QuizType.query.filter_by(code='P').first():
             return self.tested_skills.first().description
+        else:
+            return self.lesson.title + ' - Chapter ' + self.lesson.chapter.title 
 
     def what_model(self):
         return "Quiz"
@@ -661,7 +663,8 @@ class Chapter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(64))
     description = db.Column(db.Text)
-    icon = db.Column(db.Text)
+    image_url = db.Column(db.Text)
+    name = db.Column(db.Text)
     active = db.Column(db.Boolean)
     next_chapter_id = db.Column(db.Integer, db.ForeignKey('chapters.id'), nullable=True)
     next_chapter = db.relationship('Chapter', backref=db.backref('prev_chapter', uselist=False), remote_side=[id], uselist=False)

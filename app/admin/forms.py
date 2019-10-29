@@ -50,7 +50,9 @@ class NewChapter(FlaskForm):
                                          for chapter in Chapter.query.all()])
     
     title = StringField('Title', validators=[DataRequired(), Length(1, 64)])
+    name = StringField('Name', validators=[DataRequired()])
     description = TextAreaField('Description', validators=[DataRequired()])
+    image_url = StringField('Image URL', validators=[DataRequired()])
     next_chapter = SelectField('Next Chapter', coerce=int)
     module = SelectField('Module', coerce=int)
     submit = SubmitField('Submit Changes')
