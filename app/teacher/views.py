@@ -181,3 +181,12 @@ def create_accounts():
             class_student = ClassStudent(student_id=student.id, class_id=class_id)
             db.session.add(class_student)
     return jsonify(success=True)
+
+@teacher.route('/class/<int:class_id>/delete/student/<int:student_id>')
+def delete_student_from_class(class_id, student_id):
+    if current_user.id != Class.query.get(class_id).teacher_id:
+        abort(403)
+    class_student = ClassStudent.query.filter_by(class_id=class_id, student_id=student_id).first()
+    class_student.student_status = False
+    db.session.add(class_student)
+    return redirect(url_for('.display_class', id=class_id))

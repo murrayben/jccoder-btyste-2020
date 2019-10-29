@@ -1,6 +1,6 @@
 from flask import url_for
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin, AnonymousUserMixin
+from flask_login import UserMixin, AnonymousUserMixin, current_user
 from datetime import datetime
 from markdown import markdown
 from app import db, login
@@ -291,6 +291,12 @@ class User(UserMixin, db.Model):
     def can(self, permissions):
         return self.role is not None and (self.role.permissions & permissions) == permissions
 
+    def upcoming_assignments(self):
+        return self.assignments.filter(Assignment.due_date > datetime.now())
+    
+    def past_assignments(self):
+        return self.assignments.filter(Assignment.due_date < datetime.now())
+
     def __repr__(self):
         return '<User {}>'.format(self.username)
 
@@ -307,6 +313,16 @@ class AnonymousUser(AnonymousUserMixin):
 
     def is_admin(self):
         return False
+
+    @property
+    def assignments(self):
+        return Assignment.query.filter_by(id=0)
+
+    def upcoming_assignments(self):
+        return []
+    
+    def past_assignments(self):
+        return []
 
 login.anonymous_user = AnonymousUser
 
@@ -481,6 +497,8 @@ class Quiz(db.Model):
     def model_one_lower(self):
         return "Questions"
 
+    def is_unlocked(self):
+        return current_user.assignments.filter_by(quiz_id=self.id).first() or current_user.can(Permission.MANAGE_CLASS)
 
 class QuizType(db.Model):
     __tablename__ = 'quiztypes'
@@ -669,6 +687,23 @@ class Chapter(db.Model):
             append_lesson(self.lessons.filter_by(prev_lesson=None).first())
         return ordered
 
+    def student_progress(self, student):
+        quiz_scores = []
+        for lesson in self.lessons:
+            for quiz in lesson.quizzes:
+                best_score = QuizAttempt.query.filter_by(quiz_id=quiz.id, user_id=student.id).order_by(QuizAttempt.percent.desc()).first()
+                if not best_score:
+                    best_score = 0
+                else:
+                    best_score = best_score.percent
+                quiz_scores.append(best_score)
+        try:
+            average = (sum(quiz_scores) / len(quiz_scores)) # Mean of all scores
+        except ZeroDivisionError:
+            return 0
+        else:
+            return round(average)
+
 class Lesson(db.Model):
     __tablename__ = 'lessons'
     __searchable__ = ['title', 'overview']
@@ -771,6 +806,9 @@ class Page(SearchableMixin, db.Model):
             customTagMarkdown(value)
         )
     
+    def is_unlocked(self):
+        return current_user.assignments.filter_by(page_id=self.id).first() or current_user.can(Permission.MANAGE_CLASS)
+
     def __repr__(self):
         return '<Page %s>' % self.title
 
@@ -879,6 +917,11 @@ class Assignment(db.Model):
             return True
         else:
             return False
+    
+    def assigned_item(self):
+        if not self.page_id or self.quiz_id:
+            return None
+        return self.quiz if self.is_quiz else self.page
 
 class StudentAssignment(db.Model):
     __tablename__ = 'student_assignments'

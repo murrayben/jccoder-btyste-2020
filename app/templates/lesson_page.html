@@ -3,7 +3,9 @@
 
 {% macro display_page(_page) -%}
 {%- if _page %}
-{% if _page.page_type.description == "Article" %}
+{% if not _page.is_unlocked() %}
+{% set icon_class = 'fas fa-lock fa-fw' %}
+{% elif _page.page_type.description == "Article" %}
 {% set icon_class = 'fas fa-file fa-fw' %}
 {% elif _page.page_type.description == "Quiz" %}
 {% set icon_class = 'fas fa-tasks fa-fw' %}
@@ -13,11 +15,21 @@
 {% set icon_class = 'fas fa-list-alt fa-fw' %}
 {% endif %}
                     <p class="sidebar-page{% if _page.id == page.id %} active{% endif %}">
-                        <a href="{{ url_for('main.lesson_page', id=_page.id) }}" >
+                        {% if _page.is_unlocked() %}
+                        <a href="{{ url_for('main.lesson_page', id=_page.id) }}">
                             <span class="dot">
                                 <span class="{{ icon_class }}"></span>
                             </span>
-                            <span class="page-title">{{ _page.title }}</span></a>
+                            <span class="page-title">{{ _page.title }}</span>
+                        </a>
+                        {% else %}
+                        <span class="locked">
+                            <span class="dot">
+                                <span class="{{ icon_class }}"></span>
+                            </span>
+                            <span>Locked</span>
+                        </span>
+                        {% endif %}
                     </p>
 {%- endif -%}
 {% if _page.next_page -%}
@@ -174,11 +186,32 @@
             <div id="sidebar-pages">
                 {{ display_page(page.lesson.pages.filter_by(prev_page=None).first()) }}
             </div>
-            {% if page.lesson.next_lesson %}
-            <div id="sidebar-next-lesson">
-                Next Lesson:
-                <a href="{{ url_for('main.lesson_page', id=page.lesson.next_lesson.pages.filter_by(prev_page=None).first().id) }}">{{ page.lesson.next_lesson.title }}</a>
-            </div>
+            {% set next_lesson = page.lesson.next_lesson %}
+            {% if next_lesson %}
+                {% if next_lesson.type.code != 'L' %}
+                    {# If the next lesson is not learning (either a quiz or unit test) #}
+                    {# Check if the lesson after is of type Learn #}
+                    {% if next_lesson.next_lesson and next_lesson.next_lesson.type.code == 'L' %}
+                        {# It is so set the next lesson to it (essentially it has skipped the Quiz) #}
+                        {% set next_lesson = next_lesson.next_lesson %}
+                    {% else %}
+                        {# If the next doesn't exist or is another Quiz (two quizzes in a row) then just disable the button #}
+                        {% set next_lesson = none %}
+                    {% endif %}
+                {% endif %}
+
+                {# Now recheck if there is a next lesson #}
+                {% if next_lesson %}
+                    {% set first_page = next_lesson.pages.filter_by(prev_page=None).first() %}
+                    <div id="sidebar-next-lesson">
+                        Next Lesson:
+                        {% if first_page.is_unlocked() %}
+                        <a href="{{ url_for('main.lesson_page', id=first_page.id) }}">{{ next_lesson.title }}</a>
+                        {% else %}
+                        <i class="fa fa-lock" aria-hidden="true"></i> Locked
+                        {% endif %}
+                    </div>
+                {% endif %}
             {% endif %}
         </div>
     </div>

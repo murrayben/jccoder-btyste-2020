@@ -27,10 +27,10 @@ def index():
             return redirect(url_for('teacher.dashboard'))
         upcoming_page = request.args.get('upcoming_page', 1, int)
         past_page = request.args.get('past_page', 1, int)
-        upcoming_assignments = current_user.assignments.filter(Assignment.due_date > datetime.now()).paginate(upcoming_page, per_page=10)
-        past_assignments = current_user.assignments.filter(Assignment.due_date < datetime.now()).paginate(past_page, per_page=10)
+        upcoming_assignments = current_user.upcoming_assignments().paginate(upcoming_page, per_page=10)
+        past_assignments = current_user.past_assignments().paginate(past_page, per_page=10)
         title = "JCCoder - Dashboard"
-    return render_template('index.html', title=title, upcoming_assignments=upcoming_assignments, past_assignments=past_assignments)
+    return render_template('index_new.html', title=title, upcoming_assignments=upcoming_assignments, past_assignments=past_assignments)
 
 @main.route('/assignment-table', methods=['GET', 'POST'])
 def assignment_table():
@@ -60,6 +60,9 @@ def about():
 @main.route('/lesson/page/<int:id>', methods=['GET', 'POST'])
 def lesson_page(id):
     page = Page.query.get_or_404(id)
+    if not page.is_unlocked():
+        flash('You have not unlocked that page yet!', 'warning')
+        return redirect(url_for('.chapter', id=page.lesson.chapter.id))
     new_question_form = NewPageQuestion()
     new_answer_form = NewPageAnswer()
     if new_question_form.submit_question.data and new_question_form.validate():
@@ -97,6 +100,8 @@ def edit_page_answer(id):
 def take_quiz(id):
     quiz = Quiz.query.get_or_404(id)
     #questions = quiz.questions.all()
+    if not quiz.is_unlocked():
+        return 'Locked'
     questions = quiz.questions.order_by(func.rand()).limit(quiz.no_questions).all()
     session["attempt_no"] = 0
     session["questions"] = [question.id for question in questions]
@@ -104,6 +109,7 @@ def take_quiz(id):
     session["no_attempts"] = []
     session["scores"] = []
     session["explanations"] = []
+    session["num_hints_used"] = 0
     return render_template('take_quiz.html', title="JCCoder - Take Quiz", quiz=quiz, questions=questions)
 
 @main.route('/submit-mistake', methods=["GET", "POST"])
@@ -146,25 +152,57 @@ def page_content():
     
     # Get page id
     data = request.get_json()
-    page_id = int(data['id'])
+    is_quiz = data["is_quiz"]
+    if is_quiz:
+        if not current_user.can(Permission.MANAGE_CLASS):
+            abort(403)
+        quiz_id = int(data['id'])
+        quiz = Quiz.query.get(quiz_id)
 
-    # Get page
-    page = Page.query.get(page_id)
-    if not page:
-        # Return error as id is invalid
-        abort(400)
-    
-    page_title = page.title
-    page_html = page.html
-    if page.next_page:
-        page_type = page.next_page.page_type.description
+        if not quiz:
+            # Return error as id is invalid
+            abort(400)
+
+        if not quiz.is_unlocked():
+            abort(403)
+
+        questions = quiz.questions
+        title = quiz.title()
+        html = render_template('teacher/_quiz_preview.html', quiz=quiz, questions=questions)
+        html += """<style type="text/css" class="css-extra">
+    .undraggable-btn {
+        min-width: 100px;
+        min-height: 46px;
+        border: 1px solid #000000;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+    }
+</style>
+"""
+        return jsonify(success=True, page_title=title, page_html=html, page_type='')
     else:
-        page_type = ''
+        page_id = int(data['id'])
 
-    # css, js, stripped_lines = parsePageContent(page_html)
-    # page_html = '\n'.join(stripped_lines)
-    # return jsonify(success=True, page_title=page_title, page_html=page_html, page_type=page_type, css=css, js=js)
-    return jsonify(success=True, page_title=page_title, page_html=page_html, page_type=page_type)
+        # Get page
+        page = Page.query.get(page_id)
+        if not page:
+            # Return error as id is invalid
+            abort(400)
+
+        if not page.is_unlocked():
+            abort(403)
+        
+        page_title = page.title
+        page_html = page.html
+        if page.next_page:
+            page_type = page.next_page.page_type.description
+        else:
+            page_type = ''
+
+        # css, js, stripped_lines = parsePageContent(page_html)
+        # page_html = '\n'.join(stripped_lines)
+        # return jsonify(success=True, page_title=page_title, page_html=page_html, page_type=page_type, css=css, js=js)
+        return jsonify(success=True, page_title=page_title, page_html=page_html, page_type=page_type)
 
 @main.route('/check', methods=['GET', 'POST'])
 def check():
@@ -254,7 +292,7 @@ def summary():
     overall_score = sum(session["scores"]) / len(session["scores"])
     if current_user.is_authenticated:
         quiz_attempt = QuizAttempt(user_id=current_user.id, quiz_id=data['id'], percent=overall_score)
-        UserAnswer.query.filter_by(user_id=current_user.id).delete()
+        #UserAnswer.query.filter_by(user_id=current_user.id).delete()
         db.session.add(quiz_attempt)
         assignments = Assignment.query.filter_by(quiz_id=data['id']).all()
         for assignment in assignments:

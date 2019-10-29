@@ -1,0 +1,423 @@
+{% if current_user.is_admin() %}{% extends "base_admin.html" %}{% else %}{% extends "base.html" %}{% endif %}
+
+{% block styles %}
+    {{ super() }}
+    <style type="text/css">
+        #heading {
+            font-size: 50px;
+            margin-top: 0;
+            color: #3379b8;
+            text-shadow: #8c8c8c 3px 3px 5px;
+        }
+
+        .img {
+            height: 171px;
+        }
+        
+        .jumbotron {
+            padding: 30px !important;
+            background-color: #fff8dc
+        }
+
+        #text {
+            margin-top: 20px;
+        }
+
+        #text p {
+            font-weight: 400;
+        }
+
+        #assignments th {
+            text-transform: uppercase;
+        }
+        
+        .module-titles-0 {
+            color: #eecd12 !important;
+        }
+                .module-titles-1 {
+            color: #bd1e1e !important;
+        }
+        /* FontAwesome for working BootSnippet :> */
+
+        /*@import url('https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css');*/
+        .strand {
+        background: #eee !important;
+            /* background: #f5f9ff !important; */
+        }
+
+        /*
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background-color: #108d6f;
+            border-color: #108d6f;
+            box-shadow: none;
+            outline: none;
+        }
+
+        .btn-primary {
+            color: #fff;
+            background-color: #007b5e;
+            border-color: #007b5e;
+        } */
+
+        section {
+            padding: 30px 0;
+        }
+
+        section .section-title {
+        /*    color: #b98611;  */
+            color: #d99b10;
+            margin-bottom: 20px;
+            /* text-transform: uppercase; */
+        }
+
+        .strand .card {
+            border: none;
+            background: #ffffff;
+        }
+
+        .image-flip:hover .backside,
+        .image-flip.hover .backside {
+            -webkit-transform: rotateY(0deg);
+            -moz-transform: rotateY(0deg);
+            -ms-transform: rotateY(0deg);
+            -o-transform: rotateY(0deg);
+            transform: rotateY(0deg);
+            border-radius: .25rem;
+        }
+
+        .image-flip:hover .frontside,
+        .image-flip.hover .frontside {
+            -webkit-transform: rotateY(180deg);
+            -moz-transform: rotateY(180deg);
+            -o-transform: rotateY(180deg);
+            transform: rotateY(180deg);
+        }
+
+        .mainflip {
+            -webkit-transform: perspective(1000px);
+            -moz-transform: perspective(1000px);
+            -ms-transform: perspective(1000px);
+            -o-transform: perspective(1000px);
+            transform: perspective(1000px);
+            -webkit-transform-style: preserve-3d;
+            -moz-transform-style: preserve-3d;
+            -ms-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+            -webkit-transition: 1s;
+            -moz-transition: 1s;
+            -ms-transition: 1s;
+            transition: 1s;
+            position: relative;
+        }
+
+        .frontside {
+            position: relative;
+            -webkit-transform: rotateY(0deg);
+            -ms-transform: rotateY(0deg);
+            transform: rotateY(0deg);
+            z-index: 2;
+            margin-bottom: 30px;
+        }
+
+        .backside {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: white;
+            -webkit-transform: rotateY(-180deg);
+            -moz-transform: rotateY(-180deg);
+            -ms-transform: rotateY(-180deg);
+            -o-transform: rotateY(-180deg);
+            transform: rotateY(-180deg);
+            -webkit-box-shadow: 5px 7px 9px -4px rgb(158, 158, 158);
+            -moz-box-shadow: 5px 7px 9px -4px rgb(158, 158, 158);
+            box-shadow: 5px 7px 9px -4px rgb(158, 158, 158);
+        }
+
+        .frontside,
+        .backside {
+            -webkit-backface-visibility: hidden;
+            -moz-backface-visibility: hidden;
+            -ms-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-transition: 1s;
+            -webkit-transform-style: preserve-3d;
+            -moz-transition: 1s;
+            -moz-transform-style: preserve-3d;
+            -o-transition: 1s;
+            -o-transform-style: preserve-3d;
+            -ms-transition: 1s;
+            -ms-transform-style: preserve-3d;
+            transition: 1s;
+            transform-style: preserve-3d;
+        }
+
+        .frontside .card,
+        .backside .card {
+            min-height: 312px;
+        }
+
+        /* .backside .card a {
+            font-size: 18px;
+            color: #007b5e;
+        } */
+
+        .frontside .card .card-title,
+        .backside .card .card-title {
+            color: #3379b8 !important;
+        }
+
+        .frontside .card .card-body img {
+            height: 150px;
+        /*  border-radius: 15%; */
+        }
+        .module-title {
+            color: #000080;
+        }
+
+        .text-grey {
+            color: #8796af;
+        }
+
+        .masthead {
+            height: 60vh;
+            min-height: 400px;
+            background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%);
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/7e/Technology-solution.jpg'); 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            /* background-color: #6d9ddb; */
+        }
+
+        /*
+        .masthead {
+            position: relative;
+            background-color: #343a40;
+            background: url("/static/images/bg-masthead.jpg") no-repeat center center;
+            background-size: cover;
+            padding-top: 8rem;
+            padding-bottom: 8rem;
+        }
+        */
+        .bg-custom-1 {
+            background-color: #85144b;
+        }
+
+        .bg-custom-2 {
+            background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%);
+        }
+
+        .card-progress {
+            color: #bd1e1e;
+        }
+    </style>
+{% endblock %}
+
+{% block modals %}    
+    <!-- Modal -->
+    <div class="modal fade" id="intro-vid-modal" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title no-relative">JCCoder Introduction Video</h3>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="embed-responsive embed-responsive-16by9">
+                        <iframe class="embed-responsive-item" id="intro-vid" allowfullscreen></iframe>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" id="close-btn">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block page_content %}
+    {# if current_user.is_authenticated and not current_user.can(Permission.MANAGE_CLASS) #}
+    <!-- <div class="page-header border-bottom-0 pb-0">
+        <h1>My Assignments</h1>
+    </div>
+    <ul class="nav nav-pills mb-3" role="tablist">
+        <li class="nav-item">
+            <a href="#upcoming-assignments" class="nav-link active" data-toggle="tab" aria-controls="upcoming-assignments" aria-selected="true">Upcoming</a>
+        </li>
+        <li class="nav-item">
+            <a href="#past-assignments" class="nav-link" data-toggle="tab" aria-controls="past-assignments" aria-selected="false">Past</a>
+        </li>
+    </ul>
+    <div class="tab-content" id="assignments">
+        <div class="tab-pane fade show active" id="upcoming-assignments" role="tabpanel" aria-labelledby="upcoming-tab">
+            {% set pagination = upcoming_assignments %}
+            {% set assignments = upcoming_assignments.items %}
+            {% set type = 'upcoming' %}
+            {% include "_upcoming_past_assignments.html" %}
+        </div>
+        <div class="tab-pane fade" id="past-assignments" role="tabpanel" aria-labelledby="past-tab">
+            {% set pagination = past_assignments %}
+            {% set assignments = past_assignments.items %}
+            {% set type = 'past' %}
+            {% include "_upcoming_past_assignments.html" %}
+        </div>
+    </div> -->
+    {# else #}
+    <div class="jumbotron">
+        <div class="row">
+            <h1 class="col-sm-12 col-md-8 col-lg-9" id="heading">
+                JCCoder
+            </h1>
+            <img class="col-sm-5 col-md-4 col-lg-3 order-sm-first" src="/static/images/home_page_icon.png" />
+        </div>
+        <div id="text">
+            <p>Are you thinking of studying Computer Science and Coding for the Junior Cert?</p>
+            <p>Do you want to know what it is all about?</p>
+            <p>This website will get you started!</p>
+        </div>
+        <button type="button" class="btn btn-lg btn-primary" data-toggle="modal" data-target="#intro-vid-modal" id="intro-btn">JCCoder Introduction Video</button>
+    </div>
+
+    {% if current_user.is_authenticated %}
+    {% for strand in Strand.query.all() %}
+    <!-- Strand -->
+    <section class="strand px-3 pb-4 mb-5">
+        <h1 class="section-title">{{ strand.name }}</h1>
+        {% for module in strand.all_ordered_children() %}
+        {% if module.chapters.filter_by(active=true).first() %}
+        <h4 class="module-title">{{ module.title }}</h4>
+        <p class="card-text text-muted">{{ module.description }}</p>
+        {% endif %}
+        <!-- Learning Outcomes -->
+        <div class="row">
+            {% for chapter in module.all_ordered_children() %}
+            {% if chapter.active %}
+            {% set vars = {'unlocked': false, 'in_progress': false, 'count': 0, 'completed_count': 0} %}
+            {% for assignment in upcoming_assignments.items %}
+                {% set assignment_content = assignment.quiz if assignment.quiz else assignment.page %}
+                {% if assignment_content.lesson.chapter == chapter %}
+                    {% if assignment.is_quiz() and vars.update({'count': vars.count + 1}) %}{% endif %}
+                    {% if vars.update({'unlocked': true}) %}{% endif %}
+                    {% set score = StudentAssignment.query.filter_by(assignment_id=assignment.id, student_id=current_user.id).first().score %}
+                    {% if not vars.in_progress and score is number and score > 0 %}
+                        {% if vars.update({'in_progress': true}) %}{% endif %}
+                    {% endif %}
+                    {% if score == 100 %}
+                        {% if vars.update({'completed_count': vars.completed_count + 1}) %}{% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+
+            <div class="col-xs-12 col-sm-6 col-md-4">
+                <div class="image-flip" ontouchstart="this.classList.toggle('hover');">
+                    <div class="mainflip">
+                        <div class="frontside">
+                            <div class="card">                               
+                                <div class="card-body text-center">
+                                    <h3 class="card-title">{{ chapter.title }}</h3>
+                                    <p><img class="img img-fluid" src="/static/images/digitalWorld2.jpg" alt="card image"></p>
+                                    <h4 class="card-title">Computers In Our World</h4>
+                                    <p class="card-text card-progress">
+                                        {% if vars.unlocked %}
+                                        You have completed {{ chapter.student_progress(current_user) }}%
+                                        {% else %}
+                                        Locked
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="backside">
+                            <div class="card">
+                                <div class="card-body text-center mt-4">
+                                    <h4 class="card-title">Computers In Our World</h4>
+                                    <p class="card-text text-grey">{{ chapter.description }}</p>
+                                    <p>
+                                        
+                                        {% if vars.unlocked %}
+                                        <a class="btn btn-info" href="{{ url_for('main.chapter', id=chapter.id) }}">
+                                            {% if not vars.in_progress %}
+                                            Start &rarr;
+                                            {% elif vars.in_progress and vars.completed_count != vars.count %}
+                                            Continue to assignments &rarr;
+                                            {% else %}
+                                            Finished assignments! Review content
+                                            {% endif %}
+                                        </a>
+                                        {% else %}
+                                        <button type="button" class="btn btn-info disabled" disabled><i class="fa fa-lock" aria-hidden="true"></i> Locked</button>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endfor %}
+    {# endif #}
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    {% if current_user.is_authenticated %}
+    {{ moment.include_moment() }}
+    {% endif %}
+    <script type="text/javascript">
+        $("#intro-btn").on("click", function() {
+            var src = "https://www.youtube.com/embed/DLGITIXru_c?rel=0"
+            $("#intro-vid").attr("src", src);
+        });
+
+        $("#intro-vid-modal").on("hide.bs.modal", function() {
+            $("#intro-vid").removeAttr("src");
+        });
+
+        if (window.location.href.indexOf('past_page=') > -1) {
+            setTimeout(function() {$('[href="#past-assignments"]').click();}, 100);
+        }
+
+        var upcoming_page = "{{ upcoming_assignments.page }}";
+        var past_page = "{{ past_assignments.page }}";
+        $('.pagination-link').on('click', showAssignments);
+        
+        function showAssignments(e) {
+            e.preventDefault();
+            var type = $(this).siblings('.table').hasClass('upcoming-assignments') ? 'upcoming' : 'past';
+            var direction = this.id == 'prev-btn' ? -1 : 1;
+            var page = type == 'upcoming' ? upcoming_page : past_page;
+            var data = {page: page, direction: direction, type: type};
+            $.ajax({
+                url: "/assignment-table",
+                data: JSON.stringify(data),
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                type: 'POST',
+                success: function(response) {
+                    $('#' + type + '-assignments').html(response.html);
+                    flask_moment_render_all();
+                    $('.pagination-link').on('click', showAssignments);
+                    var current_page = Number(page) + direction;
+                    if (type == "upcoming") {
+                        upcoming_page = current_page;
+                    } else {
+                        past_page = current_page;
+                    }
+                },
+                error: function(error) {
+                    var error_message = $('<p>Sorry an unexpected error has occured.</p>');
+                    $('#' + type + '-assignments').append(error_message);
+                    console.error(error);
+                }
+            });
+        }
+    </script>
+{% endblock %}

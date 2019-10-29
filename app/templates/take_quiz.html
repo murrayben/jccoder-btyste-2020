@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_macros.html" as macros %}
 
 {% block navbar %}
 
@@ -129,45 +130,6 @@
     </style>
 {% endblock %}
 
-{% macro add_drag_n_drop_text(question, draggable_buttons=True) %}
-                <div class="draggable-items-box card bg-info mb-3 p-3 flex-row align-items-stretch" style="min-height: 80px;">
-                    {% for item in question.options[:-1] %}
-                    <span class="{% if not draggable_buttons %}un{% endif %}draggable-btn bg-white mr-3 d-flex" data-position="{{ loop.index }}">
-                        <span class="m-auto text-dark">{{ item.text | safe }}</span>
-                    </span>
-                    {% endfor %}
-                </div>
-                <h5>Drag the above tiles to the correct box on the right.</h5>
-                {% if draggable_buttons %}
-                <p class="text-danger">WARNING: When you drag all {{ question.options[:-1] | length }} tiles to a box, they're positions cannot be changed.</p>
-                {% endif %}
-{% endmacro %}
-{% macro add_question_input(question, enable_input=True) %}
-                {% if question.question_type.code == 'C' %}
-                <p class="mb-0">Choose <em>one</em> of the options:</p>
-                {% for option in question.options %}
-                <div class="custom-control custom-radio">
-                    <input type="radio" id="options-{{ loop.index }}-{{ question.id }}" name="options-{{ question.id }}" class="custom-control-input"{% if not enable_input %} disabled{% endif %} />
-                    <label class="custom-control-label" for="options-{{ loop.index }}-{{ question.id }}">
-                        {{ option.text }}
-                    </label>
-                </div>
-                {% endfor %}
-                {% elif question.question_type.code == 'M' %}
-                <p class="mb-0">Choose <em>all</em> the options that apply:</p>
-                {% for option in question.options %}
-                <div class="custom-control custom-checkbox">
-                    <input type="checkbox" id="options-{{ loop.index }}-{{ question.id }}" name="options-{{ question.id }}" class="custom-control-input"{% if not enable_input %} disabled{% endif %} />
-                    <label class="custom-control-label" for="options-{{ loop.index }}-{{ question.id }}">
-                        {{ option.text }}
-                    </label>
-                </div>
-                {% endfor %}
-                {% elif question.question_type.code == 'S' %}
-                <input autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" type="text" id="answer" value=""{% if not enable_input %} disabled{% endif %} />
-                {% endif %}
-{% endmacro %}
-
 {% block content %}
     <div class="container-fluid">
         <div id="start" class="text-center">
@@ -193,10 +155,10 @@
             {% for question in questions %}
             <div class="question" id="{{ question.id }}" data-max-attempts="{{ question.max_attempts }}" data-at-hint="0">
                 {% if question.question_type.code == 'D' %}
-                {{ add_drag_n_drop_text(question) }} 
+                {{ macros.add_drag_n_drop_text(question) }} 
                 {% endif %}
                 <div class="mb-3">{{ question.show() | safe }}</div>
-                {{ add_question_input(question) }}
+                {{ macros.add_question_input(question) }}
                 <div class="hints-box text-primary" style="display: none;"><hr /></div>
                 <hr />
                 <div class="question-help" style="display: none;">
@@ -311,12 +273,12 @@
                         <h5 class="card-title">Question {{ loop.index }}</h5>
                         <p class="card-text">
                             {% if question.question_type.code == 'D' %}
-                            {{ add_drag_n_drop_text(question, draggable_buttons=False) }} 
+                            {{ macros.add_drag_n_drop_text(question, draggable_buttons=False) }} 
                             {% endif %}
 
                             <div class="mb-3">{{ question.html | safe }}</div>
 
-                            {{ add_question_input(question, enable_input=False) }}
+                            {{ macros.add_question_input(question, enable_input=False) }}
                             <hr />
                             <h5>Explanation</h5>
                             <div id="explanation-{{ question.id }}">

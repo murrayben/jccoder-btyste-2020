@@ -3,8 +3,8 @@ from flask import Blueprint
 admin = Blueprint('admin', __name__)
 
 from . import views, forms
-from ..models import (Strand, Module, Chapter, Lesson, Page, PageType,
-                      Permission, Tag, db, Post, QuizAttempt, Class,
+from ..models import (User, Role, Strand, Module, Chapter, Lesson, Page,
+                      PageType, Permission, Tag, db, Post, QuizAttempt, Class,
                       ClassStudent, Assignment, StudentAssignment,
                       ProblemMistake, ProblemMistakeType, QuestionAnswer)
 
@@ -15,7 +15,7 @@ model_singulars = {'Strands': 'strand', 'Modules': 'module',
 
 @admin.app_context_processor
 def inject_models():
-    return dict(Strand=Strand, Module=Module, Chapter=Chapter, Lesson=Lesson,
+    return dict(User=User, Role=Role, Strand=Strand, Module=Module, Chapter=Chapter, Lesson=Lesson,
         Tag=Tag, db=db, Page=Page, PageType=PageType, Post=Post,
         Permission=Permission, QuizAttempt=QuizAttempt, Class=Class,
         ClassStudent=ClassStudent, Assignment=Assignment,

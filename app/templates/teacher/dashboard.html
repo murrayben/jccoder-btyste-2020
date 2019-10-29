@@ -39,7 +39,7 @@
     {% for class in classes %}
     <div class="class border-top{% if loop.last %} border-bottom mb-3{% endif %} p-3">
         <h5><a href="{{ url_for('.display_class', id=class.id) }}" class="text-dark class-link">{{ class.name }}</a></h5>
-        <p class="mb-0">{{ class.students.count() }} student{% if class.students.count() != 1 %}s{% endif %}</p>
+        <p class="mb-0">{{ class.students.filter(db.and_(Class.id == class.id, ClassStudent.student_status == true)).count() }} student{% if class.students.count() != 1 %}s{% endif %}</p>
     </div>
     {% endfor %}
     {% else %}

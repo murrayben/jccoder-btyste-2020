@@ -33,20 +33,41 @@
         #assignments-table-header {
             width: 150px;
         }
+
+        #pageModal .modal-dialog {
+            overflow-y: initial !important;
+        }
+
+        #pageModal .modal-body {
+            /*min-height: 680px;
+            max-height: 680px;*/
+            height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+
+        #pageModal .modal-content {
+            min-height: 600px;
+        }
+
+        @media (min-width: 1400px) {
+            #pageModal .modal-dialog {
+                max-width: 1200px;
+            }
+        }
     </style>
 {% endblock %}
 
 {% macro display_dropdown(item, last=True, arrow=True, missing_items=False, parent=None) %}
     {%- set item_type = item.__class__.__name__ -%}
     {% set is_page = (item_type == "Page" or item_type == "Quiz") %}
-    {% set is_not_regular_quiz = item_type == "Lesson" and (not item.type.code == 'L') %}
+    {% set is_regular_quiz = item_type == "Lesson" and (not item.type.code == 'L') %}
     <div class="content{% if is_page %} bg-white{% endif %}"{% if parent %} data-parent-type="{{ parent.__class__.__name__|lower }}" data-parent-id="{{ parent.id }}"{% endif %}>
-        <div class="border-top{% if last %} border-bottom{% endif %} {% if missing_items %}px-4 py-3{% else %}px-3 py-2{% endif %} text-dark{% if not missing_items %} content-toggler{% endif %}"{% if (not missing_items) and (not is_page) and (not is_not_regular_quiz) %} data-toggle="collapse" data-target="#{{ item_type|lower }}-{{ item.id }}-collapse" aria-expanded="false" aria-controls="{{ item_type|lower }}-{{ item.id }}-collapse"{% endif %}>
+        <div class="border-top{% if last %} border-bottom{% endif %} {% if missing_items %}px-4 py-3{% else %}px-3 py-2{% endif %} text-dark{% if not missing_items %} content-toggler{% endif %}"{% if (not missing_items) and (not is_page) and (not is_regular_quiz) %} data-toggle="collapse" data-target="#{{ item_type|lower }}-{{ item.id }}-collapse" aria-expanded="false" aria-controls="{{ item_type|lower }}-{{ item.id }}-collapse"{% endif %}>
             {% if missing_items %}
             <p class="mb-0">No {{ item }} yet. Please wait for them to be added.</p>
             {% else %}
             <div class="d-flex">
-                {%- if (arrow or is_page) and not is_not_regular_quiz %}
+                {%- if (arrow or is_page) and not is_regular_quiz %}
                     {%- if item_type == "Page" %}
                         {% if item.page_type.description == "Article" %}
                             {% set icon_class = 'fas fa-file fa-fw' %}
@@ -65,8 +86,21 @@
                 <div class="{% if not is_page %}arrow {% endif %}align-self-center"><i class="{{ icon_class }}" aria-hidden="true"></i></div>
                 {% endif -%}
                 <div class="position-relative{% if not missing_items %} mr-auto{% endif %}" style="left: 10px;">
-                    <p class="position-relative font-weight-normal mb-0" style="top: 2px;">{{ item.title if item.title else item.name if item.name else item.tested_skills.first().description }}</p>
-                    {% if is_not_regular_quiz %}
+                    <p class="position-relative font-weight-normal mb-0" style="top: 2px;">
+                        {% set is_quiz = item_type == 'Quiz' %}
+                        {% if is_quiz %}
+                        <a class="quiz-hyperlink" href="#" data-quiz-id="{{ item.id }}">{{ item.title() }}</a>
+                        {% elif item_type == 'Page' %}
+                        <a class="page-hyperlink" href="{{ url_for('main.lesson_page', id=item.id) }}" data-page-id="{{ item.id }}">{{ item.title }}</a>
+                        {% else %}
+                        {% if is_regular_quiz %}
+                        <a href="{{ url_for('main.chapter', id=item.chapter.id, item='quiz_' + item.quizzes.first().id|string ) }}">{{ item.title }}</a>
+                        {% else %}
+                        {{ item.title }}
+                        {% endif %}
+                        {% endif %}
+                    </p>
+                    {% if is_regular_quiz %}
                     <p>This quiz tests students knowledge on:</p>
                     <ul>
                         {% for skill in item.quizzes.first().tested_skills.all() %}
@@ -79,7 +113,7 @@
                 </div>
                 {% if not missing_items %}
                 <div class="custom-control custom-checkbox align-self-center assignment-checkbox">
-                    <input type="checkbox" class="custom-control-input {{ item_type|lower if not is_not_regular_quiz else 'quiz' }}-checkbox" id="{{ item_type|lower }}-{{ item.id }}-checkbox" data-type="{{ item_type|lower }}" data-id="{{ item.id if not is_not_regular_quiz else item.quizzes.first().id }}">
+                    <input type="checkbox" class="custom-control-input {{ item_type|lower if not is_regular_quiz else 'quiz' }}-checkbox" id="{{ item_type|lower }}-{{ item.id }}-checkbox" data-type="{{ item_type|lower }}" data-id="{{ item.id if not is_regular_quiz else item.quizzes.first().id }}">
                     <label class="custom-control-label" for="{{ item_type|lower }}-{{ item.id }}-checkbox"></label>
                 </div>
                 {% endif %}
@@ -115,55 +149,75 @@
 
     <!-- Add new students -->
     <div class="modal fade" id="add-students-modal" tabindex="-1" role="dialog" aria-labelledby="addStudentsModal" aria-hidden="true">
-            <div class="modal-dialog modal-lg" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Add students</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="generate-users">
-                            <h4 id="generate-users-heading">Create accounts for your students</h4>
-                            <p id="generate-users-desc">Type in your students' full name and a unique username will be generated.</p>
-                            <table class="table table-responsive w-100">
-                                <thead class="thead-default">
-                                    <tr>
-                                        <th class="w-50">Student name</th>
-                                        <th class="w-50">Generated username</th>
-                                        <th id="close-or-password"></th>
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add students</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="generate-users">
+                        <h4 id="generate-users-heading">Create accounts for your students</h4>
+                        <p id="generate-users-desc">Type in your students' full name and a unique username will be generated.</p>
+                        <table class="table table-responsive w-100">
+                            <thead class="thead-default">
+                                <tr>
+                                    <th class="w-50">Student name</th>
+                                    <th class="w-50">Generated username</th>
+                                    <th id="close-or-password"></th>
+                                </tr>
+                                </thead>
+                                <tbody id="username-table-body">
+                                    <tr class="username-field table-primary">
+                                        <td class="align-middle" scope="row">
+                                            <div class="form-group mb-0">
+                                                <input type="text" class="form-control" name="new-username" id="new-username1" placeholder="e.g. John Doe">
+                                            </div>
+                                        </td>
+                                        <td class="generated-username align-middle"></td>
+                                        <td class="delete-username align-middle">
+                                            <a href="#" class="delete-username-btn text-muted" style="visibility: hidden;"><i class="fa fa-times" aria-hidden="true"></i></a>
+                                        </td>
+                                        <td class="student-password align-middle d-none">
+                                            <div class="form-group mb-0">
+                                                <input type="text" class="form-control" name="student-password" id="student-password1" style="width: 200px;">
+                                            </div>
+                                        </td>
                                     </tr>
-                                    </thead>
-                                    <tbody id="username-table-body">
-                                        <tr class="username-field table-primary">
-                                            <td class="align-middle" scope="row">
-                                                <div class="form-group mb-0">
-                                                    <input type="text" class="form-control" name="new-username" id="new-username1" placeholder="e.g. John Doe">
-                                                </div>
-                                            </td>
-                                            <td class="generated-username align-middle"></td>
-                                            <td class="delete-username align-middle">
-                                                <a href="#" class="delete-username-btn text-muted" style="visibility: hidden;"><i class="fa fa-times" aria-hidden="true"></i></a>
-                                            </td>
-                                            <td class="student-password align-middle d-none">
-                                                <div class="form-group mb-0">
-                                                    <input type="text" class="form-control" name="student-password" id="student-password1" style="width: 200px;">
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                            </table>
-                            <p id="add-new-username-line-p">+ <a href="#" id="add-new-username-line">Add new line</a> (or press Enter)</p>
-                        </div>
+                                </tbody>
+                        </table>
+                        <p id="add-new-username-line-p">+ <a href="#" id="add-new-username-line">Add new line</a> (or press Enter)</p>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-link mr-auto d-none" id="generate-users-back-btn">Back</button>
-                        <button type="button" class="btn btn-primary disabled" id="generate-users-next-btn" disabled>Next</button>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link mr-auto d-none" id="generate-users-back-btn">Back</button>
+                    <button type="button" class="btn btn-primary disabled" id="generate-users-next-btn" disabled>Next</button>
                 </div>
             </div>
         </div>
+    </div>
+    
+    <!-- Preview content -->
+    <div class="modal fade" id="pageModal" tabindex="-1" role="dialog" aria-labelledby="previewContentModal" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="page-title"><!-- Will be replaced --></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="page-html">
+                    <!-- Will be replaced by content -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block page_content %}
@@ -197,18 +251,34 @@
         <div class="tab-pane fade show active" id="students-list" role="tabpanel" aria-labelledby="students-tab">
             {% if class.students.all()|length > 0 %}
             <a data-toggle="modal" href="#add-students-modal">Add new students</a>
-            <table class="table table-striped mt-2 w-50">
+            <table class="table table-striped mt-2 w-75">
                 <thead>
                     <tr>
                         <th>#</th>
                         <th>Username</th>
+                        <th class="text-right">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for student in class.students.all() %}
+                    {% set active = ClassStudent.query.filter_by(class_id=class.id, student_id=student.id).first().student_status %}
                     <tr>
-                        <th scope="row" class="font-weight-bold">{{ loop.index }}</th>
-                        <td>{{ student.username }}</td>
+                        <th scope="row" class="font-weight-bold align-middle">{{ loop.index }}</th>
+                        <td class="align-middle">
+                            {% if active %}
+                            {{ student.username }}
+                            {% else %}
+                            <del class="text-muted">{{ student.username }}</del>
+                            {% endif %}
+                        </td>
+                        <td class="text-right align-middle">
+                            {% if active %}
+                            <button type="button" class="btn btn-sm btn-outline-success" href="#">Edit username</button>
+                            <a class="btn btn-sm btn-outline-danger delete-student" href="{{ url_for('.delete_student_from_class', class_id=class.id, student_id=student.id) }}" role="button">Remove</a>
+                            {% else %}
+                            <p class="mb-0">Removed</p>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -304,325 +374,220 @@
     {{ super() }}
     <!-- JQuery UI is for datepicker -->
     <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
     {{ moment.include_moment() }}
+    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/load_page_content.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/teacher_class.js') }}"></script>
     <script type="text/javascript">
-        $(function () {
-            // Preventing collapse from opening/closing when checkboxes are clicked
-            $('.content-toggler .assignment-checkbox').on('click', function(e) {
-                e.stopPropagation();
-            });
+        var objects = JSON.parse(`{{ objects | safe }}`);
+        var type = "page";
+        var object;
+        for (var i = 0; i < objects.length; i++) {
+            var object = objects[i];
+            if (object === -1) {
+                type = "quiz";
+                continue;
+            }
+            $('#' + type + '-' + object + '-checkbox').prop('checked', true).change();
+    
+        }
 
-            // Collapse arrows
-            $('.content div').on('click', function() {
-                var $arrow = $(this).children('.d-flex').children('.arrow');
-                if ($arrow.children('.fa-chevron-right').length > 0) {
-                    $arrow.html('<i class="fas fa-chevron-down fa-fw" aria-hidden="true"></i>')
-                } else {
-                    $arrow.html('<i class="fas fa-chevron-right fa-fw" aria-hidden="true"></i>')
+        var page = "{{ assignments_pagination.page }}";
+        $('.pagination-link').on('click', showAssignments);
+        
+        function showAssignments(e) {
+            e.preventDefault();
+            var direction = this.id == 'prev-btn' ? -1 : 1;
+            var data = {class_id: "{{ class.id }}", page: page, direction: direction};
+            $.ajax({
+                url: "{{ url_for('teacher.assignment_page') }}",
+                data: JSON.stringify(data),
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                type: 'POST',
+                success: function(response) {
+                    $('#assignments').html(response.html);
+                    flask_moment_render_all();
+                    $('.pagination-link').on('click', showAssignments);
+                    page = Number(page) + direction;
+                },
+                error: function(error) {
+                    var error_message = $('<p>Sorry an unexpected error has occured.</p>');
+                    $('#assignments').append(error_message);
+                    console.error(error);
                 }
             });
+        }
 
-            // View more content dropdown
-            $('.module-dropdown').on('click', function(e) {
-                e.preventDefault();
-                $('.module-dropdown.active').removeClass('active');
-                $(this).addClass('active');
-                showContent();
-            });
-            showContent();
-
-            function showContent() {
-                $('.content[data-parent-type="module"]').hide();
-                $('.content-collapse').collapse('hide');
-                var $content = $('.content[data-parent-type="module"][data-parent-id="' + $('.module-dropdown.active').data('module') + '"]');
-                $content.show();
-                $($content.data('target') + '.content').show(); // Because of nested collapses
-                $('.arrow').html('<i class="fas fa-chevron-right fa-fw" aria-hidden="true"></i>'); // Reset arrows
-            }
-
-            // Checkbox tick all functionality
-            $('.assignment-checkbox input').on('change', function() {
+        $('#assign-submit-btn').on('click', function() {
+            var objects = {pages: [], quizzes: []}
+            $('.assignment-checkbox input:checked').each(function() {
                 var $this = $(this);
-                if (!$this.hasClass('page-checkbox') && !$this.hasClass('quiz-checkbox')) {
-                    $('.content[data-parent-type="' + $this.data('type') + '"][data-parent-id="' + $this.data('id') + '"]').children('.content-toggler').children('.d-flex').children('.assignment-checkbox').children('input').prop('checked', this.checked).change();
-                }
-                if ($this.data('type') !== 'chapter') {
-                    var $parent = $this.parent().parent().parent().parent();
-                    var $inputs = $('.content[data-parent-type="' + $parent.attr('data-parent-type') + '"][data-parent-id="' + $parent.attr('data-parent-id') + '"] .assignment-checkbox input')
-                    var count_checked = 0;
-                    $inputs.each(function() {
-                        if (this.checked) {
-                            count_checked++;
-                        }
-                    });
-                    if (this.checked && (count_checked === $inputs.length)) {
-                        $('.assignment-checkbox input[data-type="' + $parent.attr('data-parent-type') + '"][data-id="' + $parent.attr('data-parent-id') + '"]').prop('checked', true);
-                    } else if (!this.checked && (count_checked !== $inputs.length)) {
-                        $('.assignment-checkbox input[data-type="' + $parent.attr('data-parent-type') + '"][data-id="' + $parent.attr('data-parent-id') + '"]').prop('checked', false);
-                    }
-                }
-
-                var count = $('.assignment-checkbox input:checked.page-checkbox, .assignment-checkbox input:checked.quiz-checkbox').length;
-                if (count === 0) {
-                    count = "";
-                }
-                var $assign_btn = $('#assign-btn');
-                $('.no-assigned-items').text(count);
-                if (!count) {
-                    $assign_btn.prop('disabled', true);
-                } else {
-                    $assign_btn.prop('disabled', false);
+                if ($this.hasClass('page-checkbox')) {
+                    objects.pages.push(Number($this.data('id')));
+                } else if ($this.hasClass('quiz-checkbox')) {
+                    objects.quizzes.push(Number($this.data('id')));
                 }
             });
-            $('#assign-btn').prop('disabled', true);
-
-            $('#due_date').attr('autocomplete', 'off').datepicker({dateFormat: 'dd-mm-yy', minDate: '+1D'});
-            $('#submit').hide();
-            $('#assign-submit-btn').on('click', function() {
-                var objects = {pages: [], quizzes: []}
-                $('.assignment-checkbox input:checked').each(function() {
-                    var $this = $(this);
-                    if ($this.hasClass('page-checkbox')) {
-                        objects.pages.push(Number($this.data('id')));
-                    } else if ($this.hasClass('quiz-checkbox')) {
-                        objects.quizzes.push(Number($this.data('id')));
-                    }
-                });
-                $.ajax({
-                    url: "{{ url_for('teacher.save_items') }}",
-                    data: JSON.stringify(objects),
-                    dataType: 'json',
-                    contentType: "application/json; charset=utf-8",
-                    type: 'POST',
-                    success: function() {
-                        $('#submit').click(); // Click actual submit button
-                    },
-                    error: function(error) {
-                        var error_message = $('<p>Sorry an unexpected error has occured.</p>');
-                        $('#assign-modal .modal-body').append(error_message);
-                        console.error(error);
-                    }
-                });
-            });
-
-            var objects = JSON.parse(`{{ objects | safe }}`);
-            var type = "page";
-            var object;
-            for (var i = 0; i < objects.length; i++) {
-                var object = objects[i];
-                if (object === -1) {
-                    type = "quiz";
-                    continue;
-                }
-                $('#' + type + '-' + object + '-checkbox').prop('checked', true).change();
-
-            }
-            if (window.location.href.indexOf('assignments_page=') > -1) {
-                setTimeout(function() {$('#assignments-tab').click();}, 50);
-            }
-
-            var page = "{{ assignments_pagination.page }}";
-            $('.pagination-link').on('click', showAssignments);
-            
-            function showAssignments(e) {
-                e.preventDefault();
-                var direction = this.id == 'prev-btn' ? -1 : 1;
-                var data = {class_id: "{{ class.id }}", page: page, direction: direction};
-                $.ajax({
-                    url: "{{ url_for('teacher.assignment_page') }}",
-                    data: JSON.stringify(data),
-                    dataType: 'json',
-                    contentType: "application/json; charset=utf-8",
-                    type: 'POST',
-                    success: function(response) {
-                        $('#assignments').html(response.html);
-                        flask_moment_render_all();
-                        $('.pagination-link').on('click', showAssignments);
-                        page = Number(page) + direction;
-                    },
-                    error: function(error) {
-                        var error_message = $('<p>Sorry an unexpected error has occured.</p>');
-                        $('#assignments').append(error_message);
-                        console.error(error);
-                    }
-                });
-            }
-
-            $('#delete-class').on('click', function(e) {
-                e.preventDefault();
-                if (confirm('Are you sure you want to delete, {{ class.name }}? You are unable to undo this!')){
-                    window.location.href = $(this).attr('href');
-                }
-            });
-
-            function reindexIDs() {
-                i = 0;
-                $('[name="new-username"]').each(function() {
-                    i++;
-                    this.id = 'new-username' + i;
-                });
-            }
-
-            $('#add-new-username-line').on('click', function() {
-                var $cloned_line = $('.username-field').first().clone();
-                var $field = $cloned_line.children().first().children().children();
-                $field.val('');
-                $cloned_line.children('.generated-username').empty();
-                $('.username-field').last().after($cloned_line);
-                reindexIDs();
-                $('.delete-username a').css('visibility', 'visible');
-                $('.delete-username a').first().css('visibility', 'hidden');
-                $field.focus();
-            });
-
-            $('#username-table-body').on('click', '.delete-username-btn', function() {
-                $(this).parent().parent().remove();
-                reindexIDs();
-            });
-            
-            $('#username-table-body').on('keydown', '[name="new-username"]', function() {
-                if (event.keyCode == 13) {
-                    $('#add-new-username-line').click();
-                }
-            });
-
-            var timer = null;
-            var xhr = null;
-            $('#username-table-body').on('input', '[name="new-username"]', function() {
-                $('#generate-users-next-btn').addClass('disabled').prop('disabled', true);
-                var $this = $(this);
-                var name = $this.val();
-
-                // Clear any previous requests so there are not 5 requests to the server at once.
-                if (timer) {
-                    clearTimeout(timer);
-                    timer = null;
-                }
-                else if (xhr) {
-                    xhr.abort();
-                    xhr = null;
-                }
-                timer = setTimeout(function() {
-                    xhr = $.ajax({
-                        url: "{{ url_for('teacher.generate_username') }}",
-                        data: JSON.stringify({'name': name}),
-                        dataType: 'json',
-                        contentType: "application/json; charset=utf-8",
-                        method: 'POST',
-                        success: function(response) {
-                            xhr = null;
-                            $this.parent().parent().siblings('.generated-username').html('<span>' + response.username + '</span>');
-
-                            var has_content = false;
-                            $('[name="new-username"]').each(function() {
-                                if ($(this).val().trim()) {
-                                    has_content = true;
-                                }
-                            });
-            
-                            if (!has_content) {
-                                $('#generate-users-next-btn').addClass('disabled').prop('disabled', true);
-                            } else {
-                                $('#generate-users-next-btn').removeClass('disabled').prop('disabled', false);
-                            }
-                        },
-                        error: function(error) {
-                            $this.parent().parent().siblings('.generated-username').html('<span>Sorry an unexpected error has occured.</span>');
-                            console.error(error);
-                        }
-                    });
-                }, 1000);
-            });
-
-            var username_heading = 'Create accounts for your students';
-            var username_desc = 'Type in your students\' full name and a unique username will be generated.';
-
-            var password_heading = 'Edit your students\' passwords';
-            var password_desc = 'You now have the option to edit the password of your students.';
-
-            var page = 'username';
-            $('#generate-users-next-btn').on('click', function() {
-                if (page == 'username') {
-                    page = 'password';
-                    $(this).text('Create Accounts');
-                    $('#generate-users-back-btn').removeClass('d-none');
-                    $('#add-new-username-line-p').addClass('d-none');
-                    $('#generate-users-heading').text(password_heading);
-                    $('#generate-users-desc').text(password_desc);
-                    $('.delete-username').addClass('d-none');
-                    $('.student-password').each(function() {
-                        var $this = $(this);
-                        $this.removeClass('d-none');
-                        var randomPassword = '';
-                        characters = 'abcdefghijklmnopqrstuvwxyz0123456789_!'
-                        for (var i = 0; i < 8; i++ ) {
-                            randomPassword += characters.charAt(Math.floor(Math.random() * characters.length));
-                        }
-                        $this.children().children().val(randomPassword);
-                    });
-                    $('#close-or-password').text('Password');
-                    $('[name="new-username"]').each(function() {
-                        var $this = $(this);
-                        var username = $this.val();
-                        if (!username) {
-                            $this.parent().parent().parent().remove();
-                        }
-                        $this.parent().addClass('d-none');
-                        $this.parent().after('<span>' + username + '</span>');
-                    });
-
-
-                } else if (page == 'password') {
-                    // Submit
-                    data = {'students': [], 'class_id': '{{ class.id }}'}
-                    $('.generated-username').each(function() {
-                        var $this = $(this);
-                        var username = $this.children().text();
-                        var password = $this.siblings('.student-password').children().children().val();
-                        data.students.push({'username': username, 'password': password});
-                    });
-                    console.log(data)
-                    $.ajax({
-                        url: "{{ url_for('.create_accounts') }}",
-                        data: JSON.stringify(data),
-                        dataType: 'json',
-                        contentType: "application/json; charset=utf-8",
-                        method: 'POST',
-                        success: function(response) {
-                            $('#generate-users-back-btn').addClass('d-none');
-                            $('#generate-users-next-btn').off('click').attr('data-dismiss', 'modal').text('Close');
-                            $('#add-students-modal .modal-body').html('<h4>That\'s it!</h4><p>Your students have been successfully added.</p>')
-                            $('#add-students-modal').on('hidden.bs.modal', function() {
-                                window.location.href = "{{ url_for('teacher.display_class', id=class.id, _external=True) }}";
-                            });
-                        },
-                        error: function(error) {
-                            $('#add-students-modal .modal-body').append('<p>Sorry an unexpected error has occured.</p>');
-                            console.error(error);
-                        }
-                    });
-                }
-            });
-
-            $('#generate-users-back-btn').on('click', function() {
-                if (page == 'password') {
-                    page = 'username';
-                    $(this).addClass('d-none');
-                    $('#generate-users-next-btn').text('Next');
-                    $('#add-new-username-line-p').removeClass('d-none');
-                    $('#generate-users-heading').text(username_heading);
-                    $('#generate-users-desc').text(username_desc);
-                    $('.delete-username').removeClass('d-none');
-                    $('.student-password').addClass('d-none');
-                    $('#close-or-password').text('');
-                    $('[name="new-username"]').each(function() {
-                        var $this = $(this);
-                        $this.parent().removeClass('d-none');
-                        $this.parent().next().remove();
-                    });
+            $.ajax({
+                url: "{{ url_for('teacher.save_items') }}",
+                data: JSON.stringify(objects),
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                type: 'POST',
+                success: function() {
+                    $('#submit').click(); // Click actual submit button
+                },
+                error: function(error) {
+                    var error_message = $('<p>Sorry an unexpected error has occured.</p>');
+                    $('#assign-modal .modal-body').append(error_message);
+                    console.error(error);
                 }
             });
         });
+
+        $('#delete-class').on('click', function(e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to delete, {{ class.name }}? You are unable to undo this!')){
+                window.location.href = $(this).attr('href');
+            }
+        });
+
+        
+        var timer = null;
+        var xhr = null;
+        $('#username-table-body').on('input', '[name="new-username"]', function() {
+        $('#generate-users-next-btn').addClass('disabled').prop('disabled', true);
+        var $this = $(this);
+        var name = $this.val();
+
+        // Clear any previous requests so there are not 5 requests to the server at once.
+        if (timer) {
+            clearTimeout(timer);
+            timer = null;
+        }
+        else if (xhr) {
+            xhr.abort();
+            xhr = null;
+        }
+        timer = setTimeout(function() {
+            xhr = $.ajax({
+                url: "{{ url_for('teacher.generate_username') }}",
+                data: JSON.stringify({'name': name}),
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                method: 'POST',
+                success: function(response) {
+                    xhr = null;
+                    $this.parent().parent().siblings('.generated-username').html('<span>' + response.username + '</span>');
+
+                    var has_content = false;
+                    $('[name="new-username"]').each(function() {
+                        if ($(this).val().trim()) {
+                            has_content = true;
+                        }
+                    });
+    
+                    if (!has_content) {
+                        $('#generate-users-next-btn').addClass('disabled').prop('disabled', true);
+                    } else {
+                        $('#generate-users-next-btn').removeClass('disabled').prop('disabled', false);
+                    }
+                },
+                error: function(error) {
+                    $this.parent().parent().siblings('.generated-username').html('<span>Sorry an unexpected error has occured.</span>');
+                    console.error(error);
+                }
+            });
+        }, 1000);
+        
+        var username_heading = 'Create accounts for your students';
+        var username_desc = 'Type in your students\' full name and a unique username will be generated.';
+
+        var password_heading = 'Edit your students\' passwords';
+        var password_desc = 'You now have the option to edit the password of your students.';
+
+        var page = 'username';
+        $('#generate-users-next-btn').on('click', function() {
+            if (page == 'username') {
+                page = 'password';
+                $(this).text('Create Accounts');
+                $('#generate-users-back-btn').removeClass('d-none');
+                $('#add-new-username-line-p').addClass('d-none');
+                $('#generate-users-heading').text(password_heading);
+                $('#generate-users-desc').text(password_desc);
+                $('.delete-username').addClass('d-none');
+                $('.student-password').each(function() {
+                    var $this = $(this);
+                    $this.removeClass('d-none');
+                    var randomPassword = '';
+                    characters = 'abcdefghijklmnopqrstuvwxyz0123456789_!'
+                    for (var i = 0; i < 8; i++ ) {
+                        randomPassword += characters.charAt(Math.floor(Math.random() * characters.length));
+                    }
+                    $this.children().children().val(randomPassword);
+                });
+                $('#close-or-password').text('Password');
+                $('[name="new-username"]').each(function() {
+                    var $this = $(this);
+                    var username = $this.val();
+                    if (!username) {
+                        $this.parent().parent().parent().remove();
+                    }
+                    $this.parent().addClass('d-none');
+                    $this.parent().after('<span>' + username + '</span>');
+                });
+    
+    
+            } else if (page == 'password') {
+                // Submit
+                data = {'students': [], 'class_id': '{{ class.id }}'}
+                $('.generated-username').each(function() {
+                    var $this = $(this);
+                    var username = $this.children().text();
+                    var password = $this.siblings('.student-password').children().children().val();
+                    data.students.push({'username': username, 'password': password});
+                });
+                $.ajax({
+                    url: "{{ url_for('.create_accounts') }}",
+                    data: JSON.stringify(data),
+                    dataType: 'json',
+                    contentType: "application/json; charset=utf-8",
+                    method: 'POST',
+                    success: function(response) {
+                        $('#generate-users-back-btn').addClass('d-none');
+                        $('#generate-users-next-btn').off('click').attr('data-dismiss', 'modal').text('Close');
+                        $('#add-students-modal .modal-body').html('<h4>That\'s it!</h4><p>Your students have been successfully added.</p>')
+                        $('#add-students-modal').on('hidden.bs.modal', function() {
+                            window.location.href = "{{ url_for('teacher.display_class', id=class.id, _external=True) }}";
+                        });
+                    },
+                    error: function(error) {
+                        $('#add-students-modal .modal-body').append('<p>Sorry an unexpected error has occured.</p>');
+                        console.error(error);
+                    }
+                });
+            }
+        });
+
+        $('#generate-users-back-btn').on('click', function() {
+            if (page == 'password') {
+                page = 'username';
+                $(this).addClass('d-none');
+                $('#generate-users-next-btn').text('Next');
+                $('#add-new-username-line-p').removeClass('d-none');
+                $('#generate-users-heading').text(username_heading);
+                $('#generate-users-desc').text(username_desc);
+                $('.delete-username').removeClass('d-none');
+                $('.student-password').addClass('d-none');
+                $('#close-or-password').text('');
+                $('[name="new-username"]').each(function() {
+                    var $this = $(this);
+                    $this.parent().removeClass('d-none');
+                    $this.parent().next().remove();
+                });
+            }
+        });
+    });
     </script>
 {% endblock %}
