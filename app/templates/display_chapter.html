@@ -328,6 +328,9 @@
                 var $btn = $('.' + values[0] + '-hyperlink[data-' + values[0] + '-id="' + values[1] + '"]');
                 if ($btn.length === 0) {
                     var $btn = $('.chapter-level-quiz[data-' + values[0] + '-id="' + values[1] + '"]');
+                    if ($btn.length == 0) {
+                        var $btn = $('.unit-test-quiz[data-' + values[0] + '-id="' + values[1] + '"]');
+                    }
                 }
                 setTimeout(function() {
                     $btn.click();

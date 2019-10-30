@@ -310,6 +310,10 @@
                 {% endif %}
             {% endfor %}
 
+            {% if current_user.can(Permission.MANAGE_CLASS) %}
+            {% if vars.update({'unlocked': true}) %}{% endif %}
+            {% endif %}
+
             <div class="col-xs-12 col-sm-6 col-md-4">
                 <div class="image-flip" ontouchstart="this.classList.toggle('hover');">
                     <div class="mainflip">

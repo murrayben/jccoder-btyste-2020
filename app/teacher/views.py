@@ -82,7 +82,7 @@ def display_class(id):
         objects = session.get("assigned_pages", [])
         objects.append(-1)
         objects.extend(session.get("assigned_quizzes", []))
-    assignment_pagination = class_.assignments.paginate(page, per_page=8)
+    assignment_pagination = class_.assignments.order_by(Assignment.due_date.desc()).paginate(page, per_page=8)
     return render_template('teacher/class.html', title="JCCoder - " + class_.name, class_=class_, form=form, objects=objects, assignments_pagination=assignment_pagination)
 
 @teacher.route('/class/assignment-page', methods=["GET", "POST"])
@@ -96,7 +96,7 @@ def assignment_page():
         abort(400)
     elif class_.teacher_id != current_user.id:
         abort(400)
-    assignments_pagination = class_.assignments.paginate(page + data["direction"], per_page=8)
+    assignments_pagination = class_.assignments.order_by(Assignment.due_date.desc()).paginate(page + data["direction"], per_page=8)
     html = render_template('teacher/_assignment.html', class_=class_, assignments_pagination=assignments_pagination, moment=moment.create)
     return jsonify(success=True, html=html)
 
@@ -190,3 +190,26 @@ def delete_student_from_class(class_id, student_id):
     class_student.student_status = False
     db.session.add(class_student)
     return redirect(url_for('.display_class', id=class_id))
+
+@teacher.route('/edit/student/', methods=["GET", "POST"])
+def edit_student():
+    if request.method == 'GET':
+        abort(404)
+
+    data = request.get_json()
+    class_ = Class.query.get(int(data["class_id"]))
+    if current_user.id != class_.teacher_id:
+        abort(403)
+
+    student = User.query.get(int(data["student_id"]))
+    if not ClassStudent.query.filter_by(class_id=class_.id, student_id=student.id).first().student_status:
+        # Student is not taught by this teacher
+        abort(403)
+    
+    new_username = data["new_username"]
+    if User.query.filter_by(username=new_username).first():
+        # Username already exists
+        return jsonify(success=True, unique_username=False)
+    student.username = new_username
+    db.session.add(student)
+    return jsonify(success=True, unique_username=True)

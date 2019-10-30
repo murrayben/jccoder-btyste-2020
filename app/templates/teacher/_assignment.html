@@ -49,8 +49,15 @@
             </tr>
         </thead>
         {% for student in class.students %}
-        <tr>
-            <td class="border-right">{{ student.username }}</td>
+        {% set active = ClassStudent.query.filter_by(class_id=class.id, student_id=student.id).first().student_status %}
+        <tr{% if not active %} class="table-secondary"{% endif %}>
+            <td class="border-right">
+                {% if active %}
+                {{ student.username }}
+                {% else %}
+                <del class="text-muted">{{ student.username }}</del>
+                {% endif %}
+            </td>
             {% for assignment in assignments %}
             <td class="text-center">
                 {% set best_score = StudentAssignment.query.filter_by(student_id=student.id, assignment_id=assignment.id).order_by(StudentAssignment.score.desc()).first() %}

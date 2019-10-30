@@ -226,12 +226,20 @@
             </div>
             <div class="nav-links">
                 {% if page.prev_page %}
-                <div class="btn btn-outline-primary text-hover-white"><a href="{{ url_for('main.lesson_page', id=page.prev_page.id) }}"><span aria-hidden="true">&larr;</span> {{ page.prev_page.title }}</a></div>
+                {% if page.prev_page.is_unlocked() %}
+                <a href="{{ url_for('main.lesson_page', id=page.prev_page.id) }}" class="btn btn-outline-primary"><span aria-hidden="true">&larr;</span> {{ page.prev_page.title }}</a>
+                {% else %}
+                <button type="button" class="btn btn-dark disabled" disabled><i class="fa fa-lock" aria-hidden="true"></i> Locked</button>
+                {% endif %}
                 {% endif %}
                 {% if page.next_page %}
-                <div class="btn btn-outline-primary text-hover-white float-right"><a href="{{ url_for('main.lesson_page', id=page.next_page.id) }}">{{ page.next_page.title }} <span aria-hidden="true">&rarr;</span></a></div>
+                {% if page.next_page.is_unlocked() %}
+                <a href="{{ url_for('main.lesson_page', id=page.next_page.id) }}" class="btn btn-outline-primary float-right">{{ page.next_page.title }} <span aria-hidden="true">&rarr;</span></a>
                 {% else %}
-                <div class="btn btn-outline-primary text-hover-white float-right"><a href="{{ url_for('main.chapter', id=page.lesson.chapter.id) }}">Back to all Lessons <span aria-hidden="true">&rarr;</span></a></div>
+                <button type="button" class="btn btn-dark float-right disabled" disabled><i class="fa fa-lock" aria-hidden="true"></i> Locked</button>
+                {% endif %}
+                {% else %}
+                <a href="{{ url_for('main.chapter', id=page.lesson.chapter.id) }}" class="btn btn-outline-primary float-right">Back to all Lessons <span aria-hidden="true">&rarr;</span></a>
                 {% endif %}
             </div>
             {% if current_user.can(Permission.ASK_QUESTIONS) %}

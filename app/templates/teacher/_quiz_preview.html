@@ -2,17 +2,16 @@
 
 <h4 class="text-center">Your students will do {{ quiz.no_questions }} out of {{ quiz.questions.count() }} questions</h4>
 
-<div class="card-columns mx-auto">
-{% for question in questions %}
-
-<div class="card mr-2 mb-2">
-    <div class="card-body">
-        {% if question.question_type.code == 'D' %}
-        {{ macros.add_drag_n_drop_text(question, draggable_buttons=False) }} 
-        {% endif %}
-        <div class="mb-3">{{ question.show() | safe }}</div>
-        {{ macros.add_question_input(question, enable_input=False) }}
+<div class="card-columns">
+    {% for question in questions %}
+    <div class="card">
+        <div class="card-body">
+            {% if question.question_type.code == 'D' %}
+            {{ macros.add_drag_n_drop_text(question, draggable_buttons=False) }} 
+            {% endif %}
+            <div class="mb-3">{{ question.show() | safe }}</div>
+            {{ macros.add_question_input(question, enable_input=False) }}
+        </div>
     </div>
-</div>
-{% endfor %}
+    {% endfor %}
 </div>
