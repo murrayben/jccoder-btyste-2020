@@ -52,12 +52,13 @@ def display_class(id):
     if form.validate_on_submit():
         # Merging them into one list
         items = session.get("assigned_pages", [])
-        items.append('change')
+        items.append('change-to-quiz')
         items.extend(session.get("assigned_quizzes", []))
+        items.extend(session.get("assigned_chapter_quizzes", []))
 
         item_type = "page"
         for item in items:
-            if item == "change":
+            if item == "change-to-quiz":
                 item_type = "quiz"
                 continue
             assignment = Assignment(class_id=id, teacher_id=current_user.id, due_date=form.due_date.data)
@@ -82,6 +83,8 @@ def display_class(id):
         objects = session.get("assigned_pages", [])
         objects.append(-1)
         objects.extend(session.get("assigned_quizzes", []))
+        objects.append(-2)
+        objects.extend(session.get("assigned_chapter_quizzes", []))
     assignment_pagination = class_.assignments.order_by(Assignment.due_date.desc()).paginate(page, per_page=8)
     return render_template('teacher/class.html', title="JCCoder - " + class_.name, class_=class_, form=form, objects=objects, assignments_pagination=assignment_pagination)
 
@@ -105,15 +108,19 @@ def save_items():
     if request.method == "GET":
         abort(404)
     data = request.get_json()
+    print(data)
     # Check if all ids are valid
     for page in data["pages"]:
         if not Page.query.get(page):
             abort(400)
-    for quiz in data["quizzes"]:
+    quizzes = data["quizzes"]
+    quizzes.extend(data["chapter_quizzes"])
+    for quiz in quizzes:
         if not Quiz.query.get(quiz):
             abort(400)
     session["assigned_pages"] = data["pages"]
     session["assigned_quizzes"] = data["quizzes"]
+    session["assigned_chapter_quizzes"] = data["chapter_quizzes"]
     return jsonify(success=True)
 
 @teacher.route('/delete/class/<int:id>')
@@ -213,3 +220,17 @@ def edit_student():
     student.username = new_username
     db.session.add(student)
     return jsonify(success=True, unique_username=True)
+
+@teacher.route('/edit/class/', methods=["GET", "POST"])
+def edit_class():
+    if request.method == 'GET':
+        abort(404)
+    
+    data = request.get_json()
+    class_ = Class.query.get(int(data["class_id"]))
+    if current_user.id != class_.teacher_id:
+        abort(403)
+    
+    class_.name = data["name"]
+    db.session.add(class_)
+    return jsonify(success=True)

@@ -17,6 +17,6 @@ class AssignmentForm(FlaskForm):
     def validate_due_date(form, field):
         if field.data < datetime.utcnow():
             raise ValidationError('Due date cannot be set to a past date.')
-    students = SelectMultipleField('Students', validators=[DataRequired()], coerce=int)
+    students = SelectMultipleField('Students', validators=[DataRequired(message="Please select one or more students.")], coerce=int)
     due_date = DateTimeField('Due date', validators=[DataRequired(message="Please enter a valid date.")], format="%d-%m-%Y")
     submit = SubmitField('Assign')

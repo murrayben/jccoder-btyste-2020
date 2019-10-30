@@ -113,8 +113,10 @@
                 </div>
                 {% if not missing_items %}
                 <div class="custom-control custom-checkbox align-self-center assignment-checkbox">
-                    <input type="checkbox" class="custom-control-input {{ item_type|lower if not is_regular_quiz else 'quiz' }}-checkbox" id="{{ item_type|lower }}-{{ item.id }}-checkbox" data-type="{{ item_type|lower }}" data-id="{{ item.id if not is_regular_quiz else item.quizzes.first().id }}">
-                    <label class="custom-control-label" for="{{ item_type|lower }}-{{ item.id }}-checkbox"></label>
+                    {% set item_type = 'chapter-quiz' if is_regular_quiz else item_type %}
+                    {% set item_id = item.quizzes.first().id if is_regular_quiz else item.id %}
+                    <input type="checkbox" class="custom-control-input {{ item_type|lower }}-checkbox" id="{{ item_type|lower }}-{{ item_id }}-checkbox" data-type="{{ item_type|lower }}" data-id="{{ item_id }}">
+                    <label class="custom-control-label" for="{{ item_type|lower }}-{{ item_id }}-checkbox"></label>
                 </div>
                 {% endif %}
             </div>
@@ -368,8 +370,9 @@
         </div>
         <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
             <div class="form-group">
-                <label for="edit-class-name">Class name</label>
-                <input type="text" class="form-control" name="edit-class-name" id="edit-class-name" placeholder="Edit the name of your class" value="{{ class.name }}">
+                <label for="edit-class-name">Class name (Max 50 characters)</label>
+                <input type="text" class="form-control" name="edit-class-name" id="edit-class-name" placeholder="Edit the name of your class" value="{{ class.name }}" data-original-name="{{ class.name }}">
+                <button type="button" class="btn btn-link disabled" id="save-class-name" disabled>Save</button>
             </div>
             <a class="btn btn-danger" href="{{ url_for('.delete_class', id=class.id) }}" role="button" id="delete-class">Delete this class</a>
         </div>
@@ -435,7 +438,7 @@
                         $('.assignment-checkbox input[data-type="' + $parent.attr('data-parent-type') + '"][data-id="' + $parent.attr('data-parent-id') + '"]').prop('checked', false);
                     }
                 }
-                var count = $('.assignment-checkbox input:checked.page-checkbox, .assignment-checkbox input:checked.quiz-checkbox').length;
+                var count = $('.assignment-checkbox input:checked.page-checkbox, .assignment-checkbox input:checked.quiz-checkbox, .assignment-checkbox input:checked.chapter-quiz-checkbox').length;
                 if (count === 0) {
                     count = "";
                 }
@@ -451,13 +454,15 @@
             $('#due_date').attr('autocomplete', 'off').datepicker({dateFormat: 'dd-mm-yy', minDate: '+1D'});
             $('#submit').hide();
             $('#assign-submit-btn').on('click', function() {
-                var objects = {pages: [], quizzes: []}
+                var objects = {pages: [], quizzes: [], chapter_quizzes: []}
                 $('.assignment-checkbox input:checked').each(function() {
                     var $this = $(this);
                     if ($this.hasClass('page-checkbox')) {
                         objects.pages.push(Number($this.data('id')));
                     } else if ($this.hasClass('quiz-checkbox')) {
                         objects.quizzes.push(Number($this.data('id')));
+                    } else if ($this.hasClass('chapter-quiz-checkbox')) {
+                        objects.chapter_quizzes.push(Number($this.data('id')));
                     }
                 });
                 $.ajax({
@@ -484,9 +489,17 @@
                 if (object === -1) {
                     type = "quiz";
                     continue;
+                } else if (object === -2) {
+                    type = "chapter-quiz"
+                    continue;
                 }
                 $('#' + type + '-' + object + '-checkbox').prop('checked', true).change();
             }
+            if (objects.length > 1) {
+                $('#assign-tab').click();
+                $('#assign-btn').click();
+            }
+
             if (window.location.href.indexOf('assignments_page=') > -1) {
                 setTimeout(function() {$('#assignments-tab').click();}, 50);
             }
@@ -681,7 +694,7 @@
                 }
             });
 
-            $('.page-hyperlink, .quiz-hyperlink').on('click', function(e) {
+            $('#assign, #assignments').on('click', '.page-hyperlink, .quiz-hyperlink', function(e) {
                 e.preventDefault();
                 var $this = $(this);
                 var is_page = $this.hasClass('page-hyperlink');
@@ -753,6 +766,33 @@
                     $this.next().off('click').on('click', deleteStudent);
                 });
             }
+
+            $('#edit-class-name').on('input', function() {
+                var name = $(this).val().trim();
+                if (name.length > 50 || name.length === 0 || name == $(this).data('originalName')) {
+                    $('#save-class-name').addClass('disabled').prop('disabled', true);
+                } else {
+                    $('#save-class-name').removeClass('disabled').prop('disabled', false);
+                }
+            });
+
+            $('#save-class-name').on('click', function() {
+                data = {class_id: "{{ class.id }}", name: $('#edit-class-name').val()};
+                $.ajax({
+                    url: "{{ url_for('.edit_class') }}",
+                    data: JSON.stringify(data),
+                    dataType: 'json',
+                    contentType: "application/json; charset=utf-8",
+                    method: 'POST',
+                    success: function(response) {
+                        window.location.reload();
+                    },
+                    error: function(error) {
+                        $(this).after('<small id="passwordHelpInline" class="text-danger">Invalid name.</small>');
+                        console.error(error);
+                    }
+                });
+            });
         });
     </script>
 {% endblock %}

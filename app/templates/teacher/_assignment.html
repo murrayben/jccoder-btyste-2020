@@ -32,11 +32,12 @@
                     <div class="position-absolute" style="bottom: 0.75rem; right: 25%; left: 25%;">
                         <div style="font-size: 70%;">
                                 {% if assignment.page %}
-                                {{ assignment.page.title }}
+                                <a class="page-hyperlink" href="#" data-page-id="{{ assignment.page.id }}">{{ assignment.page.title }}</a>
                                 {% elif assignment.quiz.type.code != 'P' %}
-                                Chapter {{ assignment.quiz.lesson.chapter.title }}: {{ assignment.quiz.lesson.title }}
+                                {% set quiz = assignment.quiz %}
+                                <a href="{{ url_for('main.chapter', id=quiz.lesson.chapter.id, item='quiz_' + quiz.id|string ) }}" target="_blank">{{ quiz.title() }}</a>
                                 {% else %}
-                                {{ assignment.quiz.tested_skills.first().description }}
+                                <a class="quiz-hyperlink" href="#" data-quiz-id="{{ assignment.quiz.id }}">{{ assignment.quiz.title() }}</a>
                                 {% endif %}
                         </div>
                         <div class="text-muted" style="font-size: 70%;">
