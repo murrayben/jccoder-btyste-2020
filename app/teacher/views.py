@@ -108,7 +108,6 @@ def save_items():
     if request.method == "GET":
         abort(404)
     data = request.get_json()
-    print(data)
     # Check if all ids are valid
     for page in data["pages"]:
         if not Page.query.get(page):

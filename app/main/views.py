@@ -27,8 +27,8 @@ def index():
             return redirect(url_for('teacher.dashboard'))
         upcoming_page = request.args.get('upcoming_page', 1, int)
         past_page = request.args.get('past_page', 1, int)
-        upcoming_assignments = current_user.upcoming_assignments().paginate(upcoming_page, per_page=10)
-        past_assignments = current_user.past_assignments().paginate(past_page, per_page=10)
+        upcoming_assignments = current_user.upcoming_assignments()
+        past_assignments = current_user.past_assignments()
         title = "JCCoder - Dashboard"
     return render_template('index_new.html', title=title, upcoming_assignments=upcoming_assignments, past_assignments=past_assignments)
 

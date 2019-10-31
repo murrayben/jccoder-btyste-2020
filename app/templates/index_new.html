@@ -252,16 +252,16 @@
     </ul>
     <div class="tab-content" id="assignments">
         <div class="tab-pane fade show active" id="upcoming-assignments" role="tabpanel" aria-labelledby="upcoming-tab">
-            {% set pagination = upcoming_assignments %}
-            {% set assignments = upcoming_assignments.items %}
-            {% set type = 'upcoming' %}
-            {% include "_upcoming_past_assignments.html" %}
+            {# set pagination = upcoming_assignments #}
+            {# set assignments = upcoming_assignments.items #}
+            {# set type = 'upcoming' #}
+            {# include "_upcoming_past_assignments.html" #}
         </div>
         <div class="tab-pane fade" id="past-assignments" role="tabpanel" aria-labelledby="past-tab">
-            {% set pagination = past_assignments %}
-            {% set assignments = past_assignments.items %}
-            {% set type = 'past' %}
-            {% include "_upcoming_past_assignments.html" %}
+            {# set pagination = past_assignments #}
+            {# set assignments = past_assignments.items #}
+            {# set type = 'past' #}
+            {# include "_upcoming_past_assignments.html" #}
         </div>
     </div> -->
     {# else #}
@@ -295,7 +295,7 @@
             {% for chapter in module.all_ordered_children() %}
             {% if chapter.active %}
             {% set vars = {'unlocked': false, 'in_progress': false, 'count': 0, 'completed_count': 0} %}
-            {% for assignment in upcoming_assignments.items %}
+            {% for assignment in upcoming_assignments %}
                 {% set assignment_content = assignment.quiz if assignment.quiz else assignment.page %}
                 {% if assignment_content.lesson.chapter == chapter %}
                     {% if assignment.is_quiz() and vars.update({'count': vars.count + 1}) %}{% endif %}
