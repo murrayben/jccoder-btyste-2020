@@ -44,9 +44,8 @@ def new_question():
     if form.validate_on_submit():
         question_type = form.type.data
         question_type_id = QuestionType.query.filter(QuestionType.id == question_type).first().id
-        quiz = Quiz.query.get(form.quiz.data)
         question = Question(text=form.text.data, question_type_id=question_type_id, max_attempts=form.max_attempts.data,
-                                quiz=quiz)
+                                skill_id=form.skill.data)
         db.session.add(question)
         db.session.commit()
 
@@ -570,9 +569,6 @@ def edit_question(id):
         options = request.form.getlist('options1')
         original_options = question.options.all()
 
-        print(options)
-        print(question.options.all())
-
         for option in options:
             try:
                 if option != original_options[0].text:
@@ -623,7 +619,7 @@ def edit_question(id):
                 existing_hint.text = hint_text
                 db.session.add(existing_hint)
         
-        question.quiz_id = form.quiz.data
+        question.skill_id = form.skill.data
         db.session.add(question)
         return redirect(url_for('.all_questions'))
     form.type.data = question.question_type_id
@@ -644,7 +640,7 @@ def edit_question(id):
         hint_text += hint.text + "\n::sep::\n"
     form.hints.data = hint_text[:-8] # [:-8] gets rid of extra ::sep:: at the end (the 8th char is a newline)
     form.max_attempts.data = question.max_attempts
-    form.quiz.data = question.quiz_id
+    form.skill.data = question.skill_id
 
     if question.question_type_id == QuestionType.query.filter_by(code='S').first().id:
         options = [None]

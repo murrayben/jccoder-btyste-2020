@@ -9,8 +9,11 @@ class NewQuestion(FlaskForm):
         super(NewQuestion, self).__init__(*args, **kwargs)
         self.type.choices = [(question_type.id, question_type.description)
                              for question_type in QuestionType.query.all()]
-        self.quiz.choices = [(quiz.id, 'Quiz in lesson: {0}, Description: {1}'.format(quiz.lesson.title, quiz.description))
-                             for quiz in Quiz.query.all()]
+        self.skill.choices = [(skill.id, skill.lesson.chapter.module.title + ' > '
+                                + skill.lesson.chapter.title + ' > '
+                                + skill.lesson.title + ' > '
+                                + skill.description)
+                                for skill in Skill.query.all()]
 
     type = SelectField('Question Type', validators=[DataRequired()], coerce=int)
     text = TextAreaField('Question', validators=[DataRequired()])
@@ -18,7 +21,7 @@ class NewQuestion(FlaskForm):
     answer = StringField('Answer (first option is 1, second option is 2, etc.)', validators=[DataRequired()])
     hints = TextAreaField('Hints [seperate each hint with "::sep::" (without quotes)]', validators=[DataRequired()])
     max_attempts = IntegerField('Maximum attempts', widget=NumberInput(min=1, max=10), validators=[DataRequired()])
-    quiz = SelectField('Quiz', coerce=int)
+    skill = SelectField('Skill', coerce=int)
     submit = SubmitField('Submit Question')
 
 class NewStrand(FlaskForm):

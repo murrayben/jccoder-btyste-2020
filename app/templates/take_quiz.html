@@ -166,7 +166,7 @@
                         <div class="col-sm-6">
                             <h4>Related Videos</h4>
                             <div class="help-videos">
-                                {% with videos = Page.query.filter_by(lesson_id=question.quiz.lesson_id, page_type_id=PageType.query.filter_by(description="Video").first().id).all() %}
+                                {% with videos = Page.query.filter_by(lesson_id=question.skill.practice_quiz.lesson_id, page_type_id=PageType.query.filter_by(description="Video").first().id).all() %}
                                 <ul class="list-unstyled">
                                     {% for video in videos %}
                                     <li class="mb-2">

@@ -407,7 +407,8 @@ class Question(db.Model):
     image_url = db.Column(db.Text)
     max_attempts = db.Column(db.Integer)
     question_type_id = db.Column(db.Integer, db.ForeignKey('questiontypes.id'))
-    quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'))
+    # quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'))
+    skill_id = db.Column(db.Integer, db.ForeignKey('skills.id'))
     options = db.relationship('QuestionOption', backref='question', lazy='dynamic')
     answer = db.relationship('QuestionAnswer', backref='question', lazy='dynamic')
     user_answer = db.relationship('UserAnswer', backref='question', lazy='dynamic')
@@ -481,11 +482,18 @@ class Quiz(db.Model):
     next_quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'), nullable=True)
     type_id = db.Column(db.Integer, db.ForeignKey('quiztypes.id'))
     next_quiz = db.relationship('Quiz', backref=db.backref('prev_quiz', uselist=False), remote_side=[id], uselist=False)
-    questions = db.relationship('Question', backref='quiz', lazy='dynamic')
+    # questions = db.relationship('Question', backref='quiz', lazy='dynamic')
     assignments = db.relationship('Assignment', backref='quiz', lazy='dynamic')
     tested_skills = db.relationship('Skill', secondary=quiz_skills,
                         backref=db.backref('quizzes_tested', lazy='dynamic'),
                         lazy='dynamic')
+
+    @property
+    def questions(self):
+        if self.type.code == 'P':
+            return self.tested_skills.first().questions # NOTE: Returns BaseQuery object and not list
+        else:
+            return None
 
     def title(self):
         if self.type == QuizType.query.filter_by(code='P').first():
@@ -583,7 +591,7 @@ class UserAnswer(db.Model):
     question_id = db.Column(db.Integer, db.ForeignKey('questions.id'))
 
     def __repr__(self):
-        return '<User Answer (%s, %i, %s)>' % (self.name, self.score, self.user)
+        return '<User Answer (%s, %i, %s)>' % (self.keyed_answer, self.score, self.user)
 
 class QuizAttempt(db.Model):
     __tablename__ = 'quizattempts'
@@ -877,9 +885,14 @@ class Skill(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.Text)
     lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'))
+    questions = db.relationship('Question', backref='skill', lazy='dynamic')
 
     def what_model(self):
         return "Skill"
+    
+    @property
+    def practice_quiz(self):
+        return self.quizzes_tested.filter(Quiz.type_id == QuizType.query.filter_by(code='P').first().id).first()
 
 class Class(db.Model):
     __tablename__ = 'classes'

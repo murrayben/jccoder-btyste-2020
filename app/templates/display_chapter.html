@@ -20,7 +20,7 @@
                             </span>
                             {% endset %}
                             {% if page.is_unlocked() %}
-                            <a href="{{ url_for('main.lesson_page', id=page.id) }}" data-page-id="{{ page.id }}" {% if page.next_page and Assignment.query.filter(db.and_(Assignment.page_id==page.next_page.id, Assignment.students.contains(current_user))).first() %}data-next-page-id="{{ page.next_page_id }}" {% endif %}class="page-hyperlink">
+                            <a href="{{ url_for('main.lesson_page', id=page.id) }}" data-page-id="{{ page.id }}" {% if page.next_page and page.next_page.is_unlocked() %}data-next-page-id="{{ page.next_page_id }}" {% endif %}class="page-hyperlink">
                                 {{ page_title }}
                                 <span class="page-title">{{ page.title }}</span>
                             </a>

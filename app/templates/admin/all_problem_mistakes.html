@@ -8,7 +8,7 @@
     {% if count > 0 %}
     <ul>
     {% for problem_mistake in problem_mistakes %}
-        <li><a href="{{ url_for('.view_problem_mistake', id=problem_mistake.id) }}">Problem is in Quiz: {{ problem_mistake.question.quiz.title() }}</a></li>
+        <li><a href="{{ url_for('.view_problem_mistake', id=problem_mistake.id) }}">Problem is in Skill: {{ problem_mistake.question.skill.description }}</a></li>
     {% endfor %}
     </ul>
     {% else %}
