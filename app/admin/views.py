@@ -172,6 +172,11 @@ def new_quiz():
         quiz = Quiz(description=form.description.data, lesson=Lesson.query.get(form.lesson.data),
                     no_questions=form.no_questions.data, tested_skills=skills,
                     type_id=form.quiz_type.data)
+        quiz.next_quiz_id = form.next_quiz.data
+        if not form.next_quiz.data == 0:
+            Quiz.query.get(form.next_quiz.data).prev_quiz = quiz
+        else:
+            quiz.next_quiz_id = None # MySQL doesn't like 0
         db.session.add(quiz)
         return redirect(url_for('admin.all_quizzes'))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Quiz", new_thing="Quiz", form=form)
@@ -371,7 +376,7 @@ def lessons_pages(id):
 @login_required
 def quizzes_questions(id):
     quiz = Quiz.query.get_or_404(id)
-    questions = Question.query.filter_by(quiz=quiz).all()
+    questions = Question.query.filter(Question.skill_id == quiz.tested_skills.first().id).all()
     return render_template('admin/somethings_things.html', title="JCCoder - All Questions in Quiz (in lesson: " + quiz.lesson.title + ")", owner_of_things="Quiz", thing_type="Questions", things=questions, owner=quiz)
 
 @admin.route('/edit/strand/<int:id>', methods=["GET", "POST"])
@@ -545,6 +550,10 @@ def edit_quiz(id):
         quiz.description = form.description.data
         quiz.no_questions = form.no_questions.data
         quiz.tested_skills = parseSkillIDs(form.tested_skills.data)
+        if not form.next_quiz.data == 0:
+            Quiz.query.get(form.next_quiz.data).prev_quiz = quiz
+        else:
+            quiz.next_quiz_id = None # MySQL doesn't like 0
         quiz.lesson_id = form.lesson.data
         db.session.add(quiz)
         return redirect(url_for('.all_quizzes'))
@@ -552,6 +561,10 @@ def edit_quiz(id):
     form.description.data = quiz.description
     form.no_questions.data = quiz.no_questions
     form.tested_skills.data = unparseSkillObjects(quiz)
+    try:
+        form.next_quiz.data = quiz.next_quiz_id
+    except:
+        form.next_quiz.data = 0
     form.lesson.data = quiz.lesson_id
     return render_template('admin/edit_quiz.html', title="JCCoder - Edit Quiz in Lesson " + quiz.lesson.title, form=form, quiz=quiz)
 

@@ -105,11 +105,15 @@ class NewQuiz(FlaskForm):
                                 + skill.lesson.title + ' > '
                                 + skill.description)
                                 for skill in Skill.query.all()]
+        self.next_quiz.choices = [(0, '..........')]
+        self.next_quiz.choices.extend([(quiz.id, quiz.lesson.chapter.title + ' > ' + quiz.lesson.title + ' > ' + quiz.title())
+                                         for quiz in Quiz.query.all()])
 
     quiz_type = SelectField('Quiz Type', coerce=int)
     description = TextAreaField('Description', validators=[DataRequired()])
     no_questions = IntegerField('Number of questions asked', widget=NumberInput(min=1), validators=[DataRequired()])
     tested_skills = SelectMultipleField('Skills Tested', coerce=int)
+    next_quiz = SelectField('Next Quiz')
     lesson = SelectField('Lesson', coerce=int)
     submit = SubmitField('Submit Quiz')
 

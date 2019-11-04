@@ -16,8 +16,6 @@ function loadPageContent(pageEl, page_id, is_quiz=false, preview=false) {
             var pageHTML = response.page_html;
             var css = response.css;
             var js = response.js;
-            console.info(pageTitle)
-            console.info(pageHTML)
 
             $('#pageModal').on('hidden.bs.modal', function() {
                 destroyExtras();

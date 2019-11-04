@@ -4,7 +4,7 @@
 
 {% block page_content %}
     <div class="page-header">
-        <h1>All {{ thing_type }} in {{ owner_of_things }} {% if owner.title or owner.name %}{{ owner.title or owner.name }}{% else %}(in lesson: {{ owner.lesson.title }}){% endif %}</h1>
+        <h1>All {{ thing_type }} in {{ owner_of_things }} {% if owner.title or owner.name %}{{ owner.title() if owner.title is callable else owner.title or owner.name }}{% else %}(in lesson: {{ owner.lesson.title }}){% endif %}</h1>
     </div>
     {% if things|length > 0 %}
     <ul>
