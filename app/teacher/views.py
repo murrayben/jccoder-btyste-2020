@@ -2,7 +2,7 @@ import random, string
 
 from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
-from ..models import Assignment, Class, ClassStudent, Page, Permission, Quiz, StudentAssignment, User, db
+from ..models import Assignment, Class, ClassStudent, Page, Permission, Question, Quiz, StudentAssignment, User, db
 from .. import moment
 from .forms import AssignmentForm, NewClass
 from . import teacher
@@ -233,3 +233,27 @@ def edit_class():
     class_.name = data["name"]
     db.session.add(class_)
     return jsonify(success=True)
+
+@teacher.route('/progress/assignment/<int:id>')
+def assignment_progress(id):
+    assignment = Assignment.query.get_or_404(id)
+    if current_user.id != assignment.teacher_id:
+        abort(403)
+    if not assignment.is_quiz():
+        abort(404)
+        
+    return render_template('teacher/assignment_progress.html', title='JCCoder - Assignment Progress', assignment=assignment)
+
+@teacher.route('/progress/assignment/<int:id>/reveal-answer', methods=['GET', 'POST'])
+def assignment_progress_reveal_answer(id):
+    if request.method == 'GET':
+        abort(404)
+    
+    assignment = Assignment.query.get_or_404(id)
+    if current_user.id != assignment.teacher_id:
+        abort(403)
+    if not assignment.is_quiz():
+        abort(404)
+    data = request.get_json()
+    question = Question.query.get_or_404(int(data["question_id"]))
+    return jsonify(success=True, answer=question.correct_answer())

@@ -64,7 +64,7 @@
                 {% set best_score = StudentAssignment.query.filter_by(student_id=student.id, assignment_id=assignment.id).order_by(StudentAssignment.score.desc()).first() %}
                 {% set best_score = best_score.score|int if best_score and best_score.score is number else None %}
                 {% if assignment.is_quiz() and best_score is number %}
-                <a href="{{ url_for('.assignment_progress', id=assignment.id) }}" class="badge badge-{% if best_score == 100 %}success{% elif best_score > 69 %}warning{% else %}danger{% endif %} p-2" data-toggle="popover">{{ best_score }}</a>
+                <a href="{{ url_for('.assignment_progress', id=assignment.id) }}" tabindex="0" class="badge badge-{% if best_score == 100 %}success{% elif best_score > 69 %}warning{% else %}danger{% endif %} p-2 assignment-progress" data-toggle="popover" data-content="View progress" data-animation="false" data-placement="top" data-trigger="hover" data-container="body">{{ best_score }}</a>
                 {% elif student in assignment.students %}
                 <span class="badge badge-light border border-danger p-2">&mdash;</span>
                 {% else %}

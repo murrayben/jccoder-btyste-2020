@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
+{% set quiz = assignment.quiz %}
+
+{% block styles %}
+    {{ super() }}
+    <style type="text/css">
+        .undraggable-btn {
+            min-width: 100px;
+            min-height: 46px;
+            border: 1px solid #000000;
+            border-radius: 5px;
+        }
+    </style>
+{% endblock %}
+
+{% block page_content %}
+    <div class="row">
+        <div class="col-lg-2 d-none d-lg-block mt-5">
+            <nav class="nav nav-pills flex-column">
+                {% for questions in quiz.questions %}
+                <a class="nav-link{% if loop.first %} active{% endif %}" href="#question{{ loop.index }}" data-toggle="tab" role="tab" aria-controls="question{{ loop.index }}" aria-selected="{{ loop.first|lower }}">Question {{ loop.index }}</a>
+                {% endfor %}
+            </nav>
+        </div>
+        <div class="col-12 col-lg-10">
+            <div class="page-header">
+                <h1>{{ quiz.title() }} - Progress</h1>
+            </div>
+            <div class="tab-content" id="questions">
+                {% for question in quiz.questions %}
+                <div class="question tab-pane fade question{% if loop.first %} show active{% endif %}" id="question{{ loop.index }}" role="tabpanel" aria-labelledby="question{{ loop.index }}" data-question-id="{{ question.id }}">
+                    <h2>Question {{ loop.index }}</h2>
+                    {% if question.question_type.code == 'D' %}
+                    {{ macros.add_drag_n_drop_text(question, draggable_buttons=false) }} 
+                    {% endif %}
+                    <div class="mb-3">{{ question.show() | safe }}</div>
+                    {{ macros.add_question_input(question, enable_input=false) }}
+                    <div class="d-flex align-items-center">
+                        <h3 class="mt-3 mr-auto">Responses</h3>
+                        <button type="button" class="btn btn-outline-primary reveal-answer" style="height: 40px;">Reveal answer</button>
+                    </div>
+                    {%- set vars = {'responses': {}} -%}
+                    {%- for student in assignment.students %}
+                        {%- set start_datetime = StudentAssignment.query.filter_by(student_id=student.id, assignment_id=assignment.id).first().datetime -%}
+                        {%- set end_datetime = assignment.due_date -%}
+                        {%- set responses = UserAnswer.query.filter_by(user_id=student.id, question_id=question.id).filter(db.and_(UserAnswer.datetime > start_datetime, UserAnswer.datetime < end_datetime)).all() -%}
+                        {%- for response in responses %}
+                            {#-
+                            {%- set existing_students = vars.responses.get(response.keyed_answer) -%}
+                            {%- set existing_students = (existing_students.get('students') or []) if existing_students else [] -%}
+                            {%- if existing_students.append({'actual_student': student, 'attempt_no': response.attempt_no}) %}{% endif -%}
+                            {%- if vars.responses.__setitem__(response.keyed_answer, {'students': existing_students}) %}{% endif -%}
+                            -#}
+                            {%- set existing_objects = vars.responses.get(response.keyed_answer) or [] -%}
+                            {%- if existing_objects.append(response) %}{% endif -%}
+                            {%- if vars.responses.__setitem__(response.keyed_answer, existing_objects) %}{% endif -%}
+                        {% endfor -%}
+                    {% endfor -%}
+                    {%- set student_count = assignment.students.count() -%}
+                    {%- for response, response_objects in vars.responses.items() %}
+                        {%- set percentage = (response_objects|length / student_count) * 100 %}
+                        <div class="response" data-keyed-answer="{{ response }}">
+                            <p class="mb-1 response-text">
+                                {%- if response_objects[0].question.question_type.code != 'D' %}
+                                    {{ response }}
+                                {% else %}
+                                    {% for pair in response.split(' ') %}
+                                        {% for char in pair.split('=') %}
+                                            {% if loop.first %}
+                                                <p class="mb-0">Row #{{ char }} is
+                                            {% else %}
+                                                Button #{{ char }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endfor %}
+                                {% endif -%}
+                            </p>
+                            <div class="progress">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ percentage }}%;" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <p class="mb-0">
+                                <a class="text-muted student-toggler" data-toggle="collapse" href="#students-response-{{ response }}" aria-expanded="false" aria-controls="students-response-{{ response }}">
+                                    {%- set students_unique = response_objects|map(attribute='user')|map(attribute='username')|unique(case_sensitive=True)|list -%}
+                                    {{ students_unique|length }} student{{ 's' if students_unique|length != 1 }}
+                                    <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                                </a>
+                            </p>
+                            <div class="collapse student-collapse" id="students-response-{{ response }}">
+                                {%- for user_answer in response_objects %}
+                                {%- set attempt_no = user_answer.attempt_no|int -%}
+                                {%- set timestamp = moment(user_answer.datetime) -%}
+                                <p class="mb-1 text-muted">{{ user_answer.user.username }} - Attempt #{{ attempt_no }} <em>({{ timestamp.calendar() if not timestamp.calendar().split('/') == 3 else timestamp.format('LLL') }})</em></p>
+                                {% endfor %}
+                            </div> 
+                        </div>
+                        {{ '<hr />' | safe if not loop.last }}
+                    {% endfor -%}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    {{ moment.include_moment() }}
+    <script type="text/javascript">
+        $(function() {
+            $('.student-collapse').on('show.bs.collapse', function() {
+                $(this).prev().children().children('i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            });
+            $('.student-collapse').on('hide.bs.collapse', function() {
+                $(this).prev().children().children('i').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            });
+
+            $('.reveal-answer').on('click', function() {
+                var $this = $(this);
+                var $currentQuestion = $this.parent().parent();
+                var question_id = $currentQuestion.data('questionId');
+                if ($this.text() === 'Reveal answer') {
+                    data = {question_id: question_id};
+                    $.ajax({
+                        url: "{{ url_for('.assignment_progress_reveal_answer', id=assignment.id) }}",
+                        data: JSON.stringify(data),
+                        dataType: 'json',
+                        contentType: "application/json; charset=utf-8",
+                        type: 'POST',
+                        success: function(response) {
+                            var isMultipleAnswer = Array.isArray(response.answer);
+                            if (!isMultipleAnswer) {
+                                var answer = response.answer;
+                            } else {
+                                var answer = response.answer.join(', ');
+                            }
+                            var $correct_response = $('div.response[data-keyed-answer="'+ answer + '"]');
+                                var $wrong_responses = $('div.response[data-keyed-answer!="'+ answer + '"]')
+                                $wrong_responses.each(function() {
+                                    var $wrong_this = $(this);
+                                    if ($wrong_this.parent().get(0) === $currentQuestion.get(0)) {
+                                        $wrong_this.children('.progress').children().removeClass('bg-info').addClass('bg-danger');
+                                    }
+                                });
+                                $correct_response.children('.progress').children().removeClass('bg-info').addClass('bg-success');
+                                if ($correct_response.length === 0) {
+                                    $currentQuestion.append(`<div class="response answer-response">
+    <hr />
+    <p class="mb-1 response-text">${answer}</p>
+    <div class="progress" style="width: 1%;">
+        <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="1" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+    <p>0 students</p>
+</div>`);
+                                }
+                            $this.text('Hide answer');
+                        },
+                        error: function(error) {
+                            $this.text('Sorry an unexpected error has occured');
+                            console.error(error);
+                        }
+                    });
+                } else {
+                    var $responses = $currentQuestion.children('.response');
+                    $responses.filter('.answer-response').remove();
+                    $responses.each(function() {
+                        $(this).children('.progress').children().removeClass('bg-success bg-danger').addClass('bg-info');
+                    });
+                    $this.text('Reveal answer');
+                }
+            });
+            
+        });
+    </script>
+{% endblock %}

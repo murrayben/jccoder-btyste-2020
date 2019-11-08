@@ -519,6 +519,7 @@
                     success: function(response) {
                         $('#assignments').html(response.html);
                         flask_moment_render_all();
+                        $('.assignment-progress').popover();
                         page = Number(page) + direction;
                     },
                     error: function(error) {
