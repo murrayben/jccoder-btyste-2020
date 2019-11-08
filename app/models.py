@@ -10,6 +10,7 @@ import bleach, re
 def customTagMarkdown(original_mardown, object_id=None, extensions=None):
     lines = []
     hint_counter = 0
+    collapse_counter = 1
     hints = []
     drag_and_drop_options = []
     recording_hint = False
@@ -117,19 +118,20 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
             line = """<div class="card border-info mb-3">
     <div class="card-header bg-info p-2">
         <h5 class="mb-0">
-            <button class="btn btn-link text-white" data-toggle="collapse" data-target="#step{0}-collapse" aria-expanded="true" aria-controls="step{0}-hints" style="text-decoration: none;">
+            <button class="btn btn-link text-white" data-toggle="collapse" data-target="#step{0}-collapse{1}" aria-expanded="true" aria-controls="step{0}-hints" style="text-decoration: none;">
                 <i class="fas fa-2x fa-info-circle"></i>
-                <span style="position: relative; bottom: 5px; left: 5px;">{1}</span>
+                <span style="position: relative; bottom: 5px; left: 5px;">{2}</span>
             </button>
         </h5>
     </div>
 
-    <div id="step{0}-collapse" class="collapse">
-        <div class="card-body">\n""".format(object_id, collapse_title)
+    <div id="step{0}-collapse{1}" class="collapse">
+        <div class="card-body">\n""".format(object_id, collapse_counter, collapse_title)
             recording_collapse = True
         elif '::/collapse::' in line:
             line = "</div></div></div>"
             recording_collapse = False
+            collapse_counter += 1
 
         elif ':glossary-item::' in line:
             glossary_item = line.split('::')[1].strip()
