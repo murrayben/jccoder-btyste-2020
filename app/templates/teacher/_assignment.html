@@ -49,6 +49,38 @@
                 <th class="position-relative"></th>
             </tr>
         </thead>
+        <tr class="table-success">
+            <td class="border-right">All Students</td>
+            {% set ns = namespace(best_score=0, count=0) %}
+            {% for assignment in assignments %}
+                <td class="text-center">
+                {% set ns.best_score = 0 %}
+                {% set ns.count = 0 %}
+                {% if assignment.is_quiz() %}
+                    {% for student in class.students %}
+                        {% set best_score = StudentAssignment.query.filter_by(student_id=student.id, assignment_id=assignment.id).order_by(StudentAssignment.score.desc()).first() %}
+                        {% if best_score and best_score.score is number %}
+                            {% set best_score = best_score.score|int %}
+                            {% set ns.count = ns.count + 1 %}
+                        {% else %}
+                            {% set best_score = none %}
+                        {% endif %}
+                        {% set ns.best_score = ns.best_score + best_score if best_score else ns.best_score %}
+                        {% if loop.last %}
+                            {% set ns.best_score = (ns.best_score / ns.count) | round | int if ns.count != 0 else none %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if ns.best_score is number %}
+                    <a href="{{ url_for('.assignment_progress', assignment_id=assignment.id) }}" tabindex="0" class="badge badge-{% if ns.best_score == 100 %}success{% elif ns.best_score > 69 %}warning{% else %}danger{% endif %} p-2 assignment-progress" data-toggle="popover" data-content="View progress" data-animation="false" data-placement="top" data-trigger="hover" data-container="body">{{ ns.best_score }}</a>
+                    {% endif %}
+                {% endif %}
+                {% if not assignment.is_quiz() or ns.best_score is not number %}
+                    <span class="badge badge-light border border-danger p-2">&mdash;</span>
+                {% endif %}
+                </td>
+            {% endfor %}
+            <td></td>
+        </tr>
         {% for student in class.students %}
         {% set active = ClassStudent.query.filter_by(class_id=class.id, student_id=student.id).first().student_status %}
         <tr{% if not active %} class="table-secondary"{% endif %}>
@@ -64,7 +96,7 @@
                 {% set best_score = StudentAssignment.query.filter_by(student_id=student.id, assignment_id=assignment.id).order_by(StudentAssignment.score.desc()).first() %}
                 {% set best_score = best_score.score|int if best_score and best_score.score is number else None %}
                 {% if assignment.is_quiz() and best_score is number %}
-                <a href="{{ url_for('.assignment_progress', id=assignment.id) }}" tabindex="0" class="badge badge-{% if best_score == 100 %}success{% elif best_score > 69 %}warning{% else %}danger{% endif %} p-2 assignment-progress" data-toggle="popover" data-content="View progress" data-animation="false" data-placement="top" data-trigger="hover" data-container="body">{{ best_score }}</a>
+                <a href="{{ url_for('.assignment_progress', assignment_id=assignment.id, student_username=student.username) }}" tabindex="0" class="badge badge-{% if best_score == 100 %}success{% elif best_score > 69 %}warning{% else %}danger{% endif %} p-2 assignment-progress" data-toggle="popover" data-content="View progress" data-animation="false" data-placement="top" data-trigger="hover" data-container="body">{{ best_score }}</a>
                 {% elif student in assignment.students %}
                 <span class="badge badge-light border border-danger p-2">&mdash;</span>
                 {% else %}

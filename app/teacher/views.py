@@ -234,15 +234,25 @@ def edit_class():
     db.session.add(class_)
     return jsonify(success=True)
 
-@teacher.route('/progress/assignment/<int:id>')
-def assignment_progress(id):
-    assignment = Assignment.query.get_or_404(id)
+@teacher.route('/progress/assignment/<int:assignment_id>', defaults={'student_username': None})
+@teacher.route('/progress/assignment/<int:assignment_id>/student/<student_username>')
+def assignment_progress(assignment_id, student_username):
+    assignment = Assignment.query.get_or_404(assignment_id)
     if current_user.id != assignment.teacher_id:
         abort(403)
     if not assignment.is_quiz():
         abort(404)
-        
-    return render_template('teacher/assignment_progress.html', title='JCCoder - Assignment Progress', assignment=assignment)
+    students = assignment.class_.students.filter(ClassStudent.student_status)
+    if student_username:
+        students = User.query.filter_by(username=student_username)
+        if not students.first():
+            abort(404)
+    title = 'JCCoder - Assignment Progress - '
+    if student_username:
+        title += student_username
+    else:
+        title += 'All Students'
+    return render_template('teacher/assignment_progress.html', title=title, assignment=assignment, students=students)
 
 @teacher.route('/progress/assignment/<int:id>/reveal-answer', methods=['GET', 'POST'])
 def assignment_progress_reveal_answer(id):

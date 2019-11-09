@@ -26,7 +26,7 @@
         </div>
         <div class="col-12 col-lg-10">
             <div class="page-header">
-                <h1>{{ quiz.title() }} - Progress</h1>
+                <h1>{{ quiz.title() }} - Progress - {{ students[0].username if students.count() == 1 else "All Students" }}</h1>
             </div>
             <div class="tab-content" id="questions">
                 {% for question in quiz.questions %}
@@ -42,23 +42,19 @@
                         <button type="button" class="btn btn-outline-primary reveal-answer" style="height: 40px;">Reveal answer</button>
                     </div>
                     {%- set vars = {'responses': {}} -%}
-                    {%- for student in assignment.students %}
+                    {%- for student in students %}
                         {%- set start_datetime = StudentAssignment.query.filter_by(student_id=student.id, assignment_id=assignment.id).first().datetime -%}
                         {%- set end_datetime = assignment.due_date -%}
                         {%- set responses = UserAnswer.query.filter_by(user_id=student.id, question_id=question.id).filter(db.and_(UserAnswer.datetime > start_datetime, UserAnswer.datetime < end_datetime)).all() -%}
+                        {# User: {{ student }} Q: {{ question.id }}: {{ UserAnswer.query.filter_by(user_id=student.id, question_id=question.id).all() }}<br />
+                        {% set responses = [] %}#}
                         {%- for response in responses %}
-                            {#-
-                            {%- set existing_students = vars.responses.get(response.keyed_answer) -%}
-                            {%- set existing_students = (existing_students.get('students') or []) if existing_students else [] -%}
-                            {%- if existing_students.append({'actual_student': student, 'attempt_no': response.attempt_no}) %}{% endif -%}
-                            {%- if vars.responses.__setitem__(response.keyed_answer, {'students': existing_students}) %}{% endif -%}
-                            -#}
                             {%- set existing_objects = vars.responses.get(response.keyed_answer) or [] -%}
                             {%- if existing_objects.append(response) %}{% endif -%}
                             {%- if vars.responses.__setitem__(response.keyed_answer, existing_objects) %}{% endif -%}
                         {% endfor -%}
                     {% endfor -%}
-                    {%- set student_count = assignment.students.count() -%}
+                    {%- set student_count = students.count() -%}
                     {%- for response, response_objects in vars.responses.items() %}
                         {%- set percentage = (response_objects|length / student_count) * 100 %}
                         <div class="response" data-keyed-answer="{{ response }}">

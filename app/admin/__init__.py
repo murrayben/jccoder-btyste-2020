@@ -6,7 +6,8 @@ from . import views, forms
 from ..models import (User, Role, Strand, Module, Chapter, Lesson, Page,
                       PageType, Permission, Tag, db, Post, QuizAttempt, Class,
                       ClassStudent, Assignment, StudentAssignment,
-                      ProblemMistake, ProblemMistakeType, QuestionAnswer)
+                      ProblemMistake, ProblemMistakeType, QuestionAnswer,
+                      UserAnswer)
 
 model_singulars = {'Strands': 'strand', 'Modules': 'module',
     'Chapters': 'chapter', 'Lessons': 'lesson', 'Pages': 'page',
@@ -21,4 +22,4 @@ def inject_models():
         ClassStudent=ClassStudent, Assignment=Assignment,
         StudentAssignment=StudentAssignment, ProblemMistake=ProblemMistake,
         ProblemMistakeType=ProblemMistakeType, QuestionAnswer=QuestionAnswer,
-        model_singulars=model_singulars)
+        UserAnswer=UserAnswer, model_singulars=model_singulars)
