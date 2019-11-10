@@ -295,7 +295,7 @@
             {% for chapter in module.all_ordered_children() %}
             {% if chapter.active %}
             {% set vars = {'unlocked': false, 'in_progress': false, 'count': 0, 'completed_count': 0} %}
-            {% for assignment in upcoming_assignments %}
+            {% for assignment in current_user.assignments %}
                 {% set assignment_content = assignment.quiz if assignment.quiz else assignment.page %}
                 {% if assignment_content.lesson.chapter == chapter %}
                     {% if assignment.is_quiz() and vars.update({'count': vars.count + 1}) %}{% endif %}

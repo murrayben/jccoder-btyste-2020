@@ -1,3 +1,4 @@
+from random import shuffle
 from flask import abort, current_app, flash, jsonify, redirect, render_template, url_for, session, request, g
 from flask_login import current_user, login_required
 from sqlalchemy.sql.expression import func
@@ -102,9 +103,21 @@ def take_quiz(id):
     #questions = quiz.questions.all()
     if not quiz.is_unlocked():
         return 'Locked'
-    questions = quiz.questions.order_by(func.rand()).limit(quiz.no_questions).all()
+    if quiz.type.code == 'P':
+        questions = quiz.questions.order_by(func.rand()).limit(quiz.no_questions).all()
+    else:
+        questions = []
+        for skill in quiz.tested_skills:
+            question = skill.questions.order_by(func.rand()).first()
+            if question:
+                questions.append(question)
+        shuffle(questions)
     session["attempt_no"] = 0
-    session["questions"] = [question.id for question in questions]
+    try:
+        session["questions"] = [question.id for question in questions]
+    except AttributeError:
+        # If all skills have no questions
+        session["questions"] = []
     session["user_results"] = []
     session["no_attempts"] = []
     session["scores"] = []

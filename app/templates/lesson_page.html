@@ -61,14 +61,15 @@
         pre {
             overflow-y: auto;
             overflow-x: auto;
-            max-height: 300px;
+            max-height: 500px;
             min-width: 200px;
+            max-width: 600px;
         }
 
-        li.L0, li.L1, li.L2, li.L3,
+        /* li.L0, li.L1, li.L2, li.L3,
         li.L5, li.L6, li.L7, li.L8 {
             list-style-type: decimal !important;
-        }
+        } */
 
         .question, .answer {
             border-bottom: 1px solid #eee;
@@ -298,7 +299,7 @@
 {% endblock %}
 {% block scripts %}
     {{ super() }}
-    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+    <!-- <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script> -->
     {% if current_user.can(Permission.ASK_QUESTIONS) %}
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <script type="text/javascript">
@@ -317,7 +318,6 @@
         $(function() {
             $('footer').addClass('offset-lg-4 offset-xl-3');
             $('img').not('.media-object').addClass('img-fluid');
-            $('pre').not('.CodeMirror-line, .CodeMirror-placeholder').addClass('prettyprint linenums');
             $('.quiz').on('load', function() {
                 $('.quiz').outerHeight(Number($('.quiz').contents().find('body').css({backgroundColor:'#f7f7f7'}).outerHeight() + 10));
             });

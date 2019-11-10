@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin, current_user
 from datetime import datetime
 from markdown import markdown
+from mdx_gfm import GithubFlavoredMarkdownExtension
 from app import db, login
 from app.search import add_to_index, remove_from_index, query_index
 import bleach, re
@@ -151,8 +152,10 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
         add_line = True
         i += 1
     finished_markdown = '\n'.join(lines)
-    
-    html = markdown(finished_markdown, output_format='html', extensions=extensions or [])
+
+    extensions_list = [GithubFlavoredMarkdownExtension()]
+    extensions_list.extend(extensions or [])
+    html = markdown(finished_markdown, output_format='html', extensions=extensions_list)
     return html
 
 post_tags = db.Table("post_tags",
@@ -854,9 +857,10 @@ class PageQuestion(db.Model):
     answers = db.relationship('PageAnswer', backref='question', lazy='dynamic')
 
     def generate_new_html(target, value, oldvalue, initiator):
-        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
-                        'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
-                        'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span']
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'br', 'blockquote', 'code',
+                        'del', 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+                        'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span',
+                        'table', 'tbody', 'thead', 'td', 'tr', 'th']
         target.html = bleach.linkify(bleach.clean(
             customTagMarkdown(value),
             tags=allowed_tags, attributes=['class', 'id', 'href', 'alt', 'title', 'style', 'src']))
@@ -873,9 +877,10 @@ class PageAnswer(db.Model):
     question_id = db.Column(db.Integer, db.ForeignKey('pagequestion.id'))
 
     def generate_new_html(target, value, oldvalue, initiator):
-        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
-                        'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
-                        'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span']
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'br', 'blockquote', 'code',
+                        'del', 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+                        'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span',
+                        'table', 'tbody', 'thead', 'td', 'tr', 'th']
         target.html = bleach.linkify(bleach.clean(
             customTagMarkdown(value),
             tags=allowed_tags, attributes=['class', 'id', 'href', 'alt', 'title', 'style', 'src']))

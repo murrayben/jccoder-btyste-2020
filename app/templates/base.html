@@ -6,6 +6,7 @@
     {{ super() }}
     <link rel="icon" href="{{ url_for('static', filename='images/scratch_favicon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base_styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism-tomorrow.min.css" />
 {% endblock %}
 
 {% block navbar -%}
@@ -74,4 +75,5 @@
 {% block scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/base_scripts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/prism.js') }}"></script>
 {% endblock %}
