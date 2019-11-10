@@ -12,15 +12,15 @@ p {
     font-weight: 300;
     line-height: 1.7em;
 }
-
+/* 
 pre.prettyprint {
     background-color: #fffcf4;
     font-weight: bold;
-}
+} */
 
-li.L1, li.L3, li.L5, li.L7, li.L9 {
+/* li.L1, li.L3, li.L5, li.L7, li.L9 {
     background: none !important;
-}
+} */
 
 a, a:hover, a:focus {
     text-decoration: none;
