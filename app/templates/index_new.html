@@ -212,6 +212,26 @@
         .card-progress {
             color: #bd1e1e;
         }
+
+        #banner {
+            background-color: #159957;
+            background-image: linear-gradient(10deg, #155799, #159957);
+            padding: 6rem 7rem;
+        }
+        
+        #banner h1 {
+            font-size: 3.25rem;
+        }
+
+        #banner img {
+            left: 250px;
+            top: 50%;
+            transform: translateY(-60%);
+        }
+
+        #banner a:hover {
+            color: #000000;
+        }
     </style>
 {% endblock %}
 
@@ -237,6 +257,21 @@
         </div>
     </div>
 {% endblock %}
+{% block content %}
+    {% if not current_user.is_authenticated %}
+    <div id="banner" class="text-white text-center position-relative mb-3">
+        <h1>JC Coder</h1>
+        <p class="h5 font-weight-normal mb-5">A learning resource for teachers and students of the Junior Cycle short course in coding.</p>
+        <img class="position-absolute" src="{{ url_for('static', filename='images/home_page_icon.png' ) }}" alt="Scratch cat saying Welcome to JC Coder!">
+        <button type="button" id="intro-btn" class="btn btn-outline-warning btn-lg mr-2" data-toggle="modal" data-target="#intro-vid-modal">Play Introduction Video</button>
+        <a role="button" href="{{ url_for('auth.login') }}" class="btn btn-outline-warning btn-lg mr-2">Student Sign In</a>
+        <a role="button" href="{{ url_for('auth.register') }}" class="btn btn-outline-warning btn-lg">Teacher Sign Up</a>
+    </div>
+    {% endif %}
+    {{ super() }}
+{% endblock %}
+
+{% block body_attribs %}{{ ' style="padding-top: 55px !important;"' | safe if not current_user.is_authenticated }}{% endblock %}
 {% block page_content %}
     {# if current_user.is_authenticated and not current_user.can(Permission.MANAGE_CLASS) #}
     <!-- <div class="page-header border-bottom-0 pb-0">
@@ -265,22 +300,6 @@
         </div>
     </div> -->
     {# else #}
-    <div class="jumbotron">
-        <div class="row">
-            <h1 class="col-sm-12 col-md-8 col-lg-9" id="heading">
-                JCCoder
-            </h1>
-            <img class="col-sm-5 col-md-4 col-lg-3 order-sm-first" src="/static/images/home_page_icon.png" />
-        </div>
-        <div id="text">
-            <p>Are you thinking of studying Computer Science and Coding for the Junior Cert?</p>
-            <p>Do you want to know what it is all about?</p>
-            <p>This website will get you started!</p>
-        </div>
-        <button type="button" class="btn btn-lg btn-primary" data-toggle="modal" data-target="#intro-vid-modal" id="intro-btn">JCCoder Introduction Video</button>
-    </div>
-
-    {% if current_user.is_authenticated %}
     {% for strand in Strand.query.all() %}
     <!-- Strand -->
     <section class="strand px-3 pb-4 mb-5">
@@ -295,20 +314,22 @@
             {% for chapter in module.all_ordered_children() %}
             {% if chapter.active %}
             {% set vars = {'unlocked': false, 'in_progress': false, 'count': 0, 'completed_count': 0} %}
-            {% for assignment in current_user.assignments %}
-                {% set assignment_content = assignment.quiz if assignment.quiz else assignment.page %}
-                {% if assignment_content.lesson.chapter == chapter %}
-                    {% if assignment.is_quiz() and vars.update({'count': vars.count + 1}) %}{% endif %}
-                    {% if vars.update({'unlocked': true}) %}{% endif %}
-                    {% set score = StudentAssignment.query.filter_by(assignment_id=assignment.id, student_id=current_user.id).first().score %}
-                    {% if not vars.in_progress and score is number and score > 0 %}
-                        {% if vars.update({'in_progress': true}) %}{% endif %}
+            {% if current_user.is_authenticated %}
+                {% for assignment in current_user.assignments %}
+                    {% set assignment_content = assignment.quiz if assignment.quiz else assignment.page %}
+                    {% if assignment_content.lesson.chapter == chapter %}
+                        {% if assignment.is_quiz() and vars.update({'count': vars.count + 1}) %}{% endif %}
+                        {% if vars.update({'unlocked': true}) %}{% endif %}
+                        {% set score = StudentAssignment.query.filter_by(assignment_id=assignment.id, student_id=current_user.id).first().score %}
+                        {% if not vars.in_progress and score is number and score > 0 %}
+                            {% if vars.update({'in_progress': true}) %}{% endif %}
+                        {% endif %}
+                        {% if score == 100 %}
+                            {% if vars.update({'completed_count': vars.completed_count + 1}) %}{% endif %}
+                        {% endif %}
                     {% endif %}
-                    {% if score == 100 %}
-                        {% if vars.update({'completed_count': vars.completed_count + 1}) %}{% endif %}
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
+                {% endfor %}
+            {% endif %}
 
             {% if current_user.can(Permission.MANAGE_CLASS) %}
             {% if vars.update({'unlocked': true}) %}{% endif %}
@@ -367,7 +388,6 @@
     </section>
     {% endfor %}
     {# endif #}
-    {% endif %}
 {% endblock %}
 
 {% block scripts %}
