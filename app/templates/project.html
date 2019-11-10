@@ -129,7 +129,7 @@
 
 {% block scripts %}
     {{ super() }}
-    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+    <!-- <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script> -->
     <script type="text/javascript">
         function display(index, $button=null) {
             $('.sidebar-link-div.active').removeClass('active');
@@ -146,7 +146,6 @@
         }
 
         $('.step img').addClass('img-fluid');
-        $('.step pre').addClass('prettyprint linenums');
         $('.step').first().show();
         $('.sidebar-link').first().parent().parent().addClass('active');
         $('.next-step').on('click', function() {
