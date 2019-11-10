@@ -29,13 +29,13 @@
             <li><a href="{{ url_for('admin.edit_skill', id=item.id) }}">{{ item.description }}</a></li>
             {% else %}
             <li><a href="{{ url_for('admin.edit_' + list_items_singular, id=item.id) }}">{{ item.title }}{% if item.what_model() == "Page" %}</a>
-                (In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a>{% if item.next_page %}
-                and Next Page: <a href="{{ url_for('admin.edit_page', id=item.next_page.id) }}">{{ item.next_page.title }}</a>{% endif %}){% else %}{% if item.next_module %}</a> (Next Module: <a href="{{ url_for('admin.edit_module', id=item.next_module.id) }}">{{ item.next_module.title }}</a>){% endif %}</a>{% endif %}</li>
+                (Type: <span class="text-danger">{{ item.page_type.description }}</span> | In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a>{% if item.next_page %}
+                | Next Page: <a href="{{ url_for('admin.edit_page', id=item.next_page.id) }}">{{ item.next_page.title }}</a>{% endif %}){% else %}{% if item.next_module %}</a> (Next Module: <a href="{{ url_for('admin.edit_module', id=item.next_module.id) }}">{{ item.next_module.title }}</a>){% endif %}</a>{% endif %}</li>
             {% endif %}
             {% endfor %}
         </ul>
         {% else %}
-        <p class="bg-danger text-white p-2 pl-3">There are no {{ list_items }}.</p>
+        <p class="table-primary p-2 pl-3">There are no {{ list_items }}.</p>
         {% endif %}
 {% endmacro %}
 {% block page_content %}
