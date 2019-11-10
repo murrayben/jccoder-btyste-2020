@@ -167,12 +167,6 @@ a[aria-expanded="true"]::before {
     background: #6d7fcc;
 }
 
-#sidebarToggle {
-    position: fixed;
-    right: 60px;
-    z-index: 1000;
-}
-
 @media (max-width: 768px) {
     #sidebar {
         min-width: 80px;
