@@ -26,6 +26,8 @@
     {% set url = ('admin.' + thing.what_model() + 's_' + thing.model_one_lower())|lower %}
     <a id="show-all" class="btn btn-info" href="{{ url_for(url, id=thing.id) }}">Show all {{ thing.model_one_lower()|lower }}</a>
     {%- endif %}
+    {% set url = ('admin.all_' + thing.what_model()|lower + 's') if thing.what_model() != "Glossary" else "admin.all_glossaries" %}
+    <a id="exit" class="btn btn-primary ml-2" href="{{ url_for(url) }}" role="button">Exit</a>
 {% endblock %}
 
 {% block scripts %}
@@ -53,6 +55,7 @@
         $('textarea').css('resize', 'vertical');
         var $showAll = $('#show-all').detach();
         $showAll.appendTo($('#actions'));
-        
+
+        $('#exit').detach().appendTo($('#actions'));
     </script>
 {% endblock %}

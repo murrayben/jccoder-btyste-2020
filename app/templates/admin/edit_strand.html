@@ -6,7 +6,8 @@
         <h1>Edit {{ strand.name }}</h1>
     </div>
     {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
-    <a id="show-all" class="btn btn-info" href="{{ url_for('admin.strands_modules', id=strand.id) }}">Show all Modules</a>
+    <a id="show-all" class="btn btn-info ml-2" href="{{ url_for('admin.strands_modules', id=strand.id) }}">Show all Modules</a>
+    <a id="exit" class="btn btn-primary ml-2" href="{{ url_for('admin.all_questions') }}" role="button">Exit</a>
 {% endblock %}
 
 {% block scripts %}
@@ -16,5 +17,7 @@
         $('input[type="submit"]').appendTo($('#actions'));
         var $showAll = $('#show-all').detach();
         $showAll.appendTo($('#actions'));
+
+        $('#exit').detach().appendTo($('#actions'));
     </script>
 {% endblock %}

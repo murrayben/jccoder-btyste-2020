@@ -11,6 +11,7 @@
         <h1>Edit Question</h1>
     </div>
     {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
+    <a id="exit" class="btn btn-primary mt-2" href="{{ url_for('admin.all_questions') }}" role="button">Exit</a>
 {% endblock %}
 
 {% block scripts %}

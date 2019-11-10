@@ -6,4 +6,5 @@
         <h1>Edit Skill {{ skill.description }}</h1>
     </div>
     {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
+    <a id="exit" class="btn btn-primary mt-2" href="{{ url_for('admin.all_skills') }}" role="button">Exit</a>
 {% endblock %}

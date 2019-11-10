@@ -82,7 +82,8 @@ def new_question():
             for answer in form.answer.data.split(','):
                 question_answer = QuestionAnswer(option=QuestionOption.query.filter_by(text=options[int(answer)-1]).first(), question=question)
         db.session.add(question_answer)
-        return redirect(url_for('admin.all_questions'))
+        db.session.commit()
+        return redirect(url_for('admin.edit_question', id=question.id))
     return render_template('admin/new_question.html', title="JCCoder - New Question", form=form, QuestionType=QuestionType)
 
 @admin.route('/new/strand', methods=['GET', 'POST'])
@@ -92,7 +93,8 @@ def new_strand():
     if form.validate_on_submit():
         strand = Strand(name=form.name.data)
         db.session.add(strand)
-        return redirect(url_for('admin.all_strands'))
+        db.session.commit()
+        return redirect(url_for('admin.edit_strand', id=strand.id))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Strand", new_thing="Strand", form=form)
 
 @admin.route('/new/module', methods=['GET', 'POST'])
@@ -111,7 +113,8 @@ def new_module():
         else:
             module.next_module_id = None # MySQL doesn't like 0
         db.session.add(module)
-        return redirect(url_for('admin.all_modules'))
+        db.session.commit()
+        return redirect(url_for('admin.edit_module', id=module.id))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Module", new_thing="Module", form=form)
 
 @admin.route('/new/chapter', methods=['GET', 'POST'])
@@ -128,7 +131,8 @@ def new_chapter():
         else:
             chapter.next_chapter_id = None # MySQL doesn't like 0
         db.session.add(chapter)
-        return redirect(url_for('admin.all_chapters'))
+        db.session.commit()
+        return redirect(url_for('admin.edit_chapter', id=chapter.id))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Chapter", new_thing="Chapter", form=form)
 
 @admin.route('/new/lesson', methods=['GET', 'POST'])
@@ -149,7 +153,8 @@ def new_lesson():
         else:
             lesson.next_lesson_id = None # MySQL doesn't like 0
         db.session.add(lesson)
-        return redirect(url_for('admin.all_lessons'))
+        db.session.commit()
+        return redirect(url_for('admin.edit_lesson', id=lesson.id))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Lesson", new_thing="Lesson", form=form)
 
 @admin.route('/new/skill', methods=['GET', 'POST'])
@@ -160,7 +165,8 @@ def new_skill():
         skill = Skill(description=form.description.data,
                                            lesson=Lesson.query.get(form.lesson.data))
         db.session.add(skill)
-        return redirect(url_for('admin.all_skills'))
+        db.session.commit()
+        return redirect(url_for('admin.edit_skill', id=skill.id))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Skill", new_thing="Skill", form=form)
 
 @admin.route('/new/quiz', methods=['GET', 'POST'])
@@ -178,7 +184,8 @@ def new_quiz():
         else:
             quiz.next_quiz_id = None # MySQL doesn't like 0
         db.session.add(quiz)
-        return redirect(url_for('admin.all_quizzes'))
+        db.session.commit()
+        return redirect(url_for('admin.edit_quiz', id=quiz.id))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Quiz", new_thing="Quiz", form=form)
 
 @admin.route('/new/glossary', methods=['GET', 'POST'])
@@ -188,7 +195,8 @@ def new_glossary():
     if form.validate_on_submit():
         glossary = Glossary(title=form.title.data, text=form.content.data, lesson_id=form.lesson.data)
         db.session.add(glossary)
-        return redirect(url_for('admin.all_glossaries'))
+        db.session.commit()
+        return redirect(url_for('admin.edit_glossary', id=glossary.id))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Glossary", new_thing="Glossary", form=form)
 
 @admin.route('/new/page', methods=['GET', 'POST'])
@@ -209,7 +217,8 @@ def new_page():
         page.text = form.content.data
 
         db.session.add(page)
-        return redirect(url_for('admin.all_pages'))
+        db.session.commit()
+        return redirect(url_for('admin.edit_page', id=page.id))
     return render_template('admin/admin_new_something.html', title="JCCoder - New Page", new_thing="Page", form=form)
 
 @admin.route('/new/project', methods=['GET', 'POST'])
@@ -220,6 +229,7 @@ def new_project():
         project = Project(title=form.title.data, description=form.description.data, thumbnail=form.thumbnail.data,
                               lesson_id=form.lesson.data, status=bool(form.status.data))
         db.session.add(project)
+        db.session.commit()
         return redirect(url_for('main.index'))
     return render_template('admin/new_project.html', title="JCCoder - New Project", form=form)
 
@@ -387,7 +397,8 @@ def edit_strand(id):
     if form.validate_on_submit():
         strand.name = form.name.data
         db.session.add(strand)
-        return redirect(url_for('.all_strands'))
+        db.session.commit()
+        return redirect(url_for('.edit_strand', id=strand.id))
     form.name.data = strand.name
     return render_template('admin/edit_strand.html', title="JCCoder - Edit Strand " + strand.name, form=form, strand=strand)
 
@@ -406,7 +417,8 @@ def edit_module(id):
         else:
             module.next_module_id = None # MySQL doesn't like 0
         db.session.add(module)
-        return redirect(url_for('.all_modules'))
+        db.session.commit()
+        return redirect(url_for('.edit_module', id=module.id))
     form.title.data = module.title
     form.description.data = module.description
     form.strand.data = module.strand_id
@@ -433,7 +445,8 @@ def edit_chapter(id):
         else:
             chapter.next_chapter_id = None # MySQL doesn't like 0
         db.session.add(chapter)
-        return redirect(url_for('.all_chapters'))
+        db.session.commit()
+        return redirect(url_for('.edit_chapter', id=chapter.id))
     form.title.data = chapter.title
     form.name.data = chapter.name
     form.image_url.data = chapter.image_url
@@ -464,7 +477,8 @@ def edit_lesson(id):
         else:
             lesson.next_lesson_id = None # MySQL doesn't like 0
         db.session.add(lesson)
-        return redirect(url_for('.all_lessons'))
+        db.session.commit()
+        return redirect(url_for('.edit_lesson', id=lesson.id))
     form.title.data = lesson.title
     form.lesson_type.data = lesson.type_id
     form.overview.data = lesson.overview
@@ -492,7 +506,8 @@ def edit_skill(id):
         skill.description = form.description.data
         skill.lesson_id = form.lesson.data
         db.session.add(skill)
-        return redirect(url_for('.all_skills'))
+        db.session.commit()
+        return redirect(url_for('.edit_skill', id=skill.id))
     form.description.data = skill.description
     form.lesson.data = skill.lesson_id
     return render_template('admin/edit_skill.html', title="JCCoder - Edit Skill " + skill.description, form=form, skill=skill)
@@ -507,7 +522,8 @@ def edit_glossary(id):
         glossary.text = form.content.data
         glossary.lesson_id = form.lesson.data
         db.session.add(glossary)
-        return redirect(url_for('.all_glossaries'))
+        db.session.commit()
+        return redirect(url_for('.edit_glossary', id=glossary.id))
     form.title.data = glossary.title
     form.content.data = glossary.text
     form.lesson.data = glossary.lesson_id
@@ -529,7 +545,8 @@ def edit_page(id):
             page.next_page_id = None # MySQL doesn't like 0
         page.lesson_id = form.lesson.data
         db.session.add(page)
-        return redirect(url_for('.all_pages'))
+        db.session.commit()
+        return redirect(url_for('.edit_page', id=page.id))
     form.page_type.data = page.page_type_id
     form.title.data = page.title
     form.content.data = page.text
@@ -556,7 +573,8 @@ def edit_quiz(id):
             quiz.next_quiz_id = None # MySQL doesn't like 0
         quiz.lesson_id = form.lesson.data
         db.session.add(quiz)
-        return redirect(url_for('.all_quizzes'))
+        db.session.commit()
+        return redirect(url_for('.edit_quiz', id=quiz.id))
     form.quiz_type.data = quiz.type_id
     form.description.data = quiz.description
     form.no_questions.data = quiz.no_questions
@@ -634,7 +652,8 @@ def edit_question(id):
         
         question.skill_id = form.skill.data
         db.session.add(question)
-        return redirect(url_for('.all_questions'))
+        db.session.commit()
+        return redirect(url_for('.edit_question', id=question.id))
     form.type.data = question.question_type_id
     form.text.data = question.text
 
@@ -672,7 +691,8 @@ def edit_project(id):
         project.description = form.description.data
         project.thumbnail = form.thumbnail.data
         project.lesson_id = form.lesson.data
-        return redirect(url_for('.all_projects'))
+        db.session.commit()
+        return redirect(url_for('.edit_project', id=project.id))
     form.status.data = int(project.status)
     form.title.data = project.title
     form.description.data = project.description
