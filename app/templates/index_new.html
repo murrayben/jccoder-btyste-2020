@@ -232,6 +232,12 @@
         #banner a:hover {
             color: #000000;
         }
+
+        @media (max-width: 1200px) {
+            #banner img {
+                position: static !important;
+            }
+        }
     </style>
 {% endblock %}
 
@@ -262,7 +268,7 @@
     <div id="banner" class="text-white text-center position-relative mb-3">
         <h1>JC Coder</h1>
         <p class="h5 font-weight-normal mb-5">A learning resource for teachers and students of the Junior Cycle short course in coding.</p>
-        <img class="position-absolute" src="{{ url_for('static', filename='images/home_page_icon.png' ) }}" alt="Scratch cat saying Welcome to JC Coder!">
+        <!-- <img class="position-absolute" src="{{ url_for('static', filename='images/home_page_icon.png' ) }}" alt="Scratch cat saying Welcome to JC Coder!"> -->
         <button type="button" id="intro-btn" class="btn btn-outline-warning btn-lg mr-2" data-toggle="modal" data-target="#intro-vid-modal">Play Introduction Video</button>
         <a role="button" href="{{ url_for('auth.login') }}" class="btn btn-outline-warning btn-lg mr-2">Student Sign In</a>
         <a role="button" href="{{ url_for('auth.register') }}" class="btn btn-outline-warning btn-lg">Teacher Sign Up</a>

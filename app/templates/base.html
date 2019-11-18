@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block navbar -%}
-    <nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-dark" role="navigation">
+    <nav class="navbar fixed-top navbar-expand-lg navbar-dark" role="navigation">
         <a class="navbar-brand" href="/"><img id="navbar-icon" src="{{ url_for('static', filename='images/scratch_favicon.png') }}"> JCCoder</a>
         <button type="button" class="navbar-toggler" data-toggle="collapse" data-target=".navbar-collapse">
             <span class="navbar-toggler-icon"></span>
@@ -52,24 +52,26 @@
     {% block modals %}{% endblock %}
         <!-- Page Content -->
         <div class="container">
-            {% for category, message in get_flashed_messages(with_categories=True) %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-                {{ message|safe }}
+            <div id="content">
+                {% for category, message in get_flashed_messages(with_categories=True) %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    {{ message|safe }}
+                </div>
+                {% endfor %}
+
+                {% block page_content %}{% endblock %}
+                <i class="fa fa-3x fa-arrow-circle-up" id="scroll-top"></i>
             </div>
-            {% endfor %}
-
-            {% block page_content %}{% endblock %}
-
-            <footer>
-                    <br /> 
-                    <p class="mb-0">&copy; 2019 - Junior Cycle Coder <span class="float-right">Designed and Coded by Benjamin Murray</span></p>
-                    <p>Inspired by <a href="https://www.khanacademy.org" target="_blank" rel="noopener noreferrer">Khan Academy</a>, the <a href="https://coderdojo.com" target="_blank" rel="noopener noreferrer">CoderDojo</a> and <a href="https://www.raspberrypi.org" target="_blank" rel="noopener noreferrer">Raspberry Pi</a> Foundations.</p>
-            </footer>
-            <i class="fa fa-3x fa-arrow-circle-up" id="scroll-top"></i>
         </div>
+        <footer class="py-5 w-100">
+            <div class="container text-white">
+                <p>&copy; 2019 - Junior Cycle Coder <span class="float-right">Designed and Coded by Benjamin Murray</span></p>
+                <p class="mb-0">Inspired by <a href="https://www.khanacademy.org" target="_blank" rel="noopener noreferrer">Khan Academy</a>, the <a href="https://coderdojo.com" target="_blank" rel="noopener noreferrer">CoderDojo</a> and <a href="https://www.raspberrypi.org" target="_blank" rel="noopener noreferrer">Raspberry Pi</a> Foundations.</p>
+            </div>
+        </footer>
 {% endblock %}
 
 {% block scripts %}
