@@ -380,7 +380,9 @@
                 $(document).on('quiz_height_update', function() {
                     var $quiz = $('#quiz-' + quizID);
                     if ($quiz.contents().find('#start').is(':hidden')) {
+                        parent.console.log($quiz.innerHeight());
                         $quiz.innerHeight($quiz.contents().find('html').innerHeight());
+                        parent.console.log($('#quiz-' + quizID).contents().find('html').innerHeight());
                     }
                 });
 

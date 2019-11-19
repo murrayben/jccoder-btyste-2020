@@ -113,7 +113,7 @@ class NewQuiz(FlaskForm):
     description = TextAreaField('Description', validators=[DataRequired()])
     no_questions = IntegerField('Number of questions asked', widget=NumberInput(min=1), validators=[DataRequired()])
     tested_skills = SelectMultipleField('Skills Tested', coerce=int)
-    next_quiz = SelectField('Next Quiz')
+    next_quiz = SelectField('Next Quiz', coerce=int)
     lesson = SelectField('Lesson', coerce=int)
     submit = SubmitField('Submit Quiz')
 
