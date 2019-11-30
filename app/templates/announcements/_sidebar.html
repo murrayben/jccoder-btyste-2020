@@ -17,11 +17,12 @@
             {% for announcement in recent_announcements %}
             <li class="media">
                 <a href="#" class="mr-3">
-                    <img class="media-object rounded-circle" src="http://www.gravatar.com/avatar/bab5bd596068ac6a5ab2af12bd0c9c85?s=40&d=monsterid&?r=g">
+                    <img class="media-object rounded-circle" src="{{ announcement.author.getAvatar(50) }}">
                 </a>
                 <div class="media-body">
-                    <h4 class="media-heading">{{ announcement.author.username }}</h4>
-                    <a href="{{ url_for('announcements.permalink', id=announcement.id) }}" class="text-muted">{{ announcement.title }}</a>
+                    <h5 class="media-heading"><a href="{{ url_for('announcements.permalink', id=announcement.id) }}">{{ announcement.title }}</a></h5>
+                    <span class="text-muted">{{ announcement.author.username }}</span>
+                    
                 </div>
             </li>
             {% endfor %}

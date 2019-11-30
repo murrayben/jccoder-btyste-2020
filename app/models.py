@@ -1,4 +1,4 @@
-from flask import url_for
+from flask import request, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin, current_user
 from datetime import datetime
@@ -273,6 +273,7 @@ class User(UserMixin, db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     announcements = db.relationship('Announcement', backref='author', lazy='dynamic')
     posts = db.relationship('Post', backref='author', lazy='dynamic')
+    comments = db.relationship('PostComment', backref='author', lazy='dynamic')
     answers = db.relationship('UserAnswer', backref='user', lazy='dynamic')
     page_questions = db.relationship('PageQuestion', backref='author', lazy='dynamic')
     page_answers = db.relationship('PageAnswer', backref='author', lazy='dynamic')
@@ -293,8 +294,7 @@ class User(UserMixin, db.Model):
         super(User, self).__init__(**kwargs)
         if self.role is None:
             self.role = Role.query.filter_by(default=True).first()
-        if self.can(Permission.MANAGE_CLASS):
-            self.avatar_hash = hashlib.md5(self.email.encode("utf-8")).hexdigest()
+        self.avatar_hash = hashlib.md5(self.username.encode("utf-8")).hexdigest()
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -316,7 +316,11 @@ class User(UserMixin, db.Model):
             base_url = 'https://secure.gravatar.com/avatar'
         else:
             base_url = 'http://www.gravatar.com/avatar'
-        hash = self.avatar_hash or hashlib.md5(self.parents_email.encode('utf-8')).hexdigest()
+        if self.avatar_hash:
+            hash = self.avatar_hash
+        else:
+            hash = hashlib.md5(self.username.encode('utf-8')).hexdigest()
+            self.avatar_hash = hash
         full_url = "%s/%s?s=%i&d=%s&?r=%s" % (base_url, hash, size, default, rating)
         return full_url
 
@@ -1012,14 +1016,23 @@ class Post(db.Model, SearchableMixin):
     summary = db.Column(db.Text)
     summary_html = db.Column(db.Text)
     date_posted = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     published = db.Column(db.Boolean, default=True)
     title = db.Column(db.String(64))
     categories = db.relationship('PostCategory', secondary=post_tags,
                            backref=db.backref('posts', lazy='dynamic'))
+    comments = db.relationship('PostComment', backref='post', lazy='dynamic')
 
     @staticmethod
     def body_changed(target, value, oldvalue, initiator):
         target.body_html = customTagMarkdown(value)
+        new_summary = value
+        new_summary = new_summary.split(' ')
+        new_summary = new_summary[:80]
+        new_summary = ' '.join(new_summary)
+        if not new_summary == value:
+            new_summary += '&hellip;'
+        target.summary = new_summary
 
     @staticmethod
     def summary_changed(target, value, oldvalue, initiator):
@@ -1027,6 +1040,22 @@ class Post(db.Model, SearchableMixin):
 
 db.event.listen(Post.body, 'set', Post.body_changed)
 db.event.listen(Post.summary, 'set', Post.summary_changed)
+
+class PostComment(db.Model):
+    __tablename__ = 'postcomments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    date_posted = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+
+    @staticmethod
+    def body_changed(target, value, oldvalue, initiator):
+        target.body_html = customTagMarkdown(value)
+
+db.event.listen(PostComment.body, 'set', PostComment.body_changed)
 
 class PostCategory(db.Model):
     __tablename__ = 'postcategories'

@@ -5,9 +5,9 @@ from flask import (abort, current_app, flash, g, redirect, render_template,
                    request, session, url_for)
 from flask_login import current_user
 
-from ..models import Permission, Post, PostCategory, User, db
+from ..models import Permission, Post, PostCategory, PostComment, User, db
 from . import teacher_blog
-from .forms import PostForm, SearchForm
+from .forms import CommentForm, PostForm, SearchForm
 
 # Get PostCategory objects from a list of PostCategory ids
 def parseMultiplePost(form):
@@ -63,7 +63,7 @@ def index():
         # Get the actual category objects by parsing the ids using a function that I defined earlier
         categories = parseMultiplePost(form)
 
-        post = Post(title=form.title.data, body=form.body.data, summary=form.summary.data, author=current_user._get_current_object(), categories=categories, published=form.published.data)
+        post = Post(title=form.title.data, body=form.body.data, author=current_user._get_current_object(), categories=categories, published=form.published.data)
 
         db.session.add(post)
 
@@ -94,9 +94,17 @@ def permalink(id):
     if post.published == False and post.author != current_user and not current_user.is_admin():
         # Return a 403 status code (forbidden)
         abort(403)
+    
+    form = CommentForm()
+
+    if form.validate_on_submit():
+        comment = PostComment(body=form.body.data, post=post, author=current_user._get_current_object())
+        db.session.add(comment)
+
+        return(redirect(url_for('.permalink', id=post.id) + '#comments'))
 
     # Render template
-    return render_template("teacher_blog/permalink.html", title="Post - " + post.title, post=post)
+    return render_template("teacher_blog/permalink.html", title="Post - " + post.title, post=post, form=form)
 
 # Make a post public
 @teacher_blog.route('/public/<int:id>')
@@ -151,10 +159,9 @@ def edit(id):
     if form.validate_on_submit():
         post.title = form.title.data
         post.body = form.body.data
-        post.summary = form.summary.data
         post.categories = parseMultiplePost(form)
         post.published = form.published.data
-        post.date_posted = datetime.utcnow()
+        post.last_updated = datetime.utcnow()
 
         # Redirect the user to the page with the post in it
         return redirect(url_for('.permalink', id=id))
@@ -162,7 +169,6 @@ def edit(id):
     # Set initial values of the fields with the post data
     form.title.data = post.title
     form.body.data = post.body
-    form.summary.data = post.summary
 
     # Get list of tag ids by calling the unparseMultiplePost function (it was defined earlier)
     form.categories.data = unparseMultiplePost(post)
@@ -170,6 +176,29 @@ def edit(id):
 
     # Render edit page template
     return render_template("teacher_blog/edit.html", title="Edit Post - " + post.title, post=post, form=form)
+
+# Editing a comment
+@teacher_blog.route('/edit/comment/<int:id>', methods=["GET", "POST"])
+def edit_comment(id):
+    # Get comment from database (if it doesn't exist return 404 code)
+    comment = PostComment.query.filter_by(id=id).first_or_404()
+
+    # Create form object
+    form = CommentForm()
+
+    if current_user.username != comment.author.username and not current_user.admin():
+        abort(403)
+    
+    # If request method is POST (form submitted)
+    if form.validate_on_submit():
+        comment.body = form.body.data
+        return redirect(url_for('.permalink', id=comment.post.id) + '#comments')
+    
+    # Set initial values
+    form.body.data = comment.body
+
+    # Render template
+    return render_template("teacher_blog/edit_comment.html", title="Edit Comment for Post " + comment.post.title, comment=comment, form=form)
 
 @teacher_blog.route('/category/<int:id>')
 def category(id):

@@ -253,7 +253,7 @@
             <ul class="media-list pl-0" id="questions">
                 {% for question in page.questions.all() %}
                 <li class="media question">
-                    <img class="mr-3" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Emblem-question.svg/70px-Emblem-question.svg.png">
+                    <img class="mr-3" src="{{ question.author.getAvatar(50) }}">
                     <div class="media-body">
                         <h2 class="media-heading">By {{ question.author.username }}</h2>
                         <span class="far fa-clock"></span> {{ moment(question.last_updated).format('DD/MM/YYYY hh:mm:ss') }}
@@ -265,7 +265,7 @@
                         <ul class="media-list pl-0">
                         {% for answer in question.answers %}
                             <li class="media answer">
-                                <img class="media-object mr-3" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Stock-dialog-information.svg/80px-Stock-dialog-information.svg.png">
+                                <img class="media-object mr-3" src="{{ answer.author.getAvatar(50) }}">
                                 <div class="media-body">
                                     <h2 class="media-heading">By {{ answer.author.username }}</h4>
                                     <span class="far fa-clock"></span> {{ moment(question.last_updated).format('DD/MM/YYYY hh:mm:ss') }}

@@ -10,7 +10,7 @@
 
 {% block page_content %}
     <div class="page-header mt-0">
-        <h1>Blog</h1>
+        <h1>Teacher's Blog</h1>
     </div>
     <div class="row">
         <div class="col-lg-9 order-2 order-lg-1">
@@ -24,6 +24,8 @@
             <ul id="posts" class="list-unstyled">
                 {% for post in posts %}
                 <li class="post media">
+                    {% set show_comments = true %}
+                    {% set no_read_more = (post.summary_html == post.body_html) %}
                     {% include 'teacher_blog/_post.html' %}
                 </li>
                 {% endfor %}
@@ -46,7 +48,6 @@
     <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
     <script>
         new SimpleMDE({element: $('#body')[0], forceSync: true});
-        new SimpleMDE({element: $('#summary')[0], forceSync: true});
         $('#formAcc').hide()
         $('#comBtn').on("click", function() {
             $('#formAcc').slideToggle();

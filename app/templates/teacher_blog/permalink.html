@@ -3,6 +3,7 @@
 
 {% block styles %}
     {{ super() }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" />
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/post.css') }}" />
 {% endblock %}
 
@@ -14,6 +15,28 @@
                 {% set show_body_html = True %}
                 {% include 'teacher_blog/_post.html' %}
             </div>
+            <h2>Add a Comment</h2>
+            {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
+            <hr />
+            {% if post.comments.all() %}
+            <ul class="media-list pl-0" id="comments">
+                {% for comment in post.comments.all() %}
+                <li class="media comment">
+                    <img class="mr-3 rounded-circle" src="{{ comment.author.getAvatar(50) }}">
+                    <div class="media-body">
+                        <h4 class="media-heading">By {{ comment.author.username }}</h4>
+                        <span class="far fa-clock"></span> {{ moment(comment.date_posted).format('DD/MM/YYYY hh:mm:ss') }}
+                        {{ comment.body_html|safe }}
+                        {% if current_user.is_authenticated and (comment.author.username == current_user.username) %}
+                        <a href="{{ url_for('.edit_comment', id=comment.id) }}"><span class="badge badge-primary">Edit</span></a>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No comments have been posted yet. Be the first to post one!</p>
+            {% endif %}
         </div>
         <div class="col-lg-3 order-1 order-lg-2 mb-3">
             {% include "teacher_blog/_sidebar.html" %}
@@ -23,7 +46,10 @@
 
 {% block scripts %}
     {{ super() }}
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
     <script>
+        new SimpleMDE({element: $('#body')[0], forceSync: true, spellChecker: false});
         $(".post .media-body img").addClass("img-fluid");
     </script>
     {{ moment.include_moment() }}

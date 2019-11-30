@@ -1,5 +1,5 @@
 <a href="#" class="mr-3">
-    <img class="img-circle media-object" src="#">
+    <img class="rounded-circle media-object" src="{{ announcement.author.getAvatar(50) }}">
 </a>
 <div class="media-body">
     <h2 class="media-heading">{{ announcement.title }}{% if not announcement.published %} (Draft){% endif %}</h2>

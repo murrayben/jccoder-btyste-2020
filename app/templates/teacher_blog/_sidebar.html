@@ -15,12 +15,12 @@
         <ul class="list-unstyled">
             {% set recent_posts = Post.query.filter(db.or_(Post.published == True, Post.author_id == current_user.id, current_user.is_admin())).order_by(Post.date_posted.desc()).limit(6) %}
             {% for post in recent_posts %}
-            <li class="media">
+            <li class="media mb-2">
                 <a href="#" class="mr-3">
-                    <img class="media-object rounded-circle" src="#">
+                    <img class="media-object rounded-circle" src="{{ post.author.getAvatar(50) }}">
                 </a>
                 <div class="media-body">
-                    <a href="{{ url_for('teacher_blog.permalink', id=post.id) }}" class="media-heading h5">{{ post.title }}</a>
+                    <h6 class="mb-0"><a href="{{ url_for('teacher_blog.permalink', id=post.id) }}" class="media-heading">{{ post.title }}</a></h6>
                     <span class="text-muted">By {{ post.author.username }}</h4>
                 </div>
             </li>

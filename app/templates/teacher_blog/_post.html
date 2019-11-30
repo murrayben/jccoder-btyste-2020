@@ -1,10 +1,9 @@
 <a href="#" class="mr-3">
-    <img class="img-circle media-object" src="#">
+    <img class="rounded-circle media-object" src="{{ post.author.getAvatar(50) }}">
 </a>
 <div class="media-body">
     <h2 class="media-heading">{{ post.title }}{% if not post.published %} (Draft){% endif %}</h2>
-    By <a href="#">{{ post.author.username }}</a>
-    <br />
+    By <a href="#" class="mr-2">{{ post.author.username }}</a>
     <span class="far fa-clock"></span> {{ moment(post.date_posted).format('MMMM Do YYYY, h:mm:ss a') }}
     <br />
     {% if show_body_html %}
@@ -13,10 +12,14 @@
     <div>{{ post.summary_html|safe }}</div>
     {% endif %}
     {% if not no_read_more %}
-    <a class="btn btn-info" href="{{ url_for('teacher_blog.permalink', id=post.id) }}">Read more &raquo;</a>
+    <a class="btn btn-sm btn-info" href="{{ url_for('teacher_blog.permalink', id=post.id) }}">Read more &raquo;</a>
     {% endif %}
     <hr />
     <div class="post-controls float-sm-right">
+        {% if show_comments %}
+        <a class="comment-btn" href="{{ url_for('teacher_blog.permalink', id=post.id) }}#comments"><span class="badge badge-primary">{{ post.comments.count() }}
+                Comment{{ "s" if post.comments.count() != 1 }}</span></a>
+        {% endif %}
         {% if current_user.username == post.author.username or current_user.is_admin() %}
         <a class="edit-btn" href="{{ url_for('teacher_blog.edit', id=post.id) }}"><span class="badge badge-primary">Edit</span></a>
         {% if post.published %}

@@ -8,7 +8,7 @@
 
 {% block page_content %}
     <div class="page-header">
-        <h1>Edit Question</h1>
+        <h1>Edit Comment</h1>
     </div>
     {{ wtf.quick_form(form, button_map={'submit': 'success'}, novalidate=True) }}
 {% endblock %}
@@ -18,6 +18,6 @@
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
     <script type="text/javascript">
-        new SimpleMDE({element: $('#text')[0], forceSync: true, hideIcons: ["guide"]});
+        new SimpleMDE({element: $('#body')[0], forceSync: true, spellChecker: false});
     </script>
 {% endblock %}

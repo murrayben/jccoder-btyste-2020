@@ -94,3 +94,7 @@ footer a {
 footer a:hover {
     color: #2888c0;
 }
+
+.CodeMirror-fullscreen, .editor-toolbar.fullscreen, .editor-preview-side.editor-preview-active-side {
+    z-index: 9999 !important;
+}
