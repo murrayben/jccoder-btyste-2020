@@ -1,16 +1,16 @@
 from flask import abort, current_app, flash, g, render_template, redirect, request, url_for
 from flask_login import current_user, login_required
 from datetime import datetime
-from ..models import db, Post, Tag
-from .forms import PostForm, SearchForm
+from ..models import db, Announcement, Tag
+from .forms import AnnouncementForm, SearchForm
 from . import announcements
 
 @announcements.before_request
 def addSearchForm():
-    g.post_search_form = SearchForm()
+    g.announcement_search_form = SearchForm()
 
 # Get Tag objects from a list of Tag ids
-def parseMultiplePost(form):
+def parseMultipleAnnouncement(form):
     # Gather ids
     num_list = form.tags.data
 
@@ -29,12 +29,12 @@ def parseMultiplePost(form):
     return return_list
 
 # Do the reverse of the above
-def unparseMultiplePost(post):
+def unparseMultipleAnnouncement(announcement):
     # Set initial value of list of Tag ids
     return_list = []
 
     # Iterate through the list of objects
-    for i in post.tags:
+    for i in announcement.tags:
         # Add the id of the tag to the list of ids
         return_list.append(i.id)
     
@@ -45,48 +45,48 @@ def unparseMultiplePost(post):
 def index():
     # Get the pagination page. If no page is specified the default page number (1) is used.
     page = request.args.get("page", 1, type=int)
-    form = PostForm()
+    form = AnnouncementForm()
 
-    posts = Post.query.filter(db.or_(Post.published == True, Post.author_id == current_user.id, current_user.is_admin())).order_by(Post.date_posted.desc())
+    announcements = Announcement.query.filter(db.or_(Announcement.published == True, Announcement.author_id == current_user.id, current_user.is_admin())).order_by(Announcement.date_posted.desc())
 
-    pagination = posts.paginate(
+    pagination = announcements.paginate(
         page, per_page=current_app.config["POSTS_PER_PAGE"],
         error_out=True)
 
-    posts = pagination.items
+    announcements = pagination.items
 
     if form.validate_on_submit():
         # Get the actual tag objects by parsing the ids using a function that I defined earlier
-        tags = parseMultiplePost(form)
+        tags = parseMultipleAnnouncement(form)
 
-        # Create a post object
-        post = Post(title=form.title.data, body=form.body.data, summary=form.summary.data, author=current_user._get_current_object(), tags=tags, published=form.published.data)
+        # Create a announcement object
+        announcement = Announcement(title=form.title.data, body=form.body.data, summary=form.summary.data, author=current_user._get_current_object(), tags=tags, published=form.published.data)
 
-        # Add the post to the database session
-        db.session.add(post)
+        # Add the announcement to the database session
+        db.session.add(announcement)
 
-        # Commit the database session to write the post to the database
+        # Commit the database session to write the announcement to the database
         db.session.commit()
 
         # Issue a redirect to the home page
         return redirect(url_for('.index'))
     
     # Render the announcements/index.html template
-    return render_template("announcements/index.html", title="Announcements", form=form, posts=posts, pagination=pagination)
+    return render_template("announcements/index.html", title="Announcements", form=form, announcements=announcements, pagination=pagination)
 
-# Render a full post/announcement on its own
+# Render a full announcement/announcement on its own
 @announcements.route('/<int:id>', methods=['GET', 'POST'])
 def permalink(id):
-    # Retrieve the post and if id doesn't exist yet, return a 404 status code.
-    post = Post.query.get_or_404(id)
+    # Retrieve the announcement and if id doesn't exist yet, return a 404 status code.
+    announcement = Announcement.query.get_or_404(id)
     
-    # If the post isn't public and the author is not the current user
-    if post.published == False and post.author != current_user and not current_user.is_admin():
+    # If the announcement isn't public and the author is not the current user
+    if announcement.published == False and announcement.author != current_user and not current_user.is_admin():
         # Return a 403 status code (forbidden)
         abort(403)
 
     # Render template
-    return render_template("announcements/permalink.html", title="Announcement - " + post.title, post=post)
+    return render_template("announcements/permalink.html", title="Announcement - " + announcement.title, announcement=announcement)
 
 @announcements.route('/tag/<int:id>')
 def tag(id):
@@ -94,103 +94,100 @@ def tag(id):
     page = request.args.get("page", 1, type=int)
 
     tag = Tag.query.get_or_404(id)
-    posts = tag.posts.filter(db.or_(Post.published == True, Post.author_id == current_user.id,
-                current_user.is_admin())).order_by(Post.date_posted.desc())
+    announcements = tag.announcements.filter(db.or_(Announcement.published == True, Announcement.author_id == current_user.id,
+                current_user.is_admin())).order_by(Announcement.date_posted.desc())
 
-    pagination = posts.paginate(
+    pagination = announcements.paginate(
         page, per_page=current_app.config["POSTS_PER_PAGE"],
         error_out=True)
 
-    posts = pagination.items
+    announcements = pagination.items
 
-    return render_template("announcements/tag.html", title="Tag - " + tag.name, tag=tag, posts=posts, pagination=pagination)
+    return render_template("announcements/tag.html", title="Tag - " + tag.name, tag=tag, announcements=announcements, pagination=pagination)
 
-# Make a post public
+# Make a announcement public
 @announcements.route('/public/<int:id>')
-@login_required        # Protect the route so that only logged in users can view it
 def public(id):
-    # Retrieve post from database (issue 404 error is post doesn't exist)
-    post = Post.query.get_or_404(id)
+    # Retrieve announcement from database (issue 404 error is announcement doesn't exist)
+    announcement = Announcement.query.get_or_404(id)
 
-    # Issue a 403 (forbidden) error if post author is not the logged in user
-    if post.author.username != current_user.username and not current_user.is_admin():
+    # Issue a 403 (forbidden) error if announcement author is not the logged in user
+    if announcement.author.username != current_user.username and not current_user.is_admin():
         abort(403)
 
-    # Change status of post
-    post.published = True
+    # Change status of announcement
+    announcement.published = True
 
-    # Flash a message that says that the post is public.
-    flash("Your post is now public.", 'info')
+    # Flash a message that says that the announcement is public.
+    flash("Your announcement is now public.", 'info')
 
     return redirect(url_for('.index'))
 
-# Make a post private or a draft
+# Make a announcement private or a draft
 @announcements.route('/draft/<int:id>')
-@login_required        # Protect the route so that only logged in users can view it
 def draft(id):
-    # Retrieve post from database (issue 404 error is post doesn't exist)
-    post = Post.query.get_or_404(id)
+    # Retrieve announcement from database (issue 404 error is announcement doesn't exist)
+    announcement = Announcement.query.get_or_404(id)
 
-    # Issue a 403 (forbidden) error if post author is not the logged in user
-    if post.author.username != current_user.username and not current_user.is_admin():
+    # Issue a 403 (forbidden) error if announcement author is not the logged in user
+    if announcement.author.username != current_user.username and not current_user.is_admin():
         abort(403)
 
-    # Change status of post
-    post.published = False
+    # Change status of announcement
+    announcement.published = False
 
-    # Flash a message that says that the post is a draft
-    flash("Your post is now a draft.", 'info')
+    # Flash a message that says that the announcement is a draft
+    flash("Your announcement is now a draft.", 'info')
 
     return redirect(url_for('.index'))
 
-# Editing a post
+# Editing a announcement
 @announcements.route('/edit/<int:id>', methods=['GET', 'POST'])
-@login_required        # Protect the route so that only logged in users can view it
 def edit(id):
-    # Retrieve post from database (issue 404 error is post doesn't exist)
-    post = Post.query.get_or_404(id)
+    # Retrieve announcement from database (issue 404 error is announcement doesn't exist)
+    announcement = Announcement.query.get_or_404(id)
 
     # Create form object
-    form = PostForm()
+    form = AnnouncementForm()
 
-    # Issue a 403 (forbidden) error if post author is not the logged in user
-    if current_user.username != post.author.username and not current_user.admin():
+    # Issue a 403 (forbidden) error if announcement author is not the logged in user
+    if current_user.username != announcement.author.username and not current_user.admin():
         abort(403)
 
     # If request method is POST (a form was submitted)
     if form.validate_on_submit():
-        post.title = form.title.data
-        post.body = form.body.data
-        post.summary = form.summary.data
-        post.tags = parseMultiplePost(form)
-        post.published = form.published.data
-        post.date_posted = datetime.utcnow()
+        announcement.title = form.title.data
+        announcement.body = form.body.data
+        announcement.summary = form.summary.data
+        announcement.tags = parseMultipleAnnouncement(form)
+        announcement.published = form.published.data
+        announcement.date_posted = datetime.utcnow()
 
-        # Redirect the user to the page with the post in it
+        # Redirect the user to the page with the announcement in it
         return redirect(url_for('.permalink', id=id))
     
-    # Set initial values of the fields with the post data
-    form.title.data = post.title
-    form.body.data = post.body
-    form.summary.data = post.summary
+    # Set initial values of the fields with the announcement data
+    form.title.data = announcement.title
+    form.body.data = announcement.body
+    form.summary.data = announcement.summary
 
-    # Get list of tag ids by calling the unparseMultiplePost function (it was defined earlier)
-    form.tags.data = unparseMultiplePost(post)
-    form.published.data = post.published
+    # Get list of tag ids by calling the unparseMultipleAnnouncement function (it was defined earlier)
+    form.tags.data = unparseMultipleAnnouncement(announcement)
+    form.published.data = announcement.published
 
     # Render edit page template
-    return render_template("announcements/edit.html", title="Edit Announcement - " + post.title, post=post, form=form)
+    return render_template("announcements/edit.html", title="Edit Announcement - " + announcement.title, announcement=announcement, form=form)
 
 @announcements.route('/search')
 def search():
-    if not g.post_search_form.validate():
+    if not g.announcement_search_form.validate():
         abort(404)
-    q = g.post_search_form.q.data
+    q = g.announcement_search_form.q.data
     g.search_form.q.data = ""
     page = request.args.get('page', 1, type=int)
-    posts, total = Post.search(q, page, current_app.config["POSTS_PER_PAGE"])
+    announcements, total = Announcement.search(q, page, current_app.config["POSTS_PER_PAGE"])
     next_url = url_for('.search', q=q, page=page + 1) \
         if total > page * current_app.config["POSTS_PER_PAGE"] else None
     prev_url = url_for('.search', q=q, page=page - 1) \
         if page > 1 else None
-    return render_template('announcements/search_results.html', title="Search results for \"{0}\"".format(q), q=q, posts=posts.all(), total=total, prev_url=prev_url, next_url=next_url)
+    return render_template('announcements/search_results.html', title="Search results for \"{0}\"".format(q), q=q, announcements=announcements.all(), total=total, prev_url=prev_url, next_url=next_url)

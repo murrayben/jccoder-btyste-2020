@@ -1,0 +1,42 @@
+<div class="card border-info mb-3">
+    <div class="card-header text-white bg-info">Search Posts</div>
+    <div class="card-body">
+        <form class="form" action="{{ url_for('.search') }}" method="GET">
+            <div class="form-group required">
+                {{ g.post_search_form.q(class="form-control", placeholder=g.post_search_form.q.label.text) }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-info mb-3">
+    <div class="card-header text-white bg-info">Recent Posts</div>
+    <div class="card-body">
+        <ul class="list-unstyled">
+            {% set recent_posts = Post.query.filter(db.or_(Post.published == True, Post.author_id == current_user.id, current_user.is_admin())).order_by(Post.date_posted.desc()).limit(6) %}
+            {% for post in recent_posts %}
+            <li class="media">
+                <a href="#" class="mr-3">
+                    <img class="media-object rounded-circle" src="#">
+                </a>
+                <div class="media-body">
+                    <a href="{{ url_for('teacher_blog.permalink', id=post.id) }}" class="media-heading h5">{{ post.title }}</a>
+                    <span class="text-muted">By {{ post.author.username }}</h4>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div class="card border-info">
+    <div class="card-header text-white bg-info">Blog Categories</div>
+    <ul class="list-group list-group-flush">
+        {% for category in PostCategory.query.filter(db.not_(Chapter.query.filter(Chapter.title == PostCategory.name).exists())).order_by(PostCategory.name.asc()).all() %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('teacher_blog.category', id=category.id) }}" class="small">{{ category.name }}</a>
+            <span class="badge badge-pill badge-info">{{ category.posts.filter(db.or_(Post.published == True, Post.author_id == current_user.id, current_user.is_admin())).count() }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>

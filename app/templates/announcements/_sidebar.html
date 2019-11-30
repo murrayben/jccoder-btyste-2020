@@ -3,25 +3,25 @@
     <div class="card-body">
         <form class="form" action="{{ url_for('.search') }}" method="GET">
             <div class="form-group required">
-                {{ g.post_search_form.q(class="form-control", placeholder=g.post_search_form.q.label.text) }}
+                {{ g.announcement_search_form.q(class="form-control", placeholder=g.announcement_search_form.q.label.text) }}
             </div>
         </form>
     </div>
 </div>
 
 <div class="card border-info mb-3">
-    <div class="card-header text-white bg-info">Recent Posts</div>
+    <div class="card-header text-white bg-info">Recent Announcements</div>
     <div class="card-body">
         <ul class="list-unstyled">
-            {% set recent_posts = Post.query.filter(db.or_(Post.published == True, Post.author_id == current_user.id, current_user.is_admin())).order_by(Post.date_posted.desc()).limit(6) %}
-            {% for post in recent_posts %}
+            {% set recent_announcements = Announcement.query.filter(db.or_(Announcement.published == True, Announcement.author_id == current_user.id, current_user.is_admin())).order_by(Announcement.date_posted.desc()).limit(6) %}
+            {% for announcement in recent_announcements %}
             <li class="media">
                 <a href="#" class="mr-3">
                     <img class="media-object rounded-circle" src="http://www.gravatar.com/avatar/bab5bd596068ac6a5ab2af12bd0c9c85?s=40&d=monsterid&?r=g">
                 </a>
                 <div class="media-body">
-                    <h4 class="media-heading">{{ post.author.username }}</h4>
-                    <a href="{{ url_for('announcements.permalink', id=post.id) }}" class="text-muted">{{ post.title }}</a>
+                    <h4 class="media-heading">{{ announcement.author.username }}</h4>
+                    <a href="{{ url_for('announcements.permalink', id=announcement.id) }}" class="text-muted">{{ announcement.title }}</a>
                 </div>
             </li>
             {% endfor %}
@@ -35,7 +35,7 @@
         {% for tag in Tag.query.order_by(Tag.name.asc()).all() %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
             <a href="{{ url_for('announcements.tag', id=tag.id) }}" class="small">{{ tag.name }}</a>
-            <span class="badge badge-pill badge-info">{{ tag.posts.filter(db.or_(Post.published == True, Post.author_id == current_user.id, current_user.is_admin())).count() }}</span>
+            <span class="badge badge-pill badge-info">{{ tag.announcements.filter(db.or_(Announcement.published == True, Announcement.author_id == current_user.id, current_user.is_admin())).count() }}</span>
         </li>
         {% endfor %}
     </ul>

@@ -56,6 +56,9 @@ def create_app(config_class=Config):
     from .teacher import teacher as teacher_blueprint
     app.register_blueprint(teacher_blueprint, url_prefix='/teacher')
 
+    from .teacher_blog import teacher_blog as teacher_blog_blueprint
+    app.register_blueprint(teacher_blog_blueprint, url_prefix='/blog')
+
     # Return app
     return app
 

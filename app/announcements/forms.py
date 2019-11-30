@@ -13,7 +13,7 @@ from wtforms.validators import DataRequired, Length
 # Import Tag model to loop through all the Tags (multiple select)
 from ..models import Tag
 
-class PostForm(FlaskForm):
+class AnnouncementForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired(), Length(1, 64, message="Title should be no more than 64 characters.")])
     body = TextAreaField("Content", validators=[DataRequired()])
     summary = TextAreaField("Summary", validators=[DataRequired()])
@@ -22,7 +22,7 @@ class PostForm(FlaskForm):
     submit = SubmitField("Submit")
 
     def __init__(self, *args, **kwargs):
-        super(PostForm, self).__init__(*args, **kwargs)
+        super(AnnouncementForm, self).__init__(*args, **kwargs)
         self.tags.choices = [(tag.id, tag.name) for tag in Tag.query.order_by(Tag.name.asc()).all()]
 
 class SearchForm(FlaskForm):

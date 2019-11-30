@@ -30,7 +30,7 @@ def new_class():
     if request.method == 'GET' or not current_user.is_authenticated:
         abort(404)
     data = request.get_json()
-    if not data["name"] or not data["description"]:
+    if not data["name"]:
         abort(400)
     random_code = ''
     while random_code == '' or (Class.query.filter_by(code=random_code).count() > 0):

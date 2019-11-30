@@ -5,36 +5,36 @@
 {% block styles %}
     {{ super() }}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" />
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/announcement.css') }}" />
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/post.css') }}" />
 {% endblock %}
 
 {% block page_content %}
     <div class="page-header mt-0">
-        <h1>Announcements</h1>
+        <h1>Blog</h1>
     </div>
     <div class="row">
         <div class="col-lg-9 order-2 order-lg-1">
-            {% if current_user.is_admin() %}
-            <button type="button" class="btn btn-success" data-toggle="modal" id="comBtn" style="margin-bottom: 20px;">Add announcement</button>
+            {% if current_user.can(Permission.MANAGE_CLASS) %}
+            <button type="button" class="btn btn-success" data-toggle="modal" id="comBtn" style="margin-bottom: 20px;">Add post</button>
             <div id="formAcc" style="margin-bottom: 20px;">
                 {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
             </div>
             {% endif %}
-            {% if announcements %}
-            <ul id="announcements" class="list-unstyled">
-                {% for announcement in announcements %}
-                <li class="announcement media">
-                    {% include 'announcements/_announcement.html' %}
+            {% if posts %}
+            <ul id="posts" class="list-unstyled">
+                {% for post in posts %}
+                <li class="post media">
+                    {% include 'teacher_blog/_post.html' %}
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <p>No announcements yet!</p>
+            <p>No posts yet!</p>
             {% endif %}
             {{ macros.addPagination(pagination, '.index') }}
         </div>
         <div class="col-lg-3 order-1 order-lg-2 mb-3">
-            {% include "announcements/_sidebar.html" %}
+            {% include "teacher_blog/_sidebar.html" %}
         </div>
     </div>
 {% endblock %}
@@ -42,10 +42,11 @@
 {% block scripts %}
     {{ super() }}
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
-    {% if current_user.is_admin() %}
+    {% if current_user.can(Permission.MANAGE_CLASS) %}
+    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
     <script>
-        new SimpleMDE({element: $('#body')[0], forceSync: true, hideIcons:["guide"]});
-        new SimpleMDE({element: $('#summary')[0], forceSync: true, hideIcons:["guide"]});
+        new SimpleMDE({element: $('#body')[0], forceSync: true});
+        new SimpleMDE({element: $('#summary')[0], forceSync: true});
         $('#formAcc').hide()
         $('#comBtn').on("click", function() {
             $('#formAcc').slideToggle();
@@ -56,7 +57,7 @@
     </script>
     {% endif %}
     <script>    
-        $(".announcement .media-body img").addClass("img-fluid");
+        $(".post .media-body img").addClass("img-fluid");
     </script>
     {{ moment.include_moment() }}
 {% endblock %}

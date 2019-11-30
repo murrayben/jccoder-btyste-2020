@@ -6,7 +6,7 @@ from markdown import markdown
 from mdx_gfm import GithubFlavoredMarkdownExtension
 from app import db, login
 from app.search import add_to_index, remove_from_index, query_index
-import bleach, re
+import bleach, re, hashlib
 
 def customTagMarkdown(original_mardown, object_id=None, extensions=None):
     lines = []
@@ -158,8 +158,13 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
     html = markdown(finished_markdown, output_format='html', extensions=extensions_list)
     return html
 
-post_tags = db.Table("post_tags",
+announcement_tags = db.Table("announcement_tags",
     db.Column('tag_id', db.Integer, db.ForeignKey('tags.id')),
+    db.Column('announcement_id', db.Integer, db.ForeignKey('announcements.id'))
+)
+
+post_tags = db.Table("post_tags",
+    db.Column('post_category_id', db.Integer, db.ForeignKey('postcategories.id')),
     db.Column('post_id', db.Integer, db.ForeignKey('posts.id'))
 )
 
@@ -264,7 +269,9 @@ class User(UserMixin, db.Model):
     about_me = db.Column(db.String(140))
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     under_13 = db.Column(db.Boolean, nullable=False)
+    avatar_hash = db.Column(db.String(32))
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+    announcements = db.relationship('Announcement', backref='author', lazy='dynamic')
     posts = db.relationship('Post', backref='author', lazy='dynamic')
     answers = db.relationship('UserAnswer', backref='user', lazy='dynamic')
     page_questions = db.relationship('PageQuestion', backref='author', lazy='dynamic')
@@ -286,6 +293,8 @@ class User(UserMixin, db.Model):
         super(User, self).__init__(**kwargs)
         if self.role is None:
             self.role = Role.query.filter_by(default=True).first()
+        if self.can(Permission.MANAGE_CLASS):
+            self.avatar_hash = hashlib.md5(self.email.encode("utf-8")).hexdigest()
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -301,6 +310,15 @@ class User(UserMixin, db.Model):
     
     def past_assignments(self):
         return self.assignments.filter(Assignment.due_date < datetime.now())
+    
+    def getAvatar(self, size=100, default='identicon', rating='g'):
+        if request.is_secure:
+            base_url = 'https://secure.gravatar.com/avatar'
+        else:
+            base_url = 'http://www.gravatar.com/avatar'
+        hash = self.avatar_hash or hashlib.md5(self.parents_email.encode('utf-8')).hexdigest()
+        full_url = "%s/%s?s=%i&d=%s&?r=%s" % (base_url, hash, size, default, rating)
+        return full_url
 
     def __repr__(self):
         return '<User {}>'.format(self.username)
@@ -340,8 +358,8 @@ class Tag(db.Model):
     def __repr__(self):
         return 'Tag <%s>' % self.name
 
-class Post(db.Model, SearchableMixin):
-    __tablename__ = 'posts'
+class Announcement(db.Model, SearchableMixin):
+    __tablename__ = 'announcements'
     __searchable__ = ['title', 'body']
 
     id = db.Column(db.Integer, primary_key=True)
@@ -353,8 +371,8 @@ class Post(db.Model, SearchableMixin):
     date_posted = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     published = db.Column(db.Boolean, default=True)
     title = db.Column(db.String(64))
-    tags = db.relationship('Tag', secondary=post_tags,
-                           backref=db.backref('posts', lazy='dynamic'))
+    tags = db.relationship('Tag', secondary=announcement_tags,
+                           backref=db.backref('announcements', lazy='dynamic'))
 
     @staticmethod
     def body_changed(target, value, oldvalue, initiator):
@@ -364,8 +382,8 @@ class Post(db.Model, SearchableMixin):
     def summary_changed(target, value, oldvalue, initiator):
         target.summary_html = customTagMarkdown(value)
 
-db.event.listen(Post.body, 'set', Post.body_changed)
-db.event.listen(Post.summary, 'set', Post.summary_changed)
+db.event.listen(Announcement.body, 'set', Announcement.body_changed)
+db.event.listen(Announcement.summary, 'set', Announcement.summary_changed)
 
 class Project(db.Model):
     __tablename__ = 'projects'
@@ -982,3 +1000,39 @@ class ProblemMistakeType(db.Model):
                 t = ProblemMistakeType(mistake_type=mistake_type, description=description)
                 db.session.add(t)
         db.session.commit()
+
+class Post(db.Model, SearchableMixin):
+    __tablename__ = 'posts'
+    __searchable__ = ['title', 'body']
+
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    summary = db.Column(db.Text)
+    summary_html = db.Column(db.Text)
+    date_posted = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    published = db.Column(db.Boolean, default=True)
+    title = db.Column(db.String(64))
+    categories = db.relationship('PostCategory', secondary=post_tags,
+                           backref=db.backref('posts', lazy='dynamic'))
+
+    @staticmethod
+    def body_changed(target, value, oldvalue, initiator):
+        target.body_html = customTagMarkdown(value)
+
+    @staticmethod
+    def summary_changed(target, value, oldvalue, initiator):
+        target.summary_html = customTagMarkdown(value)
+
+db.event.listen(Post.body, 'set', Post.body_changed)
+db.event.listen(Post.summary, 'set', Post.summary_changed)
+
+class PostCategory(db.Model):
+    __tablename__ = 'postcategories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64))
+
+    def __repr__(self):
+        return 'Post Category <%s>' % self.name

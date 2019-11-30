@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block page_content %}
-    <h1>Edit {{ announcement.title }} By {{ announcement.author.username|capitalize }}</h1>
+    <h1>Edit {{ post.title }}</h1>
     {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
 {% endblock %}
 
@@ -15,7 +15,7 @@
     {{ super() }}
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <script>
-        new SimpleMDE({element: $('#body')[0], forceSync: true, hideIcons:["guide"]});
-        new SimpleMDE({element: $('#summary')[0], forceSync: true, hideIcons:["guide"]});
+        new SimpleMDE({element: $('#body')[0], forceSync: true});
+        new SimpleMDE({element: $('#summary')[0], forceSync: true});
     </script>
 {% endblock %}

@@ -3,30 +3,30 @@
 
 {% block styles %}
     {{ super() }}
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/announcement.css') }}" />
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/post.css') }}" />
 {% endblock %}
 
 {% block page_content %}
     <div class="page-header">
-        <h1>Tag "{{ tag.name }}"</h1>
+        <h1>Category "{{ category.name }}"</h1>
     </div>
     <div class="row">
         <div class="col-lg-9 order-2 order-lg-1">
-            {% if announcements %}
-            <ul id="announcements" class="list-unstyled">
-                {% for announcement in announcements %}
-                <li class="announcement media">
-                    {% include 'announcements/_announcement.html' %}
+            {% if posts %}
+            <ul id="posts" class="list-unstyled">
+                {% for post in posts %}
+                <li class="post media">
+                    {% include 'teacher_blog/_post.html' %}
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <p>No announcements in this category yet!</p>
+            <p>No posts in this category yet!</p>
             {% endif %}
-            {{ macros.addPagination(pagination, '.tag', id=tag.id) }}
+            {{ macros.addPagination(pagination, '.category', id=category.id) }}
         </div>
         <div class="col-lg-3 order-1 order-lg-2 mb-3">
-            {% include "announcements/_sidebar.html" %}
+            {% include "teacher_blog/_sidebar.html" %}
         </div>
     </div>
 {% endblock %}
@@ -34,7 +34,7 @@
 {% block scripts %}
     {{ super() }}
     <script>
-        $(".announcement .media-body img").addClass("img-fluid");
+        $(".post .media-body img").addClass("img-fluid");
     </script>
     {{ moment.include_moment() }}
 {% endblock %}
