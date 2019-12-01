@@ -215,6 +215,7 @@
                     <!-- Will be replaced by content -->
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-primary">Add Content</button>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
             </div>
@@ -505,10 +506,18 @@
             }
             var page = "{{ assignments_pagination.page }}";
             $('#assignments').on('click', '.pagination-link', showAssignments);
+            var assignmentsTimer = setInterval(function() {
+                showAssignments();
+            }, 10000);
             
-            function showAssignments(e) {
-                e.preventDefault();
-                var direction = this.id == 'prev-btn' ? -1 : 1;
+            function showAssignments(e=null) {
+                clearInterval(assignmentsTimer);
+                if (e) {
+                    e.preventDefault();
+                    var direction = this.id == 'prev-btn' ? -1 : 1;
+                } else {
+                    var direction = 0;
+                }
                 var data = {class_id: "{{ class.id }}", page: page, direction: direction};
                 $.ajax({
                     url: "{{ url_for('teacher.assignment_page') }}",
@@ -521,6 +530,9 @@
                         flask_moment_render_all();
                         $('.assignment-progress').popover();
                         page = Number(page) + direction;
+                        assignmentsTimer = setInterval(function() {
+                            showAssignments();
+                        }, 10000);
                     },
                     error: function(error) {
                         var error_message = $('<p>Sorry an unexpected error has occured.</p>');
