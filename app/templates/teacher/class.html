@@ -7,6 +7,7 @@
     {{ super() }}
     <!-- JQuery UI is for datepicker -->
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" />
     <style type="text/css">
         .content:hover > div[data-toggle="collapse"] {
             background-color: #ffffff;
@@ -49,6 +50,14 @@
             min-height: 600px;
         }
 
+        [data-toggle="collapse"] .arrow > i:before {
+            content: "\f078"; /* fa-chevron-down */
+        }
+
+        [data-toggle="collapse"][aria-expanded="true"] .arrow > i:before {
+            content: "\f077"; /* fa-chevron-up */
+        }
+
         @media (min-width: 1400px) {
             #pageModal .modal-dialog {
                 max-width: 1200px;
@@ -81,7 +90,7 @@
                     {% elif item_type == "Quiz" %}
                         {% set icon_class = 'fas fa-pencil-alt fa-fw' %}
                     {% else %}
-                        {% set icon_class = 'fas fa-chevron-right fa-fw' %}
+                        {% set icon_class = 'fas fa-fw' %}
                     {% endif -%}
                 <div class="{% if not is_page %}arrow {% endif %}align-self-center"><i class="{{ icon_class }}" aria-hidden="true"></i></div>
                 {% endif -%}
@@ -139,7 +148,7 @@
                 <div class="modal-body">
                     <p>To select multiple options, hold down Ctrl or &#8984; while clicking the different options.</p>
                     <hr />
-                    {{ wtf.quick_form(form, form_type="horizontal", novalidate=True) }}
+                    {{ wtf.quick_form(assignment_form, form_type="horizontal", novalidate=True) }}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-link text-danger" data-dismiss="modal">Cancel</button>
@@ -211,11 +220,17 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body" id="page-html">
-                    <!-- Will be replaced by content -->
+                <div class="modal-body">
+                    <div id="page-html">
+                        <!-- Will be replaced by content -->
+                    </div>
+                    <div class="d-none mb-3" id="teacher-notes-form">
+                        <hr />
+                        {{ wtf.quick_form(teacher_notes_form, button_map={'submit_notes': 'primary'}, novalidate=true) }}
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary">Add Content</button>
+                    <button type="button" class="btn btn-primary" id="add-content-modal-btn">Add Content</button>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
             </div>
@@ -384,6 +399,7 @@
     {{ super() }}
     <!-- JQuery UI is for datepicker -->
     <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     {{ moment.include_moment() }}
     <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
     <script src="{{ url_for('static', filename='js/load_page_content.js') }}"></script>
@@ -393,15 +409,7 @@
             $('.content-toggler .assignment-checkbox').on('click', function(e) {
                 e.stopPropagation();
             });
-            // Collapse arrows
-            $('.content div').on('click', function() {
-                var $arrow = $(this).children('.d-flex').children('.arrow');
-                if ($arrow.children('.fa-chevron-right').length > 0) {
-                    $arrow.html('<i class="fas fa-chevron-down fa-fw" aria-hidden="true"></i>')
-                } else {
-                    $arrow.html('<i class="fas fa-chevron-right fa-fw" aria-hidden="true"></i>')
-                }
-            });
+            
             // View more content dropdown
             $('.module-dropdown').on('click', function(e) {
                 e.preventDefault();
@@ -416,7 +424,7 @@
                 var $content = $('.content[data-parent-type="module"][data-parent-id="' + $('.module-dropdown.active').data('module') + '"]');
                 $content.show();
                 $($content.data('target') + '.content').show(); // Because of nested collapses
-                $('.arrow').html('<i class="fas fa-chevron-right fa-fw" aria-hidden="true"></i>'); // Reset arrows
+                $('.arrow').html('<i class="fas fa-fw" aria-hidden="true"></i>'); // Reset arrows
             }
             // Checkbox tick all functionality
             $('.assignment-checkbox input').on('change', function() {
@@ -453,7 +461,7 @@
             });
             $('#assign-btn').prop('disabled', true);
             $('#due_date').attr('autocomplete', 'off').datepicker({dateFormat: 'dd-mm-yy', minDate: '+1D'});
-            $('#submit').hide();
+            $('#submit_assignments').hide();
             $('#assign-submit-btn').on('click', function() {
                 var objects = {pages: [], quizzes: [], chapter_quizzes: []}
                 $('.assignment-checkbox input:checked').each(function() {
@@ -473,7 +481,7 @@
                     contentType: "application/json; charset=utf-8",
                     type: 'POST',
                     success: function() {
-                        $('#submit').click(); // Click actual submit button
+                        $('#submit_assignments').click(); // Click actual submit button
                     },
                     error: function(error) {
                         var error_message = $('<p>Sorry an unexpected error has occured.</p>');
@@ -707,6 +715,8 @@
                 }
             });
 
+            
+            var teacher_notes_simplemde = new SimpleMDE({element: $('#content')[0], forceSync: true, hideIcons:["side-by-side", "fullscreen"], spellChecker: false, placeholder: 'Type your extra notes/links/content...'});
             $('#assign, #assignments').on('click', '.page-hyperlink, .quiz-hyperlink', function(e) {
                 e.preventDefault();
                 var $this = $(this);
@@ -716,10 +726,35 @@
                 if (is_page) {
                     // Page
                     loadPageContent($this, $this.data('pageId'), is_quiz=false, preview=true)
-        
+                    $('#add-content-modal-btn').removeClass('d-none');
+                    $('#teacher-notes-form').addClass('d-none');
+                    teacher_notes_simplemde.value('');
+                    $('#page_id').val($this.data('pageId'));
+                    $('#pageModal .modal-body').animate({
+                        scrollTop: 0
+                    }, 1000);
                 } else {
                     loadPageContent($this, $this.data('quizId'), is_quiz=true, preview=true)
+                    $('#add-content-modal-btn').addClass('d-none');
                 }
+            });
+
+            $('#submit_notes').prop('disabled', true);
+            $('#submit_notes').on('click', function(e) {e.preventDefault();});
+            teacher_notes_simplemde.codemirror.on('change', function() {
+                if (teacher_notes_simplemde.value().trim()) {
+                    $('#submit_notes').prop('disabled', false).off('click');
+                } else {
+                    $('#submit_notes').prop('disabled', true).on('click', function(e) {e.preventDefault();});
+                }
+            });
+            
+            $('#add-content-modal-btn').on('click', function() {
+                $('#teacher-notes-form').removeClass('d-none');
+                $('#pageModal .modal-body').animate({
+                    scrollTop: $('#page-html').height()
+                }, 1000);
+                $(this).addClass('d-none');
             });
         
             $('.delete-student').on('click', deleteStudent);

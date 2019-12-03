@@ -275,6 +275,7 @@ class User(UserMixin, db.Model):
     posts = db.relationship('Post', backref='author', lazy='dynamic')
     comments = db.relationship('PostComment', backref='author', lazy='dynamic')
     answers = db.relationship('UserAnswer', backref='user', lazy='dynamic')
+    notes = db.relationship('TeacherNote', backref='teacher', lazy='dynamic')
     page_questions = db.relationship('PageQuestion', backref='author', lazy='dynamic')
     page_answers = db.relationship('PageAnswer', backref='author', lazy='dynamic')
     reported_problem_mistakes = db.relationship('ProblemMistake', backref='user', lazy='dynamic')
@@ -830,6 +831,7 @@ class Page(SearchableMixin, db.Model):
     next_page = db.relationship('Page', backref=db.backref('prev_page', uselist=False), remote_side=[id], uselist=False)
     questions = db.relationship('PageQuestion', backref='page', lazy='dynamic')
     assignments = db.relationship('Assignment', backref='page', lazy='dynamic')
+    notes = db.relationship('TeacherNote', backref='page', lazy='dynamic')
     lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'))
 
     def what_model(self):
@@ -932,6 +934,7 @@ class Class(db.Model):
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
     teacher_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     assignments = db.relationship('Assignment', backref='class_', lazy='dynamic', cascade='all')
+    notes = db.relationship('TeacherNote', backref='class_', lazy='dynamic')
     students = db.relationship('User', secondary='class_students',
         backref=db.backref('classes', lazy='dynamic', cascade='all'), lazy='dynamic')
 
@@ -1025,7 +1028,13 @@ class Post(db.Model, SearchableMixin):
 
     @staticmethod
     def body_changed(target, value, oldvalue, initiator):
-        target.body_html = customTagMarkdown(value)
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'br', 'blockquote', 'code',
+                        'del', 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+                        'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span',
+                        'table', 'tbody', 'thead', 'td', 'tr', 'th']
+        target.body_html = bleach.linkify(bleach.clean(
+            customTagMarkdown(value),
+            tags=allowed_tags, attributes=['class', 'id', 'href', 'alt', 'title', 'style', 'src']))
         new_summary = value
         new_summary = new_summary.split(' ')
         new_summary = new_summary[:80]
@@ -1053,7 +1062,13 @@ class PostComment(db.Model):
 
     @staticmethod
     def body_changed(target, value, oldvalue, initiator):
-        target.body_html = customTagMarkdown(value)
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'br', 'blockquote', 'code',
+                        'del', 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+                        'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span',
+                        'table', 'tbody', 'thead', 'td', 'tr', 'th']
+        target.body_html = bleach.linkify(bleach.clean(
+            customTagMarkdown(value),
+            tags=allowed_tags, attributes=['class', 'id', 'href', 'alt', 'title', 'style', 'src']))
 
 db.event.listen(PostComment.body, 'set', PostComment.body_changed)
 
@@ -1065,3 +1080,27 @@ class PostCategory(db.Model):
 
     def __repr__(self):
         return 'Post Category <%s>' % self.name
+
+class TeacherNote(db.Model):
+    __tablename__ = 'teachernotes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    date_posted = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    class_id = db.Column(db.Integer, db.ForeignKey('classes.id'))
+    page_id = db.Column(db.Integer, db.ForeignKey('pages.id'))
+
+    @staticmethod
+    def body_changed(target, value, oldvalue, initiator):
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'br', 'blockquote', 'code',
+                        'del', 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+                        'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span',
+                        'table', 'tbody', 'thead', 'td', 'tr', 'th']
+        target.body_html = bleach.linkify(bleach.clean(
+            customTagMarkdown(value),
+            tags=allowed_tags, attributes=['class', 'id', 'href', 'alt', 'title', 'style', 'src']))
+
+db.event.listen(TeacherNote.body, 'set', TeacherNote.body_changed)

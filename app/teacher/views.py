@@ -2,9 +2,9 @@ import random, string
 
 from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
-from ..models import Assignment, Class, ClassStudent, Page, Permission, Question, Quiz, StudentAssignment, User, db
+from ..models import Assignment, Class, ClassStudent, Page, Permission, Question, Quiz, StudentAssignment, TeacherNote, User, db
 from .. import moment
-from .forms import AssignmentForm, NewClass
+from .forms import AssignmentForm, NewClass, TeacherNoteForm
 from . import teacher
 
 @teacher.before_request
@@ -47,9 +47,10 @@ def display_class(id):
         abort(403)
     page = request.args.get('assignments_page', 1, int)
     session["usernames"] = []
-    form = AssignmentForm(id)
+    assignment_form = AssignmentForm(id)
+    teacher_notes_form = TeacherNoteForm()
     objects = []
-    if form.validate_on_submit():
+    if assignment_form.validate_on_submit() and assignment_form.submit_assignments.data:
         # Merging them into one list
         items = session.get("assigned_pages", [])
         items.append('change-to-quiz')
@@ -61,14 +62,14 @@ def display_class(id):
             if item == "change-to-quiz":
                 item_type = "quiz"
                 continue
-            assignment = Assignment(class_id=id, teacher_id=current_user.id, due_date=form.due_date.data)
+            assignment = Assignment(class_id=id, teacher_id=current_user.id, due_date=assignment_form.due_date.data)
             if item_type == "page":
                 assignment.page_id = item
             else:
                 assignment.quiz_id = item
             db.session.add(assignment)
             db.session.commit()
-            for student_id in form.students.data:
+            for student_id in assignment_form.students.data:
                 # Confirming that student is a real user and in the class.
                 student = User.query.get(student_id)
                 if student and (student in class_.students.all()):
@@ -79,14 +80,23 @@ def display_class(id):
                     db.session.delete(assignment)
                     db.session.commit()
         return redirect(url_for('.display_class', id=id))
-    elif form.is_submitted() and not form.validate():
+    elif assignment_form.submit_assignments.data and not assignment_form.validate():
         objects = session.get("assigned_pages", [])
         objects.append(-1)
         objects.extend(session.get("assigned_quizzes", []))
         objects.append(-2)
         objects.extend(session.get("assigned_chapter_quizzes", []))
+    elif teacher_notes_form.validate_on_submit() and teacher_notes_form.submit_notes.data:
+        page_id = int(teacher_notes_form.page_id.data)
+        teacher_note = TeacherNote(teacher_id=current_user.id, body=teacher_notes_form.content.data, page_id=page_id, class_id=class_.id)
+        db.session.add(teacher_note)
+        flash('Content Added!', 'info')
+        return redirect(url_for('main.chapter', id=Page.query.get_or_404(page_id).lesson.chapter.id, item='page_' + str(page_id)))
+    elif teacher_notes_form.submit_notes.data and not teacher_notes_form.validate():
+        flash('Something wrong has occurred!', 'warning')
+        return redirect(url_for('.display_class', id=class_.id))
     assignment_pagination = class_.assignments.order_by(Assignment.due_date.desc()).paginate(page, per_page=8)
-    return render_template('teacher/class.html', title="JCCoder - " + class_.name, class_=class_, form=form, objects=objects, assignments_pagination=assignment_pagination)
+    return render_template('teacher/class.html', title="JCCoder - " + class_.name, class_=class_, assignment_form=assignment_form, teacher_notes_form=teacher_notes_form, objects=objects, assignments_pagination=assignment_pagination)
 
 @teacher.route('/class/assignment-page', methods=["GET", "POST"])
 def assignment_page():

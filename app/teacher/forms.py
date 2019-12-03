@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask_wtf import FlaskForm
-from wtforms import DateTimeField, SelectMultipleField, StringField, SubmitField, TextAreaField
+from wtforms import DateTimeField, HiddenField, SelectMultipleField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, Optional, ValidationError
 from ..models import Class, Permission, User
 
@@ -19,4 +19,9 @@ class AssignmentForm(FlaskForm):
             raise ValidationError('Due date cannot be set to a past date.')
     students = SelectMultipleField('Students', validators=[DataRequired(message="Please select one or more students.")], coerce=int)
     due_date = DateTimeField('Due date', validators=[DataRequired(message="Please enter a valid date.")], format="%d-%m-%Y")
-    submit = SubmitField('Assign')
+    submit_assignments = SubmitField('Assign')
+
+class TeacherNoteForm(FlaskForm):
+    page_id = HiddenField('')
+    content = TextAreaField('Content', validators=[DataRequired()])
+    submit_notes = SubmitField('Add content')

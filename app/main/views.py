@@ -7,7 +7,7 @@ from ..models import (db, AnswerStatus, Assignment, Chapter, Class,
                       ClassStudent, Hint, Lesson, Page, PageAnswer,
                       PageQuestion, Permission, ProblemMistake,
                       ProblemMistakeType, Project, Quiz, StudentAssignment,
-                      UserAnswer, Question, QuizAttempt)
+                      TeacherNote, UserAnswer, Question, QuizAttempt)
 from .. import moment
 from .forms import NewPageQuestion, NewPageAnswer, EditPageAnswer, SearchForm
 from . import main
@@ -212,6 +212,28 @@ def page_content():
         else:
             page_type = ''
 
+        notes_html = ''
+        if current_user.is_admin():
+            notes = page.notes.group_by(TeacherNote.teacher).all()
+            notes_html = "<hr /><h3>Added Notes</h3>"
+            for note in notes:
+                notes_html += '<hr />{0}<p>Added by {1} to their class {2}'.format(note.body_html, note.teacher.username, note.class_.name)
+        elif current_user.can(Permission.MANAGE_CLASS):
+            notes = page.notes.filter_by(teacher_id=current_user.id).group_by(TeacherNote.class_id).all()
+            notes_html = "<hr /><h3>You added</h3>"
+            current_class = None
+            for note in notes:
+                if note.class_id != current_class:
+                    notes_html += '<hr /><h5>Class: ' + note.class_.name + '</h5>'
+                    current_class = note.class_id 
+                notes_html += '<hr />{0}'.format(note.body_html)
+        else:
+            notes = page.notes.filter(TeacherNote.class_.has(Class.students.contains(current_user._get_current_object()))).all()
+            notes_html = "<hr /><h3>Added by your teacher</h3>"
+            for note in notes:
+                notes_html += '<hr />{0}'.format(note.body_html)
+                
+        page_html += notes_html
         # css, js, stripped_lines = parsePageContent(page_html)
         # page_html = '\n'.join(stripped_lines)
         # return jsonify(success=True, page_title=page_title, page_html=page_html, page_type=page_type, css=css, js=js)

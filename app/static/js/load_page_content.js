@@ -4,7 +4,7 @@ function destroyExtras() {
 
 function loadPageContent(pageEl, page_id, is_quiz=false, preview=false) {
     // Send ajax request to server to retrieve page content
-    data = {id: page_id, is_quiz: is_quiz}
+    data = {id: page_id, is_quiz: is_quiz, is_preview: preview}
     $.ajax({
         url: '/page-content/',
         data: JSON.stringify(data),
