@@ -373,7 +373,8 @@ def get_hint():
         # Return error as data is invalid (possibly user tried to change values through browser Inspector)
         abort(400)
     hint_count = Hint.query.filter_by(question_id=data["question_id"]).count()
-    session["num_hints_used"] = int(session.get("num_hints_used", 0)) + 1
+    if not data["is_checked"]:
+        session["num_hints_used"] = int(session.get("num_hints_used", 0)) + 1
     is_last_hint = int(data["hint_no"]) == hint_count
     return jsonify(success=True, hint_html=hint.html, is_last_hint=is_last_hint)
 

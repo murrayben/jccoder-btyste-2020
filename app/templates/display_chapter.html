@@ -380,9 +380,7 @@
                 $(document).on('quiz_height_update', function() {
                     var $quiz = $('#quiz-' + quizID);
                     if ($quiz.contents().find('#start').is(':hidden')) {
-                        parent.console.log($quiz.innerHeight());
                         $quiz.innerHeight($quiz.contents().find('html').innerHeight());
-                        parent.console.log($('#quiz-' + quizID).contents().find('html').innerHeight());
                     }
                 });
 
@@ -435,7 +433,6 @@
                             if (response.authenticated) {
                                 var score = response.overall_score;
                                 var best_score = $('.quiz-hyperlink[data-quiz-id="' + quiz_id + '"]').siblings('.best-score').children('.score').first();
-                                console.log(best_score);
                                 if (score > Number(best_score.text())) {
                                     best_score.text(score);
                                 }

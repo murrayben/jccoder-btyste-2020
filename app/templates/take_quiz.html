@@ -316,6 +316,7 @@
             var x = $('<span class="fas fa-times fa-fw">');
             var hint_icon = $('<i class="far fa-lightbulb fa-fw">');
             var used_hint = false;
+            var is_checked = false;
 
             $('.container-fluid').children().hide();
             $('#start').show();
@@ -346,7 +347,7 @@
                 var $this = $(this); // For further down
                 var $hints_box = $currentQuestion.children('.hints-box').first();
                 $hints_box.show(function() {
-                    data = {"hint_no": Number($currentQuestion.attr('data-at-hint')) + 1, "question_id": $currentQuestion.attr('id')}
+                    data = {"hint_no": Number($currentQuestion.attr('data-at-hint')) + 1, "question_id": $currentQuestion.attr('id'), is_checked: is_checked}
                     $.ajax({
                         url: "{{ url_for('main.get_hint') }}",
                         data: JSON.stringify(data),
@@ -370,7 +371,7 @@
                             }
                             
                             $currentQuestion.attr('data-at-hint', Number($currentQuestion.attr('data-at-hint')) + 1)
-                            if ($currentQuestion.attr('data-at-hint') === "1") {
+                            if ($currentQuestion.attr('data-at-hint') === "1" && !is_checked) {
                                 /*data = {"hint_used_mark_incorrect": true};
                                 $.ajax({
                                     url: "{{ url_for('main.check') }}",
@@ -493,6 +494,7 @@
                 $currentQuestion = $currentQuestion.next();
                 $currentQuestion.fadeIn();
                 used_hint = false;
+                is_checked = false;
                 $('#help-btn').show();
                 updateAttemptNo(true);
                 $("#max-attempts").text($currentQuestion.data('max-attempts'));
@@ -569,6 +571,7 @@
                             if (response.answer_status) {
                                 //$('.answer-status').html("<span style=\"color:#5ad65a\">Correct!</span>").hide().fadeIn(1000);
                                 parent.$(parent.document).trigger('update_check_btn', ["popover-<h5>That was the right answer! Well done!</h5>"]);
+                                is_checked = true;
                                 if (!used_hint) {
                                     var $historyIcon = $('.no-ans').first();
                                     $historyIcon.addClass('badge-correct');
@@ -680,6 +683,10 @@
                     });
                         
                 } else {
+                    parent.$('#page-html').animate({
+                        scrollTop: 0
+                    }, 1000);
+                    parent.$(parent.document).trigger('update_check_btn', ["popover-<h5>Please enter an answer!</h5>"]);
                     $('#next-btn').removeAttr('disabled');
                     parent.$(parent.document).trigger('update_check_btn', ["enable-btn"]);
                 }

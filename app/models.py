@@ -1081,6 +1081,11 @@ class PostCategory(db.Model):
     def __repr__(self):
         return 'Post Category <%s>' % self.name
 
+def set_target(attrs, new=False):
+    attrs[(None, 'target')] = '_blank'
+    attrs[(None, 'rel')] = 'noopener noreferrer'
+    return attrs
+
 class TeacherNote(db.Model):
     __tablename__ = 'teachernotes'
 
@@ -1101,6 +1106,6 @@ class TeacherNote(db.Model):
                         'table', 'tbody', 'thead', 'td', 'tr', 'th']
         target.body_html = bleach.linkify(bleach.clean(
             customTagMarkdown(value),
-            tags=allowed_tags, attributes=['class', 'id', 'href', 'alt', 'title', 'style', 'src']))
+            tags=allowed_tags, attributes=['class', 'id', 'href', 'alt', 'title', 'style', 'src']), callbacks=[set_target])
 
 db.event.listen(TeacherNote.body, 'set', TeacherNote.body_changed)
