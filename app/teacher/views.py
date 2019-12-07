@@ -95,6 +95,7 @@ def display_class(id):
     elif teacher_notes_form.submit_notes.data and not teacher_notes_form.validate():
         flash('Something wrong has occurred!', 'warning')
         return redirect(url_for('.display_class', id=class_.id))
+    # assignment_pagination = class_.assignments.filter_by(page_id=None).order_by(Assignment.due_date.desc()).paginate(page, per_page=8)
     assignment_pagination = class_.assignments.order_by(Assignment.due_date.desc()).paginate(page, per_page=8)
     return render_template('teacher/class.html', title="JCCoder - " + class_.name, class_=class_, assignment_form=assignment_form, teacher_notes_form=teacher_notes_form, objects=objects, assignments_pagination=assignment_pagination)
 
@@ -109,7 +110,12 @@ def assignment_page():
         abort(400)
     elif class_.teacher_id != current_user.id:
         abort(400)
-    assignments_pagination = class_.assignments.order_by(Assignment.due_date.desc()).paginate(page + data["direction"], per_page=8)
+
+    if data["just_quizzes"]:
+        assignments_pagination = class_.assignments.filter_by(page_id=None)
+    else:
+        assignments_pagination = class_.assignments
+    assignments_pagination = assignments_pagination.order_by(Assignment.due_date.desc()).paginate(page + data["direction"], per_page=8)
     html = render_template('teacher/_assignment.html', class_=class_, assignments_pagination=assignments_pagination, moment=moment.create)
     return jsonify(success=True, html=html)
 

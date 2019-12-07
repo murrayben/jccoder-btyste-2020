@@ -1,6 +1,7 @@
 {% set class = class_ %}
 {% set assignments = assignments_pagination.items %}
-<div class="text-right mb-2">
+<div class="d-flex mb-2">
+    <button type="button" class="btn btn-link mr-auto" id="assignment-filter-btn" data-filtering="Quiz">Just show quiz assignments</button>
     {% set has_prev = assignments_pagination.has_prev %}
     {% set has_next = assignments_pagination.has_next %}
     <a href="{{ url_for('.display_class', id=class.id, assignments_page=assignments_pagination.prev_num) if has_prev else '#' }}" class="btn btn-link pagination-link{% if not has_prev %} disabled{% endif %}" id="prev-btn">Previous</a>

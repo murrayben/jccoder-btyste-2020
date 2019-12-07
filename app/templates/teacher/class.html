@@ -517,8 +517,21 @@
             var assignmentsTimer = setInterval(function() {
                 showAssignments();
             }, 10000);
+
+            $('#assignments').on('click', '#assignment-filter-btn', filterAssignments);
+            function filterAssignments() {
+                var $this = $(this);
+                if ($this.data('filtering') === 'Quiz') {
+                    $this.data('filtering', 'All');
+                } else {
+                    $this.data('filtering', 'Quiz');
+                }
+                $this.text('Loading...')
+                $this.off('click');
+                showAssignments(e=null, go_to_first_page=true);
+            }
             
-            function showAssignments(e=null) {
+            function showAssignments(e=null, go_to_first_page=false) {
                 clearInterval(assignmentsTimer);
                 if (e) {
                     e.preventDefault();
@@ -526,7 +539,9 @@
                 } else {
                     var direction = 0;
                 }
-                var data = {class_id: "{{ class.id }}", page: page, direction: direction};
+                var current_page = go_to_first_page ? 1 : page;
+                var just_quizzes = $('#assignment-filter-btn').data('filtering') === 'All';
+                var data = {class_id: "{{ class.id }}", page: current_page, direction: direction, just_quizzes: just_quizzes};
                 $.ajax({
                     url: "{{ url_for('teacher.assignment_page') }}",
                     data: JSON.stringify(data),
@@ -541,6 +556,10 @@
                         assignmentsTimer = setInterval(function() {
                             showAssignments();
                         }, 10000);
+
+                        if (just_quizzes) {
+                            $('#assignment-filter-btn').data('filtering', 'All').text('Show all assignments');
+                        }
                     },
                     error: function(error) {
                         var error_message = $('<p>Sorry an unexpected error has occured.</p>');
