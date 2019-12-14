@@ -842,9 +842,7 @@ class Page(SearchableMixin, db.Model):
         #                 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
         #                 'h1', 'h2', 'h3', 'p', 'img', 'footer', 'div', 'span', 'iframe']
         
-        target.html = bleach.linkify(
-            customTagMarkdown(value)
-        )
+        target.html = customTagMarkdown(value)
     
     def is_unlocked(self):
         return current_user.assignments.filter_by(page_id=self.id).first() or current_user.can(Permission.MANAGE_CLASS)

@@ -527,7 +527,8 @@
                     $this.data('filtering', 'Quiz');
                 }
                 $this.text('Loading...')
-                $this.off('click');
+                $('#assignments').off('click');
+                $('#assignments').on('click', '.pagination-link', showAssignments);
                 showAssignments(e=null, go_to_first_page=true);
             }
             
@@ -552,13 +553,17 @@
                         $('#assignments').html(response.html);
                         flask_moment_render_all();
                         $('.assignment-progress').popover();
-                        page = Number(page) + direction;
+                        page = Number(current_page) + direction;
                         assignmentsTimer = setInterval(function() {
                             showAssignments();
                         }, 10000);
 
                         if (just_quizzes) {
                             $('#assignment-filter-btn').data('filtering', 'All').text('Show all assignments');
+                        }
+                        var max_length = just_quizzes ? 2 : 3;
+                        if ($._data($('#assignments').get(0), 'events').click.length < max_length) {
+                            $('#assignments').on('click', '#assignment-filter-btn', filterAssignments);
                         }
                     },
                     error: function(error) {

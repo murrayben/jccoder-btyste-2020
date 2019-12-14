@@ -164,12 +164,19 @@
                 <hr />
                 <div class="question-help" style="display: none;">
                     <div class="row">
+                        {% set videos = Page.query.filter_by(lesson_id=question.skill.practice_quiz.lesson_id, page_type_id=PageType.query.filter_by(description="Video").first().id).all() %}
+                        {% set unlocked_videos = [] %}
+                        {% for video in videos %}
+                            {% if video.is_unlocked() %}
+                                {% if unlocked_videos.append(video) %}{% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if unlocked_videos %}
                         <div class="col-sm-6">
                             <h4>Related Videos</h4>
                             <div class="help-videos">
-                                {% with videos = Page.query.filter_by(lesson_id=question.skill.practice_quiz.lesson_id, page_type_id=PageType.query.filter_by(description="Video").first().id).all() %}
                                 <ul class="list-unstyled">
-                                    {% for video in videos %}
+                                    {% for video in unlocked_videos %}
                                     <li class="mb-2">
                                         <a href="{{ url_for('main.lesson_page', id=video.id) }}" target="_blank">
                                             <span class="dot">
@@ -179,9 +186,9 @@
                                     </li>
                                     {% endfor %}
                                 </ul>
-                                {% endwith %}
                             </div>
                         </div>
+                        {% endif %}
                         <div class="col-sm-6">
                             <h4>Still stuck?</h4>
                             <button role="button" class="btn btn-block btn-success mb-2 get-hint-btn">Get a hint</button>

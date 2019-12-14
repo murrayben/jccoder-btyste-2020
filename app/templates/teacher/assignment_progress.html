@@ -45,7 +45,8 @@
                     {%- for student in students %}
                         {%- set start_datetime = StudentAssignment.query.filter_by(student_id=student.id, assignment_id=assignment.id).first().datetime -%}
                         {%- set end_datetime = assignment.due_date -%}
-                        {%- set responses = UserAnswer.query.filter_by(user_id=student.id, question_id=question.id).filter(db.and_(UserAnswer.datetime > start_datetime, UserAnswer.datetime < end_datetime)).all() -%}
+                        {%- set responses = UserAnswer.query.filter_by(user_id=student.id, question_id=question.id) -%}
+                        {% set responses = responses.filter(db.and_(UserAnswer.datetime > start_datetime, UserAnswer.datetime < end_datetime)).all() if responses.all() -%}
                         {# User: {{ student }} Q: {{ question.id }}: {{ UserAnswer.query.filter_by(user_id=student.id, question_id=question.id).all() }}<br />
                         {% set responses = [] %}#}
                         {%- for response in responses %}
@@ -87,7 +88,7 @@
                                 {%- for user_answer in response_objects %}
                                 {%- set attempt_no = user_answer.attempt_no|int -%}
                                 {%- set timestamp = moment(user_answer.datetime) -%}
-                                <p class="mb-1 text-muted">{{ user_answer.user.username }} - Attempt #{{ attempt_no }} <em>({{ timestamp.calendar() if not timestamp.calendar().split('/') == 3 else timestamp.format('LLL') }})</em></p>
+                                <p class="mb-1 text-muted">{{ user_answer.user.username }} - Attempt #{{ attempt_no }} <em>({{ timestamp.calendar() if not timestamp.calendar().split('/')|length == 3 else timestamp.format('LLL') }})</em></p>
                                 {% endfor %}
                             </div> 
                         </div>
