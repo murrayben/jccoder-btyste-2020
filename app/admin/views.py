@@ -69,7 +69,7 @@ def new_question():
             question_answer_option = QuestionOption(text=form.answer.data, question_id=question.id)
             db.session.add(question_answer_option)
             db.session.commit()
-            question_answer = QuestionAnswer(option=QuestionOption.query.filter_by(text=form.answer.data).first(), question=question)
+            question_answer = QuestionAnswer(option=question_answer_option, question=question)
         elif question_type == QuestionType.query.filter_by(code='S').first(): # Single Answer
             question_option = QuestionOption(text=form.answer.data, question_id=question.id)
             db.session.add(question_option)
@@ -599,6 +599,9 @@ def edit_question(id):
         # Options
         options = request.form.getlist('options1')
         original_options = question.options.all()
+
+        if question.question_type_id == QuestionType.query.filter_by(code='D').first().id:
+            options.append(question.correct_answer()) # To add the extra option (the option that is a hack) that contains the answer
 
         for option in options:
             try:

@@ -215,12 +215,12 @@ def page_content():
         notes_html = ''
         if current_user.is_admin():
             notes = page.notes.group_by(TeacherNote.teacher_id).all()
-            notes_html = "<hr /><h3>Added Notes</h3>"
+            notes_html = "<hr /><h3>Added Notes</h3>" if notes else ""
             for note in notes:
                 notes_html += '<hr />{0}<p>Added by {1} to their class {2}'.format(note.body_html, note.teacher.username, note.class_.name)
         elif current_user.can(Permission.MANAGE_CLASS):
             notes = page.notes.filter_by(teacher_id=current_user.id).group_by(TeacherNote.class_id).all()
-            notes_html = "<hr /><h3>You added</h3>"
+            notes_html = "<hr /><h3>You added</h3>" if notes else ""
             current_class = None
             for note in notes:
                 if note.class_id != current_class:
@@ -229,7 +229,7 @@ def page_content():
                 notes_html += '<hr />{0}'.format(note.body_html)
         else:
             notes = page.notes.filter(TeacherNote.class_.has(Class.students.contains(current_user._get_current_object()))).all()
-            notes_html = "<hr /><h3>Added by your teacher</h3>"
+            notes_html = "<hr /><h3>Added by your teacher</h3>" if notes else ""
             for note in notes:
                 notes_html += '<hr />{0}'.format(note.body_html)
                 

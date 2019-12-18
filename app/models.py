@@ -98,11 +98,11 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
             recording_drag_and_drop = True
             line = ''
         elif '::/drag-and-drop::' in line:
-            table = """<table class="table bg-info table-bordered text-white">\n"""
+            table = """<table class="table bg-secondary table-bordered text-white">\n"""
             for option in drag_and_drop_options:
                 table += """    <tr>
         <td>{0}</td>
-        <td class="blank"></td>
+        <td class="blank bg-info"></td>
     </tr>""".format(option)
             table += "\n</table>"
             line = table
