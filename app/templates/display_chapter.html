@@ -161,6 +161,11 @@
             }
         }
         
+        @media (min-width: 992px) {
+            #scrollspy ul {
+                position: fixed;
+            }
+        }
     </style>
 {% endblock %}
 
@@ -168,10 +173,10 @@
 <div class="modal fade" id="pageModal" tabindex="-1" role="dialog" aria-labelledby="pageContent">
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fas fa-times"></span></button>
-                <h4 class="modal-title text-center" id="page-title"></h4>
-                <a href="#" id="go-to-page" class="btn btn-sm btn-success float-right">See comments</a>
+            <div class="modal-header flex-wrap">
+                <button type="button" class="close ml-0 mr-lg-0 mr-md-auto" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fas fa-times"></span></button>
+                <h4 class="modal-title mt-md-0 mt-2 ml-3" id="page-title"></h4>
+                <a href="#" id="go-to-page" class="btn btn-sm btn-success mt-md-0 mt-2 ml-3">See comments</a>
             </div>
             <div class="modal-body position-relative" id="page-html">
             <!-- Will be replaced by page Content -->
@@ -189,8 +194,8 @@
 {% block page_content %}
 {% if lessons %}
 <div class="row">
-    <div class="col-lg-3 d-none d-lg-block" id="scrollspy">
-        <ul class="nav nav-pills flex-column position-fixed">
+    <div class="col-12 col-xl-3 col-lg-4 mb-3" id="scrollspy">
+        <ul class="nav nav-pills flex-column">
             <li class="nav-item">
                 <span class="nav-link text-uppercase text-muted">Contents</span>
             </li>
@@ -201,7 +206,7 @@
             {% endfor %}
         </ul>
     </div>
-    <div class="col-12 col-lg-9 position-relative">
+    <div class="col-12 col-xl-9 col-lg-8 position-relative">
         <h1>{{ chapter.title }}</h1>
         <p class="font-weight-normal">{{ chapter.description }}</p>
         <hr>

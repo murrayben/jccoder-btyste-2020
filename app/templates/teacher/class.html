@@ -241,12 +241,12 @@
 {% block page_content %}
     <div class="page-header mt-2">
         <div class="row justify-content-between">
-            <div class="col-auto mr-auto">
+            <div class="col-sm-auto mr-auto">
                 <p class="mb-0"><a href="{{ url_for('.dashboard') }}" class="text-dark">&larr; Back to all classes</a></p>
                 <h2>{{ class.name }}</h2>
             </div>
             <div class="col-auto">
-                <p class="mb-0 text-right">Class code</p>
+                <p class="mb-0 text-md-right">Class code</p>
                 <h2>{{ class.code }}</h2>
             </div>
         </div>
@@ -269,44 +269,46 @@
         <div class="tab-pane fade show active" id="students-list" role="tabpanel" aria-labelledby="students-tab">
             {% if class.students.all()|length > 0 %}
             <a data-toggle="modal" href="#add-students-modal">Add new students</a>
-            <table class="table table-striped mt-2 w-75">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Username</th>
-                        <th class="text-right">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in class.students.all() %}
-                    {% set active = ClassStudent.query.filter_by(class_id=class.id, student_id=student.id).first().student_status %}
-                    <tr>
-                        <th scope="row" class="font-weight-bold align-middle">{{ loop.index }}</th>
-                        <td class="username align-middle">
-                            {% if active %}
-                            <div class="current-username" data-user-id="{{ student.id }}">{{ student.username }}</div>
-                            <div class="d-none">
-                                <div class="form-group mb-0">
-                                  <input type="text" class="form-control" name="edit-username" id="edit-username{{ loop.index }}" value="{{ student.username }}" placeholder="Enter a new unique username here">
-                                  <small class="form-text text-danger d-none">Sorry, but that username has already been taken.</small>
+            <div class="table-responsive">
+                <table class="table table-striped mt-2 w-75">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Username</th>
+                            <th class="text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in class.students.all() %}
+                        {% set active = ClassStudent.query.filter_by(class_id=class.id, student_id=student.id).first().student_status %}
+                        <tr>
+                            <th scope="row" class="font-weight-bold align-middle">{{ loop.index }}</th>
+                            <td class="username align-middle">
+                                {% if active %}
+                                <div class="current-username" data-user-id="{{ student.id }}">{{ student.username }}</div>
+                                <div class="d-none">
+                                    <div class="form-group mb-0">
+                                    <input type="text" class="form-control" name="edit-username" id="edit-username{{ loop.index }}" value="{{ student.username }}" placeholder="Enter a new unique username here">
+                                    <small class="form-text text-danger d-none">Sorry, but that username has already been taken.</small>
+                                    </div>
                                 </div>
-                            </div>
-                            {% else %}
-                            <del class="text-muted">{{ student.username }}</del>
-                            {% endif %}
-                        </td>
-                        <td class="text-right align-middle">
-                            {% if active %}
-                            <button type="button" class="btn btn-sm btn-outline-success edit-username">Edit username</button>
-                            <a class="btn btn-sm btn-outline-danger delete-student" href="{{ url_for('.delete_student_from_class', class_id=class.id, student_id=student.id) }}" role="button">Remove</a>
-                            {% else %}
-                            <p class="mb-0">Removed</p>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                                {% else %}
+                                <del class="text-muted">{{ student.username }}</del>
+                                {% endif %}
+                            </td>
+                            <td class="text-right align-middle">
+                                {% if active %}
+                                <button type="button" class="btn btn-sm btn-outline-success edit-username">Edit username</button>
+                                <a class="btn btn-sm btn-outline-danger delete-student" href="{{ url_for('.delete_student_from_class', class_id=class.id, student_id=student.id) }}" role="button">Remove</a>
+                                {% else %}
+                                <p class="mb-0">Removed</p>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             {% else %}
             <!-- <p class="mb-0">No students yet. Please share the link <span class="text-primary">{{ url_for('main.join_class_confirm', code=class.code, _external=True) }}</span> with your students.</p> -->
             <h5>Get Started</h5>
@@ -740,7 +742,7 @@
             });
 
             
-            var teacher_notes_simplemde = new SimpleMDE({element: $('#content')[0], forceSync: true, hideIcons:["side-by-side", "fullscreen"], spellChecker: false, placeholder: 'Type your extra notes/links/content...'});
+            var teacher_notes_simplemde = new SimpleMDE({element: $('#note_content')[0], forceSync: true, hideIcons:["side-by-side", "fullscreen"], spellChecker: false, placeholder: 'Type your extra notes/links/content...'});
             $('#assign, #assignments').on('click', '.page-hyperlink, .quiz-hyperlink', function(e) {
                 e.preventDefault();
                 var $this = $(this);

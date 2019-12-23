@@ -23,5 +23,5 @@ class AssignmentForm(FlaskForm):
 
 class TeacherNoteForm(FlaskForm):
     page_id = HiddenField('')
-    content = TextAreaField('Content', validators=[DataRequired()])
+    note_content = TextAreaField('Content', validators=[DataRequired()])
     submit_notes = SubmitField('Add content')

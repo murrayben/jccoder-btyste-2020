@@ -88,7 +88,7 @@ def display_class(id):
         objects.extend(session.get("assigned_chapter_quizzes", []))
     elif teacher_notes_form.validate_on_submit() and teacher_notes_form.submit_notes.data:
         page_id = int(teacher_notes_form.page_id.data)
-        teacher_note = TeacherNote(teacher_id=current_user.id, body=teacher_notes_form.content.data, page_id=page_id, class_id=class_.id)
+        teacher_note = TeacherNote(teacher_id=current_user.id, body=teacher_notes_form.note_content.data, page_id=page_id, class_id=class_.id)
         db.session.add(teacher_note)
         flash('Content Added!', 'info')
         return redirect(url_for('main.chapter', id=Page.query.get_or_404(page_id).lesson.chapter.id, item='page_' + str(page_id)))

@@ -14,13 +14,13 @@
 {% elif _page.page_type.description == "Glossary" %}
 {% set icon_class = 'fas fa-list-alt fa-fw' %}
 {% endif %}
-                    <p class="sidebar-page{% if _page.id == page.id %} active{% endif %}">
+                    <p class="sidebar-page position-relative mb-0{% if _page.id == page.id %} active{% endif %}">
                         {% if _page.is_unlocked() %}
                         <a href="{{ url_for('main.lesson_page', id=_page.id) }}">
+                            <span class="page-title ml-5 my-2">{{ _page.title }}</span>
                             <span class="dot">
                                 <span class="{{ icon_class }}"></span>
                             </span>
-                            <span class="page-title">{{ _page.title }}</span>
                         </a>
                         {% else %}
                         <span class="locked">
@@ -142,7 +142,9 @@
         }
 
         .dot {
-            position: relative;
+            position: absolute;
+            left: 17px;
+            top: 10px;
             display: inline-block;
             border-radius: 60px;
             border: 1px solid #646464;
