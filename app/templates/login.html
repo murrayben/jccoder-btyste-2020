@@ -11,4 +11,9 @@
 {% block scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
+    <script type="text/javascript">
+        $(function () {
+            $('#username').focus();
+        });
+    </script>
 {% endblock %}

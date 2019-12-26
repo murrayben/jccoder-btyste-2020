@@ -27,9 +27,9 @@
 {% endmacro %}
 
 {% macro add_drag_n_drop_text(question, draggable_buttons=True) %}
-                <div class="draggable-items-box card bg-info mb-3 p-3 flex-row align-items-stretch" style="min-height: 80px;">
+                <div class="draggable-items-box card bg-info mb-3 p-3 pt-1 flex-row flex-wrap align-items-stretch" style="min-height: 80px;">
                     {% for item in question.options[:-1] %}
-                    <span class="{% if not draggable_buttons %}un{% endif %}draggable-btn bg-white mr-3 d-flex" data-position="{{ loop.index }}">
+                    <span class="{% if not draggable_buttons %}un{% endif %}draggable-btn bg-white mr-3 mt-2 p-2 d-flex" data-position="{{ loop.index }}">
                         <span class="m-auto text-dark">{{ item.text | safe }}</span>
                     </span>
                     {% endfor %}

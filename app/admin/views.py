@@ -64,7 +64,7 @@ def new_question():
             for option in options:
                 if option.startswith('img:'):
                     option = option[4:]
-                    option = '<img src="{0}" />'.format(option)
+                    option = '<img src="{0}" class="img-fluid" />'.format(option)
                 db.session.add(QuestionOption(text=option, question_id=question.id))
             question_answer_option = QuestionOption(text=form.answer.data, question_id=question.id)
             db.session.add(question_answer_option)

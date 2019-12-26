@@ -477,6 +477,40 @@ class Question(db.Model):
         # Otherwise:
         target.html = customTagMarkdown(value)
 
+    def drag_and_drop_answers(self, response=None, use_correct_answer=False):
+        if not response and not use_correct_answer:
+            raise TypeError(
+                'drag_and_drop_answers() takes at least 1 argument (0 given)'
+            )
+        
+        if use_correct_answer:
+            response = self.correct_answer()
+        
+        options = []
+        for pair in response.split(' '):
+            char = pair.split('=')[1]
+            options.append(self.options.offset(int(char) - 1).first())
+
+        if self.question_type != QuestionType.query.filter_by(code='D').first():
+            return ""
+
+        spaces = self.html.split('<td class="blank bg-info"></td>')
+        html = []
+        for i, space in enumerate(spaces):
+            html.append(space)
+            try:
+                option = """<span class="draggable-btn bg-white mr-3 mt-2 d-flex p-2" data-position="{0}">
+    <span class="m-auto text-dark">{1}
+</span>""".format(i + 1, options[i])
+            except IndexError:
+                # Last space containg closing table tag (</table>)
+                pass
+            else:
+                # Add option
+                html.append('<td class="blank bg-info">{0}</td>'.format(option))
+        html = ''.join(html)
+        return html
+
     def __repr__(self):
         return '<Question> {0} Answer: {1}'.format(self.text, self.correct_answer())
 

@@ -2,7 +2,7 @@ import random, string
 
 from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
-from ..models import Assignment, Class, ClassStudent, Page, Permission, Question, Quiz, StudentAssignment, TeacherNote, User, db
+from ..models import Assignment, Class, ClassStudent, Page, Permission, Question, QuestionType, Quiz, StudentAssignment, TeacherNote, User, db
 from .. import moment
 from .forms import AssignmentForm, NewClass, TeacherNoteForm
 from . import teacher
@@ -282,4 +282,8 @@ def assignment_progress_reveal_answer(id):
         abort(404)
     data = request.get_json()
     question = Question.query.get_or_404(int(data["question_id"]))
-    return jsonify(success=True, answer=question.correct_answer())
+    if question.question_type != QuestionType.query.filter_by(code='D').first():
+        answer = question.correct_answer()
+    else:
+        answer = {'raw_answer': question.correct_answer(), 'html': question.drag_and_drop_answers(use_correct_answer=True)}
+    return jsonify(success=True, answer=answer)

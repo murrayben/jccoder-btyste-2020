@@ -6,11 +6,20 @@
 {% block styles %}
     {{ super() }}
     <style type="text/css">
-        .undraggable-btn {
+        .draggable-btn, .undraggable-btn {
             min-width: 100px;
             min-height: 46px;
             border: 1px solid #000000;
             border-radius: 5px;
+        }
+
+        .blank {
+            vertical-align: middle !important;
+            max-width: 100px;
+        }
+
+        .blank img {
+            max-height: 50px;
         }
     </style>
 {% endblock %}
@@ -58,33 +67,25 @@
                     {%- set student_count = students.count() -%}
                     {%- for response, response_objects in vars.responses.items() %}
                         {%- set percentage = (response_objects|length / student_count) * 100 %}
-                        <div class="response" data-keyed-answer="{{ response }}">
+                        <div class="response" data-keyed-answer="{{ response }}" data-question-id="{{ question.id }}">
                             <p class="mb-1 response-text">
                                 {%- if response_objects[0].question.question_type.code != 'D' %}
                                     {{ response }}
                                 {% else %}
-                                    {% for pair in response.split(' ') %}
-                                        {% for char in pair.split('=') %}
-                                            {% if loop.first %}
-                                                <p class="mb-0">Row #{{ char }} is
-                                            {% else %}
-                                                Button #{{ char }}</p>
-                                            {% endif %}
-                                        {% endfor %}
-                                    {% endfor %}
+                                {{ question.drag_and_drop_answers(response) | safe }}
                                 {% endif -%}
                             </p>
                             <div class="progress">
                                 <div class="progress-bar bg-info" role="progressbar" style="width: {{ percentage }}%;" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                             <p class="mb-0">
-                                <a class="text-muted student-toggler" data-toggle="collapse" href="#students-response-{{ response }}" aria-expanded="false" aria-controls="students-response-{{ response }}">
+                                <a class="text-muted student-toggler" data-toggle="collapse" href="#students-response-{{ question.id }}-{{ response }}" aria-expanded="false" aria-controls="students-response-{{ response }}">
                                     {%- set students_unique = response_objects|map(attribute='user')|map(attribute='username')|unique(case_sensitive=True)|list -%}
                                     {{ students_unique|length }} student{{ 's' if students_unique|length != 1 }}
                                     <i class="fas fa-chevron-down" aria-hidden="true"></i>
                                 </a>
                             </p>
-                            <div class="collapse student-collapse" id="students-response-{{ response }}">
+                            <div class="collapse student-collapse" id="students-response-{{ question.id }}-{{ response }}">
                                 {%- for user_answer in response_objects %}
                                 {%- set attempt_no = user_answer.attempt_no|int -%}
                                 {%- set timestamp = moment(user_answer.datetime) -%}
@@ -127,22 +128,32 @@
                         type: 'POST',
                         success: function(response) {
                             var isMultipleAnswer = Array.isArray(response.answer);
+                            var isObject = !(typeof response.answer === 'string');
+                            var html_answer = undefined;
                             if (!isMultipleAnswer) {
-                                var answer = response.answer;
+                                if (isObject) {
+                                    var answer = response.answer.raw_answer;
+                                    var html_answer = response.answer.html;
+                                } else {
+                                    var answer = response.answer;
+                                }
                             } else {
                                 var answer = response.answer.join(', ');
                             }
-                            var $correct_response = $('div.response[data-keyed-answer="'+ answer + '"]');
-                                var $wrong_responses = $('div.response[data-keyed-answer!="'+ answer + '"]')
-                                $wrong_responses.each(function() {
-                                    var $wrong_this = $(this);
-                                    if ($wrong_this.parent().get(0) === $currentQuestion.get(0)) {
-                                        $wrong_this.children('.progress').children().removeClass('bg-info').addClass('bg-danger');
-                                    }
-                                });
-                                $correct_response.children('.progress').children().removeClass('bg-info').addClass('bg-success');
-                                if ($correct_response.length === 0) {
-                                    $currentQuestion.append(`<div class="response answer-response">
+                            var $correct_response = $('div.response[data-keyed-answer="'+ answer + '"][data-question-id="' + question_id + '"]');
+                            var $wrong_responses = $('div.response[data-keyed-answer!="'+ answer + '"][data-question-id="' + question_id + '"]');
+                            $wrong_responses.each(function() {
+                                var $wrong_this = $(this);
+                                if ($wrong_this.parent().get(0) === $currentQuestion.get(0)) {
+                                    $wrong_this.children('.progress').children().removeClass('bg-info').addClass('bg-danger');
+                                }
+                            });
+                            $correct_response.children('.progress').children().removeClass('bg-info').addClass('bg-success');
+                            if ($correct_response.length === 0) {
+                                if (html_answer !== undefined) {
+                                    answer = html_answer
+                                }
+                                $currentQuestion.append(`<div class="response answer-response">
     <hr />
     <p class="mb-1 response-text">${answer}</p>
     <div class="progress" style="width: 1%;">
@@ -150,7 +161,7 @@
     </div>
     <p>0 students</p>
 </div>`);
-                                }
+                            }
                             $this.text('Hide answer');
                         },
                         error: function(error) {
@@ -167,7 +178,7 @@
                     $this.text('Reveal answer');
                 }
             });
-            
+
         });
     </script>
 {% endblock %}
