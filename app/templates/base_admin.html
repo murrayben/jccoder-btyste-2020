@@ -170,7 +170,10 @@
                         <div class="collapse navbar-collapse">
                             <ul class="nav navbar-nav mr-auto">
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ url_for('main.chapters') }}">Preview</a>
+                                    <a class="nav-link" href="{{ url_for('main.index') }}">Student Preview</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('main.chapters') }}">Teacher Preview</a>
                                 </li>
                                 <form class="form-inline ml-0 ml-xl-4 mr-3" action="{{ url_for('main.search') }}" method="GET">
                                     <div class="form-group required">
@@ -187,7 +190,7 @@
                                     <a class="nav-link" href="{{ url_for('announcements.index') }}">Annoucements</a>
                                 </li>
                                 {% if current_user.is_authenticated %}
-                                <span class="navbar-text">Logged in as {{ current_user.username }}</span>
+                                <span class="navbar-text  mx-lg-2 mx-0">Logged in as {{ current_user.username }}</span>
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
                                 </li>
