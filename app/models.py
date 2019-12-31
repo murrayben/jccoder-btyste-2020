@@ -1,28 +1,62 @@
-from flask import request, url_for
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin, AnonymousUserMixin, current_user
+"""app/models.py
+
+Module containing all the models in the application. Contains functions
+for rendering markdown.
+"""
+
+import hashlib
+import re
 from datetime import datetime
+
+import bleach
+from flask import request, url_for
+from flask_login import AnonymousUserMixin, UserMixin, current_user
 from markdown import markdown
 from mdx_gfm import GithubFlavoredMarkdownExtension
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from app import db, login
-from app.search import add_to_index, remove_from_index, query_index
-import bleach, re, hashlib
+from app.search import add_to_index, query_index, remove_from_index
+
 
 def customTagMarkdown(original_mardown, object_id=None, extensions=None):
-    lines = []
-    hint_counter = 0
-    collapse_counter = 1
-    hints = []
-    drag_and_drop_options = []
-    recording_hint = False
-    recording_collapse = False
-    recording_drag_and_drop = False
-    add_line = True
-    i = 0
-    for line in original_mardown.split('\n'):
-        # Video
-        if ':video::' in line:
+    """Renders markdown to HTML with modified custom Markdown syntax.
+    
+    Paramaters
+    ----------
+    original_markdown : str
+        Markdown to be converted
+    object_id : int
+        ID of the model that is converting the markdown (default None)
+    extensions : list
+        Any additional extensions to be added to markdown converter
+        (default None)
+
+    Returns
+    -------
+    Converted HTML : str
+    """
+
+    # Initialising variables
+    lines = []  # Markdown split into individual lines
+    hint_counter = 0    # Stores what hint # the program is at
+    collapse_counter = 1    # Stores what collapse no the program is at
+    hints = []  # List of hints
+    drag_and_drop_options = []  # Options in a drag and drop question
+    recording_hint = False  # If a hint tag is in progress
+    recording_collapse = False  # If a collapse tag is in progress
+    recording_drag_and_drop = False # If a drag and drop tag is in progress
+    add_line = True # If the program should add the current line to the
+                    # end HTML
+    for line in original_mardown.split('\n'):   # Splits markdown by newline
+        if ':video::' in line:  # Video (also used for Scratch embed)
+            # Splits arguments and creates HTML
             arguments = line.split('::')
+
+            # arguments[0] = "video" from tag (not used)
+            # arguments[1] = Bootstrap grid class
+            # arguments[2] = Aspect ratio
+            # arguments[3] = Embed link
             video = """<div class="row" style="margin-bottom:20px">
     <div class="{0}">
         <div class="embed-responsive embed-responsive-{1}">
@@ -30,10 +64,14 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
         </div>
     </div>
 </div>""".format(arguments[1], arguments[2], arguments[3])
+
+            # Replaces line with entire HTML
             line = video
         
         # Hints
-        elif '::hints::' in line:
+        elif '::hints::' in line:   # Opening tag
+            # Initial HTML (object_id ensures unique ids if two hint
+            # objects occur within the same step)
             hint_html = """<div class="card border-info mb-3">
     <div class="card-header bg-info p-2">
         <h5 class="mb-0">
@@ -45,49 +83,64 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
     </div>
 
     <div id="step{0}-hints" class="collapse">
-        <div class="card-body">\n""".format(object_id)
-            add_line = False
-        elif '::/hint::' in line:
+        <div class="card-body">\n""".format(object_id)  # BS4 card
+            add_line = False    # "::hints::" should not be added
+        elif '::/hint::' in line:   # End of one individual hint
+            # Stop recording HTML of the hint
+            # "::hint::" should not be added to HTML
             recording_hint = False
             add_line = False
-        elif recording_hint:
+        elif recording_hint:    # Add current line to list containing
+                                # all hints
             try:
+                # Adding line to current hint
                 hints[hint_counter - 1] = hints[hint_counter - 1] + '\n' + line
-            except:
+            except IndexError:
+                # First line so index currently doesn't exist
                 hints.append(line)
+            # Do not add line to HTML as it will be added later
             add_line = False
-        elif '::hint::' in line:
+        elif '::hint::' in line:    # Start recording HTML for a hint
             hint_counter += 1
             recording_hint = True
             add_line = False
-        elif '::/hints::' in line:
-            hint_counter = 1
+        elif '::/hints::' in line:  # End of hints
+            hint_counter = 1    # Is reused as loop counter
+            # Put everything together
+
+            # BS4 navigation pills
             hint_html += """<ul class="nav nav-pills" role="tablist">\n"""
             for hint in hints:
-                if hint:
+                if hint:    # In case of a blank line
                     hint_html += """<li class="nav-item">
     <a class="nav-link"""
+                    # First hint should be visible
                     hint_html += ' active show"' if hint_counter == 1 else '"'
                     hint_html += """ id="step{0}-hint{1}-tab" data-toggle="pill" href="#step{0}-hint{1}" role="tab" aria-controls="lesson{0}-hint{1}">Hint {1}</a>
 </li>\n""".format(object_id, hint_counter)
                     hint_counter += 1
+            # Reset counter and close navigation pills HTML
             hint_counter = 1
             hint_html += """</ul>
 <div class="tab-content mt-2 border rounded px-3 pt-3">"""
-
+            
+            # BS4 pill/tab content
             for hint in hints:
                 if hint:
+                    # Similar to above
                     hint_html += '<div class="tab-pane fade'
                     hint_html += ' show active"' if hint_counter == 1 else '"'
                     hint_html += """ id="step{0}-hint{1}" role="tabpanel" aria-labelledby="step{0}-hint{1}">{2}</div>\n""".format(object_id, hint_counter, markdown(hint, output_format='html'))
                     hint_counter += 1
+            # Close all open HTML tags and reset variables
             hint_html += '</div></div></div></div>'
             hint_counter = 1
             hints = []
 
+            # Replace line with all the HTML
             line = hint_html
         
-        # CSS & JS specific
+        # CSS & JS specific to a page
         elif ':css::' in line:
             line = '<link rel="stylesheet" href="{0}" class="css-extra" />'.format(line.split('::')[1].strip())
         elif ':js::' in line:
@@ -96,10 +149,11 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
         # Drag and Drop quiz
         elif '::drag-and-drop::' in line:
             recording_drag_and_drop = True
-            line = ''
-        elif '::/drag-and-drop::' in line:
+            line = ''   # Or `add_line = False` could be used
+        elif '::/drag-and-drop::' in line:  # Turn options into a table
             table = """<table class="table bg-secondary table-bordered text-white">\n"""
             for option in drag_and_drop_options:
+                # Uses BS4 table
                 table += """    <tr>
         <td>{0}</td>
         <td class="blank bg-info"></td>
@@ -109,13 +163,17 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
             recording_drag_and_drop = False
             drag_and_drop_options = []
         elif recording_drag_and_drop:
+            # Add options to the list
             drag_and_drop_options.append(line)
             line = ''
         
 
-        # Collapse
+        # Collapse (similar to drag and drop)
         elif ':collapse::' in line:
             collapse_title = line.split('::')[1].strip()
+
+            # Add BS4 collapsible card (collapse_counter ensured unique
+            # IDs)
             line = """<div class="card border-info mb-3">
     <div class="card-header bg-info p-2">
         <h5 class="mb-0">
@@ -128,13 +186,14 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
 
     <div id="step{0}-collapse{1}" class="collapse">
         <div class="card-body">\n""".format(object_id, collapse_counter, collapse_title)
-            recording_collapse = True
-        elif '::/collapse::' in line:
+            recording_collapse = True   # Not really required
+        elif '::/collapse::' in line:   # Close open HTML tags
             line = "</div></div></div>"
             recording_collapse = False
             collapse_counter += 1
 
-        elif ':glossary-item::' in line:
+        # Glossary items
+        elif ':glossary-item::' in line:    
             glossary_item = line.split('::')[1].strip()
             line = """<div class="card mb-3">
     <h5 class="card-header">{0}</h5>
@@ -145,19 +204,23 @@ def customTagMarkdown(original_mardown, object_id=None, extensions=None):
             line = "</div></div>"
             recording_collapse = False
         
-        elif recording_collapse:
+        elif recording_collapse:    # Does nothing extra
             line = markdown(line, output_format='html')
         if add_line:
             lines.append(line)
         add_line = True
-        i += 1
+    
+    # Join up the lines
     finished_markdown = '\n'.join(lines)
 
+    # Add GFM extension and any extras passed as arguments
     extensions_list = [GithubFlavoredMarkdownExtension()]
     extensions_list.extend(extensions or [])
     html = markdown(finished_markdown, output_format='html', extensions=extensions_list)
     return html
 
+# Following three tables are association tables for many-to-many
+# relationships
 announcement_tags = db.Table("announcement_tags",
     db.Column('tag_id', db.Integer, db.ForeignKey('tags.id')),
     db.Column('announcement_id', db.Integer, db.ForeignKey('announcements.id'))
@@ -173,7 +236,9 @@ quiz_skills = db.Table("quiz_skills",
     db.Column('skill_id', db.Integer, db.ForeignKey('skills.id'))
 )
 
+
 class Permission:
+    """Contains the binary values for actions a user can or cannot do."""
     ASK_QUESTIONS = 0x01
     ANSWER_QUESTIONS = 0x02
     SAVE_HISTORY = 0x04
@@ -181,20 +246,47 @@ class Permission:
     MODERATE_QUESTIONS = 0x10
     ADMINISTRATOR = 0xff
 
+
 class SearchableMixin(object):
+    """Incorporates the `search.py` functions and returns a list of
+    objects rather than IDs. Should be inherited from and not used
+    directly.
+
+    Contains classmethods only.
+
+    Based from the Flask-Mega Tutorial by Miguel Grinberg.
+    """
+
     @classmethod
     def search(cls, expression, page, per_page):
+        """Searches using `search.py` `query_index` function and
+        returns a list of SQLAlchemy objects, not IDs.
+
+        Returns
+        -------
+        Objects found : SQLAlchemy.BaseQuery
+        
+        Total objects found : int
+        """
+
         ids, total = query_index(cls.__tablename__, expression, page, per_page)
         if total == 0:
+            # Return a blank query
             return cls.query.filter_by(id=0), 0
-        when = []
-        for i in range(len(ids)):
+        
+        # Used in a SQL WHEN statement to order objects in the same order the search returned
+        when = []   
+        for i in range(len(ids)):   # enumerate() could also be used
             when.append((ids[i], i))
+
+        # Filter: IF object id IN ids (above)
+        # ORDER BY: when list
         return cls.query.filter(cls.id.in_(ids)).order_by(
             db.case(when, value=cls.id)), total
 
     @classmethod
     def before_commit(cls, session):
+        """Adds any changes to DB in a dictionary."""
         session._changes = {
             'add': list(session.new),
             'update': list(session.dirty),
@@ -203,6 +295,9 @@ class SearchableMixin(object):
 
     @classmethod
     def after_commit(cls, session):
+        """Checks the changes and either adds, modifies or deletes from
+        the indices.
+        """
         for obj in session._changes['add']:
             if isinstance(obj, SearchableMixin):
                 add_to_index(obj.__tablename__, obj)
@@ -216,12 +311,14 @@ class SearchableMixin(object):
 
     @classmethod
     def reindex(cls):
+        """Utility method to reindex all objects."""
         for obj in cls.query:
             add_to_index(cls.__tablename__, obj)
 
-
+# Add events for automatic addition or deletion of the indices
 db.event.listen(db.session, 'before_commit', SearchableMixin.before_commit)
 db.event.listen(db.session, 'after_commit', SearchableMixin.after_commit)
+
 
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -233,6 +330,7 @@ class Role(db.Model):
 
     @staticmethod
     def insert_roles():
+        """Inserts the roles for the application."""
         roles = {
             'Student': (Permission.ASK_QUESTIONS |
                         Permission.ANSWER_QUESTIONS |
@@ -260,6 +358,7 @@ class Role(db.Model):
     def __repr__(self):
         return '<Role %r>' % self.name
 
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -271,20 +370,29 @@ class User(UserMixin, db.Model):
     under_13 = db.Column(db.Boolean, nullable=False)
     avatar_hash = db.Column(db.String(32))
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
-    announcements = db.relationship('Announcement', backref='author', lazy='dynamic')
+    announcements = db.relationship('Announcement', backref='author',
+                                    lazy='dynamic')
     posts = db.relationship('Post', backref='author', lazy='dynamic')
-    comments = db.relationship('PostComment', backref='author', lazy='dynamic')
+    comments = db.relationship('PostComment', backref='author',
+                               lazy='dynamic')
     answers = db.relationship('UserAnswer', backref='user', lazy='dynamic')
     notes = db.relationship('TeacherNote', backref='teacher', lazy='dynamic')
-    page_questions = db.relationship('PageQuestion', backref='author', lazy='dynamic')
-    page_answers = db.relationship('PageAnswer', backref='author', lazy='dynamic')
-    reported_problem_mistakes = db.relationship('ProblemMistake', backref='user', lazy='dynamic')
+    page_questions = db.relationship('PageQuestion', backref='author',
+                                     lazy='dynamic')
+    page_answers = db.relationship('PageAnswer', backref='author',
+                                   lazy='dynamic')
+    reported_problem_mistakes = db.relationship('ProblemMistake',
+                                                backref='user',
+                                                lazy='dynamic')
     quizzes_attempted = db.relationship('Quiz', secondary='quizattempts',
                         backref=db.backref('users_attempted', lazy='dynamic'),
                         lazy='dynamic') # For quiz results
 
     @property
     def password(self):
+        """Password attribute, write-only. Raises `AttributeError` if
+        read.
+        """
         raise AttributeError('Password is a write-only attribute')
 
     @password.setter

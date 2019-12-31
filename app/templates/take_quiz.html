@@ -138,25 +138,30 @@
 {% block content %}
     <div class="container-fluid">
         <div id="start" class="text-center">
+            <!-- Start splash screen -->
             <h3 id="no-problems">Do {{ questions|length }} problem{% if questions|length != 1 %}s{% endif %}!</h3>
             <p id="description">{{ quiz.description }}</p>
             <button type="button" id="start-btn" class="btn btn-primary">Start Quiz</button>
         </div>
 
-        <div class="page-header">
+        <div class="page-header" style="display: none;">
+            <!-- Attempt numbers -->
             <p id="attempt-status" class="text-right">Attempt #<span id="attempt-no"></span> out of <span id="max-attempts"></span></p>
         </div>
             
-        <div class="progress active">
+        <div class="progress active" style="display: none;">
+            <!-- Progress bar showing how far through the quiz the user is -->
             <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
-        <div id="history">
+        <div id="history" style="display: none;">
+            <!-- Circles showing progress through quiz -->
             <h3 class="answer-status"></h3>
             {% for question in questions %}
             <div class="no-ans history-badge"></div>
             {% endfor %}
         </div>
         <div class="questions" style="display: none;">
+            <!-- Questions -->
             {% for question in questions %}
             <div class="question" id="{{ question.id }}" data-max-attempts="{{ question.max_attempts }}" data-at-hint="0">
                 {% if question.question_type.code == 'D' %}
@@ -168,6 +173,7 @@
                 <hr />
                 <div class="question-help" style="display: none;">
                     <div class="row">
+                        {# Find videos in same lesson that are unlocked #}
                         {% set videos = Page.query.filter_by(lesson_id=question.skill.practice_quiz.lesson_id, page_type_id=PageType.query.filter_by(description="Video").first().id).all() %}
                         {% set unlocked_videos = [] %}
                         {% for video in videos %}
@@ -206,8 +212,10 @@
             {% endfor %}
         </div>
         <!-- <button role="button" class="btn btn-primary" id="next-btn">Check</button> -->
+        <!-- Real check button -->
         <button id="next-btn" style="display: none;">Check</button>
-        <div class="row justify-content-between" id="question-buttons">
+        <div class="row justify-content-between" id="question-buttons" style="display: none;">
+            <!-- Hint and Report a Problem -->
             <div class="col-sm-auto">
                 <button role="button" class="btn btn-success" id="help-btn">Need help?</button>
             </div>
@@ -216,6 +224,7 @@
             </div>
         </div>
         <div class="card mt-2 d-none" id="mistake-form">
+            <!-- Report a Problem form -->
             <div class="card-body" id="mistake-form-card">
                 <h5 class="card-title">Report a mistake in the question</h5>
                 <div class="card-text">
@@ -238,6 +247,7 @@
                 </div>
             </div>
             <div class="card-body d-none" id="mistake-form-feedback">
+                <!-- Report a problem feedback -->
                 <h5 class="card-title">Thank you!</h5>
                 <div class="card-text">
                     <p>Your feedback has been submitted and is greatly appreciated.</p>
@@ -246,6 +256,7 @@
             </div>
         </div>
         <div id="summary">
+            <!-- Summary at end of quiz -->
             <div class="table-responsive">
                 <table class="table table-bordered">
                     <thead class="thead-dark">
@@ -294,6 +305,8 @@
                             <hr />
                             <h5>Explanation</h5>
                             <div id="explanation-{{ question.id }}">
+                                <!-- Explanation comes from server at end of quiz, otherwise users could use Inspect
+                                    Element and read all the answers -->
                             </div>
                         </p>
                     </div>
@@ -314,7 +327,12 @@
         // $radioBtns.on('change', checkForRadio);
 
         $(function() {
+            /* Not in an external file because of templating language.
+             * take_quiz.html JS -- Controls entire quiz
+             * Built to be used as an iframe
+             */
 
+            // Reset forms (Firefox) and add responsive images
             $('input[type="radio"]').attr('checked', false);
             $('input[type="text"]').val("");
             $('.question img').addClass('img-fluid');
@@ -323,25 +341,27 @@
             });*/
             var $currentQuestion = $('.question').first();
             
+            // Intialise variables
             var tick = $('<span class="fas fa-check fa-fw">');
             var x = $('<span class="fas fa-times fa-fw">');
             var hint_icon = $('<i class="far fa-lightbulb fa-fw">');
             var used_hint = false;
             var is_checked = false;
 
-            $('.container-fluid').children().hide();
-            $('#start').show();
+            $('.container-fluid').children().hide();    // Hide everything
+            $('#start').show(); // Show splash screen
             $('#start-btn').on('click', function() {
+                // Show first question
                 $('.container-fluid').children().fadeIn();
                 $('#start, #summary, .question').hide();
                 $currentQuestion.fadeIn(function() {
                     updateModalHeight();
                 });
                 $("#max-attempts").text($currentQuestion.data('max-attempts'));
-                updateAttemptNo(true);
+                updateAttemptNo(true);  // Reset attempt number
                 $('#next-btn').hide().on('click', checkQuestion);
                 parent.$(parent.document).trigger('update_check_btn', ["enable-btn"])
-                resizeBlanks();
+                resizeBlanks(); // Resize drag and drop table
             });
 
             $('#help-btn').on('click', function() {
@@ -505,6 +525,7 @@
             });
 
             function updateModalHeight() {
+                // Update height of modal in parent page
                 parent.$(parent.document).trigger('quiz_height_update');
             }
 
@@ -541,39 +562,58 @@
             }
 
             function checkQuestion() {
-                $('#next-btn').attr('disabled', 'disabled');
-                parent.$(parent.document).trigger('update_check_btn', ["disable-btn"])
+                $('#next-btn').attr('disabled', 'disabled');    // Prevent double clicking
+                parent.$(parent.document).trigger('update_check_btn', ["disable-btn"])  // Disable button in parent
+
+                // Multiple Choice/Answer
                 var $checkedOptions = $currentQuestion.children('.custom-control').children('input').filter(':checked');
-                var draggedItems = $currentQuestion.children('.draggable-items-box');
+
+                // Drag and drop
+                var draggedItems = $currentQuestion.children('.draggable-items-box');   // Misleading as dragged
+                                                                                        // items is how many btns
+                                                                                        // are left to drag
                 if (draggedItems.length !== 0) {
+                    // Button still left to drag
                     draggedItems = draggedItems.children('.draggable-btn').length;
                 } else {
+                    // Not drag and drop question
                     draggedItems = undefined;
                 }
+
+                // Single Answer
                 var singleAnswer = $currentQuestion.children('#answer');
                 singleAnswer = singleAnswer.length !== 0 ? singleAnswer.val().trim() : false
                 if ($checkedOptions.length > 0 || draggedItems === 0 || singleAnswer) {
                     // Check question
                     if ($checkedOptions.length === 1 && $checkedOptions.attr('type') === 'radio') {
+                        // Multiple Choice (radio buttons)
                         var data = {"answer": $checkedOptions.next().text(), "question_id": $currentQuestion.attr('id')};
                     } else if (draggedItems === 0) {
+                        // Drag and drop
                         var answerDragDrop = "";
                         for (var i = 0; i < $('.draggable-btn:visible').length; i++) {
+                            // Creates "i + 1 (int)=number_of_button (on HTML element) i + 1..."
+                            // (drag and drop question answer format)
+                            // Utilises a data attribute set
                             answerDragDrop += (i + 1) + "=" + $('.blank:visible').eq(i).children('.draggable-btn').data('position') + " ";
                         }
                         answerDragDrop = answerDragDrop.trim();
                         var data = {"answer": answerDragDrop, "question_id": $currentQuestion.attr('id')}
                     } else if ($checkedOptions.length >= 1 && $checkedOptions.attr('type') === 'checkbox') {
+                        // Multiple Answer (uses an array)
                         var answers = [];
                         $checkedOptions.each(function() {
                             answers.push($(this).next().text().trim());
                         });
                         var data = {"answer": answers, "question_id": $currentQuestion.attr('id')};
                     } else {
+                        // Single Answer (easiest)
                         var data = {"answer": singleAnswer, "question_id": $currentQuestion.attr('id')};
                     }
 
-                    data.used_hint = used_hint;
+                    data.used_hint = used_hint; // If has used hint
+
+                    // AJAX call to server to check
                     $.ajax({
                         url: "{{ url_for('main.check') }}",
                         data: JSON.stringify(data),
@@ -581,23 +621,29 @@
                         contentType: "application/json; charset=utf-8",
                         type: 'POST',
                         success: function(response) {
+                            // Re-enable check button
                             $('#next-btn').removeAttr('disabled');
                             parent.$(parent.document).trigger('update_check_btn', ["enable-btn"])
                             updateModalHeight();
                             var isLastQuestion = $('.question').eq(-1).is($currentQuestion);
                             var try_again = response.try_again
                             if (!try_again) {
+                                // Either user gave correct answer or ran out of attempts
                                 $progressBar = $('.progress-bar');
+                                // parseInt removes "px" from width
+
+                                // Creates a percentage: (width / total width) x 100
                                 $progressWidth = parseInt($progressBar.css('width'), 10) / parseInt($progressBar.parent().width(), 10) * 100;
                                 newWidth = $progressWidth + Math.pow($('.question').length, -1) * 100
-                                newWidth = newWidth.toFixed(0)
+                                newWidth = newWidth.toFixed(0)  // Round to nearest whole number
                                 if (isLastQuestion) {
-                                    newWidth = 100
+                                    newWidth = 100  // Prevents a 99.99 value
                                 }
                                 $progressBar.css('width', newWidth + '%');
                                 $progressBar.attr('aria-valuenow', newWidth);
                                 $progressBar.text(newWidth + '%');
                             }
+                            // Triggering the update_check_btn event with data (popover-HTML) creates a popover on parent check btn (in display_chapter.html)
                             if (response.answer_status) {
                                 //$('.answer-status').html("<span style=\"color:#5ad65a\">Correct!</span>").hide().fadeIn(1000);
                                 parent.$(parent.document).trigger('update_check_btn', ["popover-<h5>That was the right answer! Well done!</h5>"]);
@@ -608,9 +654,9 @@
                                     $historyIcon.removeClass('no-ans');
                                     $historyIcon.append(tick.clone());
                                 }
-                                updateAttemptNo(true);
+                                updateAttemptNo(true);  // Reset attempts
                             } else if (try_again) {
-                                updateAttemptNo();
+                                updateAttemptNo();  // Increment attempts
                                 if (attemptNo === $currentQuestion.data('max-attempts')) {
                                     //$('.answer-status').html("<span style=\"color:#d43e3e\">Last chance! Try Again.</span>").hide().fadeIn(1000).delay(1000).fadeOut(1000);
                                     parent.$(parent.document).trigger('update_check_btn', ["popover-<h5>Last chance! Try Again.</h5>"]);
@@ -713,6 +759,7 @@
                     });
                         
                 } else {
+                    // User has not entered an answer
                     parent.$('#page-html').animate({
                         scrollTop: 0
                     }, 1000);
