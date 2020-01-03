@@ -258,7 +258,7 @@
                     <img class="mr-3" src="{{ question.author.getAvatar(50) }}">
                     <div class="media-body">
                         <h2 class="media-heading">By {{ question.author.username }}</h2>
-                        <span class="far fa-clock"></span> {{ moment(question.last_updated).format('DD/MM/YYYY hh:mm:ss') }}
+                        <span class="far fa-clock"></span> {{ moment(question.last_updated).format('DD/MM/YYYY hh:mm:ss A') }}
                         {{ question.html|safe }}
                         {% if current_user.is_authenticated and (question.author.username == current_user.username) %}
                         <a href="{{ url_for('main.edit_page_question', id=question.id) }}"><span class="badge badge-primary">Edit</span></a>
@@ -270,7 +270,7 @@
                                 <img class="media-object mr-3" src="{{ answer.author.getAvatar(50) }}">
                                 <div class="media-body">
                                     <h2 class="media-heading">By {{ answer.author.username }}</h4>
-                                    <span class="far fa-clock"></span> {{ moment(question.last_updated).format('DD/MM/YYYY hh:mm:ss') }}
+                                    <span class="far fa-clock"></span> {{ moment(answer.last_updated).format('DD/MM/YYYY hh:mm:ss A') }}
                                     {{ answer.html|safe }}
                                     {% if current_user.is_authenticated and (answer.author.username == current_user.username) %}
                                     <a href="{{ url_for('main.edit_page_answer', id=answer.id) }}"><span class="badge badge-primary">Edit</span></a>

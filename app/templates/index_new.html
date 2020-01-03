@@ -241,7 +241,7 @@
 
         @media (max-width: 576px) {
             #banner {
-                padding: 1rem;
+                padding: 2rem 1rem 1rem;
             }
         }
     </style>
@@ -273,10 +273,10 @@
     {% if not current_user.is_authenticated %}
     <div id="banner" class="text-white text-center position-relative mb-3">
         <h1>JC Coder</h1>
-        <p class="h5 font-weight-normal mb-5">A learning resource for teachers and students of the Junior Cycle short course in coding.</p>
+        <p class="h5 font-weight-normal mb-5">An online learning platform for teachers and students of the Junior Cycle Short Course in Coding.</p>
         <!-- <img class="position-absolute" src="{{ url_for('static', filename='images/home_page_icon.png' ) }}" alt="Scratch cat saying Welcome to JC Coder!"> -->
-        <button type="button" id="intro-btn" class="btn btn-outline-warning btn-lg mr-2" data-toggle="modal" data-target="#intro-vid-modal">Play Introduction Video</button>
-        <a role="button" href="{{ url_for('auth.login') }}" class="btn btn-outline-warning btn-lg mr-2">Student Sign In</a>
+        <button type="button" id="intro-btn" class="btn btn-outline-warning btn-lg mr-2 mb-2 mb-sm-0" data-toggle="modal" data-target="#intro-vid-modal">Introduction Video</button>
+        <a role="button" href="{{ url_for('auth.login') }}" class="btn btn-outline-warning btn-lg mr-2 mb-2 mb-sm-0">Sign In</a>
         <a role="button" href="{{ url_for('auth.register') }}" class="btn btn-outline-warning btn-lg">Teacher Sign Up</a>
     </div>
     {% endif %}
@@ -380,7 +380,7 @@
                                             {% elif vars.in_progress and vars.completed_count != vars.count %}
                                             Continue to assignments &rarr;
                                             {% else %}
-                                            Finished assignments! Review content
+                                            Completed assignments!
                                             {% endif %}
                                         </a>
                                         {% else %}

@@ -89,7 +89,7 @@
                                 {%- for user_answer in response_objects %}
                                 {%- set attempt_no = user_answer.attempt_no|int -%}
                                 {%- set timestamp = moment(user_answer.datetime) -%}
-                                <p class="mb-1 text-muted">{{ user_answer.user.username }} - Attempt #{{ attempt_no }} <em>({{ timestamp.calendar() if not timestamp.calendar().split('/')|length == 3 else timestamp.format('LLL') }})</em></p>
+                                <p class="mb-1 text-muted">{{ user_answer.user.username }} - Attempt #{{ attempt_no }} <em>({{ timestamp.calendar() if not timestamp.calendar().split('/')|length == 2 else timestamp.format('LLL') }})</em></p>
                                 {% endfor %}
                             </div> 
                         </div>

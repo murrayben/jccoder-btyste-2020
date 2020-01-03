@@ -5,19 +5,23 @@
     <div class="page-header">
         <h1>Register</h1>
     </div>
+    {% if not disabled %}
     {{ wtf.quick_form(form, button_map={'submit': 'success'}, novalidate=True) }}
+    {% else %}
+    <p>Sorry the register functionality is currently disabled.</p>
+    {% endif %}
 {% endblock %}
 
 {% block scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
     <script type="text/javascript">
-        var $user_type_div = $('.form-check').first();
-        $user_type_div.removeClass('form-check').addClass('btn-group btn-group-toggle mb-3').attr('data-toggle', 'buttons');
+        //var $user_type_div = $('.form-check').first();
+        //$user_type_div.removeClass('form-check').addClass('btn-group btn-group-toggle mb-3').attr('data-toggle', 'buttons');
 
-        var $secondRadio = $('.form-check').first().children();
+        /*var $secondRadio = $('.form-check').first().children();
         $secondRadio.detach().appendTo($user_type_div);
-        $('.form-check').first().remove();
+        $('.form-check').first().remove();*/
 
         $user_type_div.children('label').removeClass('form-check-label').addClass('btn btn-primary');
         $('[name="user_type"][checked]').parent().addClass('active');

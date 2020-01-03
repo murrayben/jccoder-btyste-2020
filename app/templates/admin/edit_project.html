@@ -75,7 +75,7 @@
 
         var $newStepHTML = $card.clone();
         new SimpleMDE({element: $('#description')[0], forceSync: true, hideIcons:["guide"]});
-        var firstStep = new SimpleMDE({element: $('.step-content')[0], forceSync: true, hideIcons:["guide"]});
+        var firstStep = new SimpleMDE({element: $('.step-content')[0], forceSync: true, hideIcons:["guide"], spellChecker: false});
 
         // New step functionality
         var project_id = Number($('#project-form').data('project-id'));
@@ -204,7 +204,7 @@
                 // Do nothing
             }
             var $object = $newStepHTML.clone().insertBefore($btnGroup);
-            new SimpleMDE({element: $object.children('.card-body').children('.new-step-block').children('.form-group').last().children('textarea')[0], forceSync: true, hideIcons:["guide"], initialValue: initialVal});
+            new SimpleMDE({element: $object.children('.card-body').children('.new-step-block').children('.form-group').last().children('textarea')[0], forceSync: true, hideIcons:["guide"], initialValue: initialVal, spellChecker: false});
             numSteps += 1;
             if (numSteps == 2) {
                 $deleteStepBtn.fadeIn();
