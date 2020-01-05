@@ -37,6 +37,7 @@
             background-color: #ffffff;
         }
 
+        /* Following CSS thanks to Raspberry Pi */
         .sidebar-link-div p {
             margin: 0;
         }
@@ -87,6 +88,7 @@
             border-color: #0058ca;
             background-color: #0058ca;
         }
+        /* END */
 
         #first-sidebar-link a::before {
             top: 50%;
@@ -119,7 +121,7 @@
                 <div class="step step-{{ step.id }}" style="display: none;" {% if step.next_step %}data-next-id="{{ step.next_step.id }}"{% endif %} data-counter-id="{{ loop.index0 }}">
                     <h2 class="step-title text-info">{{ step.title }}</h2>
                     {{ step.content_html|safe }}
-                    <button class="next-step btn btn-success">{{ "Complete project" if not step.next_step else step.next_step.title }} <span class="fas fa-chevron-right"></span></button>
+                    <button class="next-step btn btn-primary">{{ "Complete project" if not step.next_step else step.next_step.title }} &rarr;<!--<span class="fas fa-chevron-right"></span>--></button>
                 </div>
                 {% endfor %}
             </div>

@@ -36,7 +36,7 @@
                 </div>
                 <h5>Drag the above tiles to the correct box on the right.</h5>
                 {% if draggable_buttons %}
-                <p class="text-danger">WARNING: When you drag all {{ question.options[:-1] | length }} tiles to a box, they're positions cannot be changed.</p>
+                <p class="text-danger">WARNING: When you drag all {{ question.options[:-1] | length }} tiles to a box, their positions cannot be changed.</p>
                 {% endif %}
 {% endmacro %}
 {% macro add_question_input(question, enable_input=True) %}

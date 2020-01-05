@@ -7,6 +7,8 @@ from . import announcements
 
 @announcements.before_request
 def addSearchForm():
+    if not current_user.is_authenticated:  
+        return current_app.login_manager.unauthorized()
     g.announcement_search_form = SearchForm()
 
 # Get Tag objects from a list of Tag ids
