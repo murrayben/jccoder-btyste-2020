@@ -277,7 +277,7 @@
         <!-- <img class="position-absolute" src="{{ url_for('static', filename='images/home_page_icon.png' ) }}" alt="Scratch cat saying Welcome to JC Coder!"> -->
         <!-- <button type="button" id="intro-btn" class="btn btn-outline-warning btn-lg mr-2 mb-2 mb-sm-0" data-toggle="modal" data-target="#intro-vid-modal">Introduction Video</button> -->
         <a role="button" href="{{ url_for('auth.login') }}" class="btn btn-outline-warning btn-lg mr-2 mb-2 mb-sm-0">Sign In</a>
-        <a role="button" href="{{ url_for('auth.register') }}" class="btn btn-outline-warning btn-lg">Teacher Sign Up</a>
+        <a role="button" href="{{ url_for('auth.register') }}" class="btn btn-outline-warning btn-lg mb-2 mb-sm-0">Teacher Sign Up</a>
     </div>
     {% endif %}
     {{ super() }}
