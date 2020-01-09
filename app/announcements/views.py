@@ -153,7 +153,7 @@ def edit(id):
     form = AnnouncementForm()
 
     # Issue a 403 (forbidden) error if announcement author is not the logged in user
-    if current_user.username != announcement.author.username and not current_user.admin():
+    if current_user.username != announcement.author.username and not current_user.is_admin():
         abort(403)
 
     # If request method is POST (a form was submitted)
