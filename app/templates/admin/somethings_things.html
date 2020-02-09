@@ -7,7 +7,7 @@
         <h1>All {{ thing_type }} in {{ owner_of_things }} {% if owner.name or owner.title %}{{ owner.name if owner.name else owner.title() if owner.title is callable else owner.title }}{% else %}(in lesson: {{ owner.lesson.title }}){% endif %}</h1>
     </div>
     {% if things|length > 0 %}
-    <ul>
+    <ol>
         {% for item in things %}
         {% if item.what_model() == "Module" %}
         <li><a href="{{ url_for('admin.edit_module', id=item.id) }}">{{ item.title }}</a></li>
@@ -29,7 +29,7 @@
         <li><a href="{{ url_for('admin.edit_question', id=item.id) }}" class="text-truncate d-inline-block" style="max-width: 50%; margin-bottom: -7px;">{{ item.text }}</a> (raw Markdown)
         {% endif %}
         {% endfor %}
-    </ul>
+    </ol>
     {% else %}
     <p>There are no {{ thing_type|lower }}.</p>
     {% endif %}

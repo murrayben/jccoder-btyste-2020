@@ -394,8 +394,9 @@ def all_quizzes():
 @login_required
 def all_questions():
     """View for displaying all questions."""
+    groups = Skill.query.all()
     questions = Question.query.all()
-    return render_template('admin/all_something.html', title="JCCoder - All Questions", list_items="Questions", items=questions)
+    return render_template('admin/all_something.html', title="JCCoder - All Questions", list_items="Questions", items=questions, groups=groups)
 
 @admin.route('/all/glossary/')
 @login_required

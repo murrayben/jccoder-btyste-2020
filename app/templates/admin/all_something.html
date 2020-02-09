@@ -4,7 +4,7 @@
 
 {% macro render_items(items) %}
         {% if items|length > 0 %}
-        <ul>
+        <ol>
             {% for item in items %}
             {% if item.what_model() == "Strand" %}
             <li><a href="{{ url_for('admin.edit_strand', id=item.id) }}">{{ item.name }}</a></li>
@@ -24,7 +24,7 @@
             {% elif item.what_model() == "Quiz" %}
             <li><a href="{{ url_for('admin.edit_quiz', id=item.id) }}">{{ item.title() }}</a> (In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a>) <a href="{{ url_for('main.take_quiz', id=item.id) }}" class="badge badge-danger">Take Quiz</a></li>
             {% elif item.what_model() == "Question" %}
-            <li><a href="{{ url_for('admin.edit_question', id=item.id) }}" class="text-truncate d-inline-block" style="max-width: 50%; margin-bottom: -7px;">{{ item.text }}</a> (In skill: <a href="{{ url_for('admin.edit_skill', id=item.skill.id) }}">{{ item.skill.description }}</a> in lesson: <a href="{{ url_for('admin.edit_lesson', id=item.skill.lesson.id) }}">{{ item.skill.lesson.title }}</a>)</li>
+            <li><a href="{{ url_for('admin.edit_question', id=item.id) }}" class="text-truncate d-inline-block" style="max-width: 50%; margin-bottom: -7px;">{{ item.text }}</a></li>
             {% elif item.what_model() == "Skill" %}
             <li><a href="{{ url_for('admin.edit_skill', id=item.id) }}">{{ item.description }}</a></li>
             {% else %}
@@ -33,22 +33,24 @@
                 | Next Page: <a href="{{ url_for('admin.edit_page', id=item.next_page.id) }}">{{ item.next_page.title }}</a>{% endif %}){% else %}{% if item.next_module %}</a> (Next Module: <a href="{{ url_for('admin.edit_module', id=item.next_module.id) }}">{{ item.next_module.title }}</a>){% endif %}</a>{% endif %}</li>
             {% endif %}
             {% endfor %}
-        </ul>
+        </ol>
         {% else %}
-        <p class="table-primary p-2 pl-3">There are no {{ list_items }}.</p>
+        <p class="text-danger p-2">There are no {{ list_items }}.</p>
         {% endif %}
 {% endmacro %}
 {% block page_content %}
     <div class="page-header">
         <h1>All {{ list_items }}</h1>
     </div>
-    {% if list_items == 'Modules' or list_items == 'Chapters' or list_items == 'Lessons' or list_items == 'Pages' or list_items == 'Skills' or list_items == 'Projects' %}
+    {% if list_items == 'Modules' or list_items == 'Chapters' or list_items == 'Lessons' or list_items == 'Pages' or list_items == 'Skills' or list_items == 'Projects' or list_items == 'Questions' %}
     {% for group in groups %}
-    <h3>{{ group.name or group.title }}</h3>
+    <h3 class="table-primary p-2 pl-3">{{ group.name or group.title or group.description + " (" + group.lesson.chapter.title + " > " + group.lesson.title + ")" }}</h3>
         {% if list_items == 'Projects' %}
         {% set items = group.projects.all() %}
         {% elif list_items == 'Skills' %}
         {% set items = group.skills.all() %}
+        {% elif list_items == 'Questions' %}
+        {% set items = group.questions.all() %}
         {% else %}
         {% set items = group.all_ordered_children() %}
         {% endif %}
