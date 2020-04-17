@@ -135,27 +135,39 @@
 {% block scripts %}
     {{ super() }}
     <script type="text/javascript">
+        var currentIndex = Number(window.location.hash.replace('#', '')) - 1;
+
         var distance = $('#steps').offset().top - 150;
-        function display(index, $button=null) {
+        function display(index, $button=null, animation=true) {
             $('.sidebar-link-div.active').removeClass('active');
             $('.sidebar-link-div p').removeClass('done');
             $('.sidebar-link-div').eq(index).addClass('active');
             $('.sidebar-link-div p:lt(' + index + ')').addClass('done');
-            $('.step:visible').fadeOut(function() {
+            var time = (animation ? 400 : 0);
+            $('.step:visible').fadeOut(time, function() {
                 if (index === 0) {
                     $('.step').first().fadeIn();
+                    window.location.hash = '';
                 } else {
-                    $('.step-'+ $button.parent().attr('data-next-id')).fadeIn();
+                    var $next = $('.step-'+ $button.parent().attr('data-next-id'))
+                    if (animation) $next.fadeIn();
+                    else $next.show();
+                    window.location.hash = index + 1;
                 }
                 $('html, body').animate({
-                    scrollTop: distance
+                    scrollTop: (animation ? distance : 0)
                 }, 0.000001);
             });
         }
-
         $('.step img').addClass('img-fluid');
         $('.step').first().show();
         $('.sidebar-link').first().parent().parent().addClass('active');
+
+        if (currentIndex > 0 && !isNaN(currentIndex)) {
+            console.log($('.next-step').eq(currentIndex-1));
+            display(currentIndex, $('.next-step').eq(currentIndex - 1), animation=false);
+        }
+
         $('.prev-step').on('click', function() {
             var $button = $(this);
             var index = Number($button.parent().attr('data-counter-id')) - 1;
