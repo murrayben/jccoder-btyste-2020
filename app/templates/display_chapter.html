@@ -95,6 +95,10 @@
             overflow-y: initial !important;
         }
 
+        .modal-title {
+            font-family: "Comic Sans MS", "Comic Sans", cursive;
+        }
+
         .modal-body {
             /*min-height: 680px;
             max-height: 680px;*/
@@ -248,7 +252,7 @@
                     <div class="card-deck">
                         {%- for project in lesson.projects.filter_by(status=True) %}
                         {%- set card_link = url_for('main.project', id=project.id) %}
-                        <div class="card project text-dark" style="max-width: 50%;">
+                        <div class="card border-dark project text-dark" style="max-width: 50%;">
                             <a href="{{ card_link }}">
                                 <img class="card-img-top" src="{{ project.thumbnail }}">
                             </a>
