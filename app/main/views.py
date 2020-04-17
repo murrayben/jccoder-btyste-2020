@@ -1,4 +1,3 @@
-from random import shuffle
 from flask import abort, current_app, flash, jsonify, redirect, render_template, url_for, session, request, g
 from flask_login import current_user, login_required
 from sqlalchemy.sql.expression import func
@@ -11,6 +10,7 @@ from ..models import (db, AnswerStatus, Assignment, Chapter, Class,
 from .. import moment
 from .forms import NewPageQuestion, NewPageAnswer, EditPageAnswer, SearchForm
 from . import main
+import random
 
 @main.before_app_request
 def before_request():
@@ -107,11 +107,20 @@ def take_quiz(id):
         questions = quiz.questions.order_by(func.rand()).limit(quiz.no_questions).all()
     else:
         questions = []
+        num_skills = len(quiz.tested_skills.all())
+        num_of_qs = quiz.no_questions / num_skills
+        num_left = quiz.no_questions % num_skills
         for skill in quiz.tested_skills:
-            question = skill.questions.order_by(func.rand()).first()
-            if question:
-                questions.append(question)
-        shuffle(questions)
+            q_set = skill.questions.order_by(func.rand()).limit(num_of_qs)
+            if q_set:
+                questions.extend(q_set)
+        
+        bank = [question for skill in quiz.tested_skills for question in skill.questions if question not in questions]
+        for _ in range(num_left):
+            q = random.choice(bank)
+            questions.append(q)
+            bank.remove(q)
+        random.shuffle(questions)
     session["attempt_no"] = 0
     try:
         session["questions"] = [question.id for question in questions]

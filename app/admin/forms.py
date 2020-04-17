@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import FileField, IntegerField, SelectMultipleField, PasswordField, RadioField, SelectField, StringField, SubmitField, TextAreaField
+from wtforms import FileField, IntegerField, SelectMultipleField, PasswordField, RadioField, SelectField, StringField, SubmitField, TextAreaField, ValidationError
 from wtforms.widgets.html5 import NumberInput, URLInput
 from wtforms.validators import DataRequired, Length, Optional
 from ..models import QuestionType, Strand, Module, Chapter, Lesson, LessonType, Quiz, QuizType, Page, PageType, Skill
@@ -95,8 +95,9 @@ class NewSkill(FlaskForm):
     submit = SubmitField('Submit Changes')
 
 class NewQuiz(FlaskForm):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, editing=False, *args, **kwargs):
         super(NewQuiz, self).__init__(*args, **kwargs)
+        self.editing = editing
         self.quiz_type.choices = [(quiz_type.id, quiz_type.description) for quiz_type in QuizType.query.all()]
         self.lesson.choices = [(lesson.id, lesson.chapter.module.title + ' > ' + lesson.chapter.title + ' > ' + lesson.title)
                                for lesson in Lesson.query.all()]
@@ -108,6 +109,13 @@ class NewQuiz(FlaskForm):
         self.next_quiz.choices = [(0, '..........')]
         self.next_quiz.choices.extend([(quiz.id, quiz.lesson.chapter.title + ' > ' + quiz.lesson.title + ' > ' + quiz.title())
                                          for quiz in Quiz.query.all()])
+    
+    def validate_no_questions(form, field):
+        if form.editing:
+            # num_skills = len(Quiz.query.get(form.id).tested_skills.all())
+            num_skills = len(form.tested_skills.data)
+            if int(field.data) < num_skills:
+                raise ValidationError("Number of questions asked must be greater than the number of tested skills, in this case " + str(num_skills) + " skill(s).")
 
     quiz_type = SelectField('Quiz Type', coerce=int)
     description = TextAreaField('Description', validators=[DataRequired()])

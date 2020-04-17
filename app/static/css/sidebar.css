@@ -45,7 +45,9 @@ li, p {
 
 #page-content {
     width: 100%;
+    margin-left: 235px;
 }
+
 .page-container {
     display: flex;
     align-items: stretch;
@@ -64,6 +66,8 @@ li, p {
     color: #fff;
     transition: all 0.3s;
     margin-left: -15px;
+    position: fixed;
+    height: 100%;
 }
 
 #sidebar.active {

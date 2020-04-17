@@ -18,7 +18,7 @@
     <div class="page-header">
         <h1>Edit {{ thing.title }} <small>({{ thing.what_model() }})</small></h1>
     </div>
-    {{ wtf.quick_form(form, button_map={'submit': 'success'}) }}
+    {{ wtf.quick_form(form, button_map={'submit': 'success'}, novalidate=true) }}
     {% if thing.what_model() == "Lesson" -%}
     <a class="btn btn-info" href="{{ url_for('admin.edit_lesson_content', id=thing.id) }}" id="edit-content">Edit Content</a>
     {%- endif %}
@@ -38,6 +38,7 @@
     {% if thing.what_model() == "Page" %}
     <script src="{{ url_for('static', filename='js/page.js') }}"></script>
     {% endif %}
+    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
     <script type="text/javascript">
         $('<div class="btn-toolbar" id="actions">').appendTo($('form').not('[action="/search"]'));
         $('input[type="submit"]').appendTo($('#actions'));

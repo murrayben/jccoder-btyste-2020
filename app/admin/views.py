@@ -689,7 +689,7 @@ def edit_page(id):
 def edit_quiz(id):
     """View for editing a quiz."""
     quiz = Quiz.query.get_or_404(id)
-    form = NewQuiz()
+    form = NewQuiz(editing=True)
     if form.validate_on_submit():
         quiz.type_id = form.quiz_type.data
         quiz.description = form.description.data

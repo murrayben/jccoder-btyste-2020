@@ -121,7 +121,10 @@
                 <div class="step step-{{ step.id }}" style="display: none;" {% if step.next_step %}data-next-id="{{ step.next_step.id }}"{% endif %} data-counter-id="{{ loop.index0 }}">
                     <h2 class="step-title text-info">{{ step.title }}</h2>
                     {{ step.content_html|safe }}
-                    <button class="next-step btn btn-primary">{{ "Complete project" if not step.next_step else step.next_step.title }} &rarr;<!--<span class="fas fa-chevron-right"></span>--></button>
+                    {% if not loop.first %}
+                    <button type="button" class="prev-step btn btn-secondary">&larr; Back</button>
+                    {% endif %}
+                    <button type="button" class="next-step btn btn-primary">{{ "Complete project" if not step.next_step else step.next_step.title }} &rarr;<!--<span class="fas fa-chevron-right"></span>--></button>
                 </div>
                 {% endfor %}
             </div>
@@ -131,8 +134,8 @@
 
 {% block scripts %}
     {{ super() }}
-    <!-- <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script> -->
     <script type="text/javascript">
+        var distance = $('#steps').offset().top - 150;
         function display(index, $button=null) {
             $('.sidebar-link-div.active').removeClass('active');
             $('.sidebar-link-div p').removeClass('done');
@@ -144,12 +147,23 @@
                 } else {
                     $('.step-'+ $button.parent().attr('data-next-id')).fadeIn();
                 }
+                $('html, body').animate({
+                    scrollTop: distance
+                }, 0.000001);
             });
         }
 
         $('.step img').addClass('img-fluid');
         $('.step').first().show();
         $('.sidebar-link').first().parent().parent().addClass('active');
+        $('.prev-step').on('click', function() {
+            var $button = $(this);
+            var index = Number($button.parent().attr('data-counter-id')) - 1;
+            if (index === Number($('.step:visible').attr('data-counter-id'))) {
+                return;
+            }
+            display(index, $button);
+        });
         $('.next-step').on('click', function() {
             var $button = $(this);
             var index = Number($button.parent().attr('data-counter-id')) + 1;
