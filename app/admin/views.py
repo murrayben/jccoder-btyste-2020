@@ -388,7 +388,15 @@ def all_lessons():
 def all_quizzes():
     """View for displaying all quizzes."""
     quizzes = Quiz.query.all()
-    return render_template('admin/all_something.html', title="JCCoder - All Quizzes", list_items="Quizzes", items=quizzes)
+    groups = []
+
+    # Similar technique used to order all the lessons for grouping the
+    # quizzes by lesson
+    for strand in Strand.query.all():
+        for module in strand.all_ordered_children():
+            for chapter in module.all_ordered_children():
+                groups.extend(chapter.all_ordered_children())
+    return render_template('admin/all_something.html', title="JCCoder - All Quizzes", list_items="Quizzes", items=quizzes, groups=groups)
 
 @admin.route('/all/question/')
 @login_required

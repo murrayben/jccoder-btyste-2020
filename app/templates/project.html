@@ -118,13 +118,14 @@
         <div class="col-lg-8">
             <div id="steps">
                 {% for step in project.steps %}
-                <div class="step step-{{ step.id }}" style="display: none;" {% if step.next_step %}data-next-id="{{ step.next_step.id }}"{% endif %} data-counter-id="{{ loop.index0 }}">
+                <div class="step step-{{ step.id }} pb-4" style="display: none;" {% if step.next_step %}data-next-id="{{ step.next_step.id }}"{% endif %} data-counter-id="{{ loop.index0 }}">
                     <h2 class="step-title text-info">{{ step.title }}</h2>
                     {{ step.content_html|safe }}
                     {% if not loop.first %}
-                    <button type="button" class="prev-step btn btn-secondary">&larr; Back</button>
+                    <button type="button" class="prev-step btn btn-secondary mb-2">&larr; {{ step.prev_step.title }}</button>
                     {% endif %}
-                    <button type="button" class="next-step btn btn-primary">{{ "Complete project" if not step.next_step else step.next_step.title }} &rarr;<!--<span class="fas fa-chevron-right"></span>--></button>
+                    <button type="button" class="next-step btn btn-primary float-lg-right">{{ "Complete project" if not step.next_step else step.next_step.title }} &rarr;<!--<span class="fas fa-chevron-right"></span>--></button>
+                    <br />
                 </div>
                 {% endfor %}
             </div>
@@ -174,7 +175,7 @@
             if (index === Number($('.step:visible').attr('data-counter-id'))) {
                 return;
             }
-            display(index, $button);
+            display(index, $('.next-step').eq(index - 1));
         });
         $('.next-step').on('click', function() {
             var $button = $(this);

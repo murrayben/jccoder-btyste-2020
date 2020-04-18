@@ -2,62 +2,110 @@
 
 {% set list_items_singular = model_singulars.get(list_items) %}
 
-{% macro render_items(items) %}
+{% macro render_items(items, collapse=true, loop_index=none) %}
         {% if items|length > 0 %}
-        <ol>
-            {% for item in items %}
-            {% if item.what_model() == "Strand" %}
-            <li><a href="{{ url_for('admin.edit_strand', id=item.id) }}">{{ item.name }}</a></li>
-            {%- elif item.what_model() == "Lesson" -%}
-            <li><a href="{{ url_for('admin.edit_lesson', id=item.id) }}">{{ item.title }}</a> (In chapter: <a href="{{ url_for('admin.edit_chapter', id=item.chapter.id) }}">{{ item.chapter.title }}</a>{% if item.next_lesson %} and Next Lesson: <a href="{{ url_for('admin.edit_lesson', id=item.next_lesson.id) }}">{{ item.next_lesson.title }}</a>{% endif %})
-                {% if item.skills[:] != [] -%}
-                <ul>
-                {% for skill in item.skills -%}
-                    <li><a href="{{ url_for('admin.edit_skill', id=skill.id) }}">{{ skill.description }}</a></li>
-                {%- endfor %}
-                </ul>
-                {%- endif %}
-            </li>
-            {% elif item.what_model() == "Chapter" %}
-            <li><a href="{{ url_for('admin.edit_chapter', id=item.id) }}">{{ item.title }}: {{ item.name if item.name else "No name yet" }}</a> (In module: <a href="{{ url_for('admin.edit_module', id=item.module.id) }}">{{ item.module.title }}</a>
-                {% if item.next_chapter %} and Next Chapter: <a href="{{ url_for('admin.edit_chapter', id=item.next_chapter.id) }}">{{ item.next_chapter.title }}</a>{% endif %})</li>
-            {% elif item.what_model() == "Quiz" %}
-            <li><a href="{{ url_for('admin.edit_quiz', id=item.id) }}">{{ item.title() }}</a> (In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a>) <a href="{{ url_for('main.take_quiz', id=item.id) }}" class="badge badge-danger">Take Quiz</a></li>
-            {% elif item.what_model() == "Question" %}
-            <li><a href="{{ url_for('admin.edit_question', id=item.id) }}" class="text-truncate d-inline-block" style="max-width: 50%; margin-bottom: -7px;">{{ item.text }}</a></li>
-            {% elif item.what_model() == "Skill" %}
-            <li><a href="{{ url_for('admin.edit_skill', id=item.id) }}">{{ item.description }}</a></li>
-            {% else %}
-            <li><a href="{{ url_for('admin.edit_' + list_items_singular, id=item.id) }}">{{ item.title }}{% if item.what_model() == "Page" %}</a>
-                (Type: <span class="text-danger">{{ item.page_type.description }}</span> | In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a>{% if item.next_page %}
-                | Next Page: <a href="{{ url_for('admin.edit_page', id=item.next_page.id) }}">{{ item.next_page.title }}</a>{% endif %}){% else %}{% if item.next_module %}</a> (Next Module: <a href="{{ url_for('admin.edit_module', id=item.next_module.id) }}">{{ item.next_module.title }}</a>){% endif %}</a>{% endif %}</li>
-            {% endif %}
-            {% endfor %}
-        </ol>
-        {% else %}
-        <p class="text-danger p-2">There are no {{ list_items }}.</p>
+        {% if collapse %}
+        <div id="group-{{ loop_index }}" class="collapse" aria-labelledby="groupNumber{{ loop_index }}" data-parent="#accordion">
+            <div class="p-3">
+        {% endif %}
+                <ol style="width: auto;">
+                    {% for item in items %}
+                    {% if item.what_model() == "Strand" %}
+                    <li><a href="{{ url_for('admin.edit_strand', id=item.id) }}">{{ item.name }}</a></li>
+                    {%- elif item.what_model() == "Lesson" -%}
+                    <li><a href="{{ url_for('admin.edit_lesson', id=item.id) }}">{{ item.title }}</a> (In chapter: <a href="{{ url_for('admin.edit_chapter', id=item.chapter.id) }}">{{ item.chapter.title }}</a>{% if item.next_lesson %} and Next Lesson: <a href="{{ url_for('admin.edit_lesson', id=item.next_lesson.id) }}">{{ item.next_lesson.title }}</a>{% endif %})
+                        {% if item.skills[:] != [] -%}
+                        <ul>
+                        {% for skill in item.skills -%}
+                            <li><a href="{{ url_for('admin.edit_skill', id=skill.id) }}">{{ skill.description }}</a></li>
+                        {%- endfor %}
+                        </ul>
+                        {%- endif %}
+                    </li>
+                    {% elif item.what_model() == "Chapter" %}
+                    <li><a href="{{ url_for('admin.edit_chapter', id=item.id) }}">{{ item.title }}: {{ item.name if item.name else "No name yet" }}</a> (In module: <a href="{{ url_for('admin.edit_module', id=item.module.id) }}">{{ item.module.title }}</a>
+                        {% if item.next_chapter %} and Next Chapter: <a href="{{ url_for('admin.edit_chapter', id=item.next_chapter.id) }}">{{ item.next_chapter.title }}</a>{% endif %})</li>
+                    {% elif item.what_model() == "Quiz" %}
+                    <li><a href="{{ url_for('admin.edit_quiz', id=item.id) }}">{{ item.title() }}</a> (In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a>) <a href="{{ url_for('main.take_quiz', id=item.id) }}" class="badge badge-danger">Preview</a></li>
+                    {% elif item.what_model() == "Question" %}
+                    <li><a data-id="{{ item.id }}" data-toggle="popover" data-html="true" data-content="{{ item.html }}" data-trigger="hover" data-placement="top" href="{{ url_for('admin.edit_question', id=item.id) }}" class="d-inline-block question" style="margin-bottom: -7px;">{{ item.text|truncate(100) }}</a></li>
+                    {% elif item.what_model() == "Skill" %}
+                    <li><a href="{{ url_for('admin.edit_skill', id=item.id) }}">{{ item.description }}</a></li>
+                    {% else %}
+                    <li><a href="{{ url_for('admin.edit_' + list_items_singular, id=item.id) }}">{{ item.title }}{% if item.what_model() == "Page" %}</a>
+                        (Type: <span class="text-danger">{{ item.page_type.description }}</span> | In lesson: <a href="{{ url_for('admin.edit_lesson', id=item.lesson.id) }}">{{ item.lesson.title }}</a>{% if item.next_page %}
+                        | Next Page: <a href="{{ url_for('admin.edit_page', id=item.next_page.id) }}">{{ item.next_page.title }}</a>{% endif %}){% else %}{% if item.next_module %}</a> (Next Module: <a href="{{ url_for('admin.edit_module', id=item.next_module.id) }}">{{ item.next_module.title }}</a>){% endif %}</a>{% endif %}</li>
+                    {% endif %}
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
         {% endif %}
 {% endmacro %}
+
+{% block styles %}
+    {{ super() }}
+    <style type="text/css">
+        .group > a:hover {
+            text-decoration: underline;
+        }
+
+        .group > a i {
+            transition: all 0.5s;
+            float: right;
+        }
+
+        .group > a[aria-expanded="false"] i::before {
+            content: "\f078";
+        }
+
+        .group > a[aria-expanded="true"] i::before {
+            content: "\f077"
+        }
+
+        .popover {
+            min-width: 500px;
+        }
+    </style>
+{% endblock %}
+
 {% block page_content %}
     <div class="page-header">
         <h1>All {{ list_items }}</h1>
     </div>
-    {% if list_items == 'Modules' or list_items == 'Chapters' or list_items == 'Lessons' or list_items == 'Pages' or list_items == 'Skills' or list_items == 'Projects' or list_items == 'Questions' %}
+    {% if groups is defined %}
+    <div id="accordion">
     {% for group in groups %}
-    <h3 class="table-primary p-2 pl-3">{{ group.name or group.title or group.description + " (" + group.lesson.chapter.title + " > " + group.lesson.title + ")" }}</h3>
-        {% if list_items == 'Projects' %}
+    {% if list_items == 'Projects' %}
         {% set items = group.projects.all() %}
-        {% elif list_items == 'Skills' %}
+    {% elif list_items == 'Skills' %}
         {% set items = group.skills.all() %}
-        {% elif list_items == 'Questions' %}
+    {% elif list_items == 'Questions' %}
         {% set items = group.questions.all() %}
-        {% else %}
-        {% set items = group.all_ordered_children() %}
-        {% endif %}
-        {{ render_items(items) }}
-    {% endfor %}
+    {% elif list_items == 'Quizzes' %}
+        {% set items = group.quizzes.all() %}
     {% else %}
-    {{ render_items(items) }}
+        {% set items = group.all_ordered_children() %}
+    {% endif %}
+    {% if items|length > 0 %}
+    <h5 class="group table-primary p-2 px-3">
+        <a data-toggle="collapse" aria-expanded="false" href="#group-{{ loop.index }}" class="text-dark d-inline-block w-100">
+            {% if group.__class__ == Lesson %}
+            <small>Chapter</small> {{ group.chapter.title }} &mdash; <small>Lesson</small>
+            {% elif group.__class__ == Chapter %}
+            <small>Module</small> {{ group.module.title }} <small>Chapter</small>
+            {% endif %}
+            {{ group.name or group.title or (group.lesson.chapter.title + " > " + group.lesson.title + " > " + group.description ) }}
+            <span class="text-danger">({{ items|length|string + " " + (list_items|lower if items|length != 1 else list_items_singular) }})</span>
+            <i class="fas fa-chevron-up"></i>
+        </a>
+    </h5>
+    {{ render_items(items, collapse=true, loop_index=loop.index) }}
+    {% endif %}
+    {% endfor %}
+    </div>
+    {% else %}
+    {{ render_items(items, collapse=false) }}
     {% endif %}
     <a class="btn btn-success" href="{{ url_for('admin.new_' + list_items_singular) }}">New {{ list_items_singular }}</a>
 {% endblock %}
