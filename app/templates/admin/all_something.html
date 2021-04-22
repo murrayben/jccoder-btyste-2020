@@ -7,6 +7,9 @@
         {% if collapse %}
         <div id="group-{{ loop_index }}" class="collapse" aria-labelledby="groupNumber{{ loop_index }}" data-parent="#accordion">
             <div class="p-3">
+        {% else %}
+        <div>
+            <div>
         {% endif %}
                 <ol style="width: auto;">
                     {% for item in items %}
@@ -108,4 +111,5 @@
     {{ render_items(items, collapse=false) }}
     {% endif %}
     <a class="btn btn-success" href="{{ url_for('admin.new_' + list_items_singular) }}">New {{ list_items_singular }}</a>
+    <!-- comment -->
 {% endblock %}
